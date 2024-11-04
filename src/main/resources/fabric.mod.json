@@ -5,8 +5,8 @@
 	"name": "Euphoria Patcher",
 	"description": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nReport issues on discord!",
 	"authors": [
-		"isuewo",
-		"SpacEagle17"
+		"SpacEagle17",
+		"isuewo"
 	],
 	"contact": {
 		"homepage": "https://euphoriapatches.com",
