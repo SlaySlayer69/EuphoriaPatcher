@@ -62,6 +62,7 @@ public class EuphoriaPatcher {
             return;
         }
         ALREADY_LAUNCHED = true;
+        System.out.println("\nEuphoria Patcher:");
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
 
