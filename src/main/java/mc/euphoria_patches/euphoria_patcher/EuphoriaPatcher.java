@@ -25,7 +25,8 @@ import java.util.*;
 
 public class EuphoriaPatcher {
     
-    public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean isDevModLoader = FabricLoader.getInstance().isDevelopmentEnvironment();
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
@@ -79,7 +80,7 @@ public class EuphoriaPatcher {
             if (shaderInfo.baseFile == null){
                 log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
                 log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
-                if(!IS_DEV) return;
+                if(!isDevFunc()) return;
             }
         } else {
             thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
@@ -172,6 +173,10 @@ public class EuphoriaPatcher {
         log(messageLevel, messageFadeTimer, message);
     }
 
+    public static boolean isDevFunc() {
+        return IS_DEV && isDevModLoader;
+    }
+
     // Detect installed Complementary Shaders versions
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
@@ -214,7 +219,7 @@ public class EuphoriaPatcher {
 
     // Check if the patch is already installed
     private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
-        if (info.baseFile != null && Files.exists(file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION)) && !IS_DEV && !info.isAlreadyInstalled) {
+        if (info.baseFile != null && Files.exists(file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION)) && !isDevFunc() && !info.isAlreadyInstalled) {
             info.isAlreadyInstalled = true;
             log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
         }
@@ -345,7 +350,7 @@ public class EuphoriaPatcher {
     // Verify base archive
     private boolean verifyBaseArchive(Path baseArchived) {
         try {
-            if (IS_DEV) {
+            if (isDevFunc()) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
                 log(0, "Hash of base: " + hash);
                 log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
@@ -374,7 +379,7 @@ public class EuphoriaPatcher {
         Path patchedArchive = temp.resolve(patchedName + ".tar");
         Path patchedFile = shaderpacks.resolve(patchedName);
         Path patchFile;
-        if (IS_DEV){
+        if (isDevFunc()){
              // All this code to generate the .patch file in the forge and fabric build dir for less copy-paste action
             Path fabricBuildDir = resourcesBuildDir.resolve("resources/main");
             Path forgeBuildDir = resourcesBuildDir.resolve("sourcesSets/main");
