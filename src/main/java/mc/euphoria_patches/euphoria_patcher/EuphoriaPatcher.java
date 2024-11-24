@@ -236,7 +236,7 @@ public class EuphoriaPatcher {
             }
         }
         if (shaderpacks.toString().contains("SpacEagle")) {
-            log(1, "Have fun developing Euphoria Patches!");
+            log(1, "Have fun developing Euphoria Patches!\n");
         } else {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
