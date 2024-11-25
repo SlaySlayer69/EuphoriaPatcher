@@ -7,6 +7,7 @@ import java.nio.file.Path;
 public class ModLoaderSpecifics {
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
     public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
+    public static boolean isDevMode = FabricLoader.getInstance().isDevelopmentEnvironment();
 
     public static boolean serverCheck() {
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER){
