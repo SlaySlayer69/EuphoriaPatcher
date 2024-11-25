@@ -3,8 +3,6 @@ package mc.euphoria_patches.euphoria_patcher;
 import mc.euphoria_patches.euphoria_patcher.features.*;
 import mc.euphoria_patches.euphoria_patcher.util.*;
 
-import net.fabricmc.loader.api.FabricLoader;
-
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -23,7 +21,7 @@ import java.util.*;
 public class EuphoriaPatcher {
     
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
-    private static final boolean isDevModLoader = FabricLoader.getInstance().isDevelopmentEnvironment();
+    private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
