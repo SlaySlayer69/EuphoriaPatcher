@@ -1,10 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher;
 
 import mc.euphoria_patches.euphoria_patcher.features.*;
-import mc.euphoria_patches.euphoria_patcher.util.Config;
-import mc.euphoria_patches.euphoria_patcher.util.JsonUtilReader;
-import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
-import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
+import mc.euphoria_patches.euphoria_patcher.util.*;
 
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -42,8 +39,8 @@ public class EuphoriaPatcher {
     public static final String SHADERS_PROPERTIES_LOCATION = "shaders/shaders.properties";
 
     // Get necessary paths
-    public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-    public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
+    public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
+    public static Path configDirectory = ModLoaderSpecifics.configDirectory;
     public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
     public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
