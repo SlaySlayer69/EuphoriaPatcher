@@ -302,7 +302,7 @@ public class EuphoriaPatcher {
         boolean result = applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
 
         try {
-            log(0, "Cleaning up temporary directory...");
+            log(0, "Cleaning up the temporary directory...");
             FileUtils.deleteDirectory(temp.toFile());
         } catch (IOException e) {
             log(2, "Error cleaning up temporary directory: " + e.getMessage());
