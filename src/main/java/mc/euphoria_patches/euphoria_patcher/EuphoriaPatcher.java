@@ -299,7 +299,15 @@ public class EuphoriaPatcher {
 
         if (!verifyBaseArchive(baseArchived)) return false;
 
-        return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
+        boolean result = applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
+
+        try {
+            log(0, "Cleaning up temporary directory...");
+            FileUtils.deleteDirectory(temp.toFile());
+        } catch (IOException e) {
+            log(2, "Error cleaning up temporary directory: " + e.getMessage());
+        }
+        return result;
     }
 
     // Extract base shader
