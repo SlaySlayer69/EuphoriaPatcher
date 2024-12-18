@@ -28,7 +28,7 @@ public class EuphoriaPatcher {
     public static final String VERSION = "_r5.3";
     public static final String PATCH_VERSION = "_1.4.3";
 
-    private static final String BASE_TAR_HASH = "c85eb822ee37aa3b1764f9490484d47e";
+    private static final String BASE_TAR_HASH = "52140ace34d1996c5a1f02930fdcbf1a";
     private static final int BASE_TAR_SIZE = 1300992;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";

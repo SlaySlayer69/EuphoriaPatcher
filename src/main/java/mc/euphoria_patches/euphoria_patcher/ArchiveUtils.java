@@ -91,10 +91,16 @@ public class ArchiveUtils {
             String fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
             TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName); // Create a TAR entry for the file or directory
 
-            // Set deterministic flags for the archive entry
-            tarEntry.setModTime(0);
-            tarEntry.setIds(0, 0);
-            tarEntry.setNames("", "");
+            // Set deterministic metadata
+            tarEntry.setModTime(0); // Fixed timestamp
+            tarEntry.setSize(Files.isRegularFile(filePath) ? Files.size(filePath) : 0); // Explicit file size
+            tarEntry.setIds(0, 0); // Fixed user/group IDs
+            tarEntry.setNames("", ""); // Fixed user/group names
+            tarEntry.setMode(0100644); // Standard file permissions for files
+
+            // Exceptions if error
+            tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_ERROR);
+            tarOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_ERROR);
 
             tarOutputStream.putArchiveEntry(tarEntry);
 
