@@ -16,28 +16,44 @@ public class Config {
     public static void createConfig() {
         try {
             Files.createFile(CONFIG_PATH);
-            try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), true)) {
-                writer.write("# This file stores configuration options for the Euphoria Patcher mod\n");
-                writer.write("# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\n");
-                writer.write("# Thank you for using Euphoria Patches - SpacEagle17\n");
-            }
+            writeInitialConfig();
             EuphoriaPatcher.log(0, "Successfully created config file");
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error creating config file: " + e.getMessage());
         }
     }
 
-    public static void ensureVersionLine() {
+    private static void writeInitialConfig() throws IOException {
+        try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), false)) {
+            writer.write("# This file stores configuration options for the Euphoria Patcher mod\n");
+            writer.write("# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\n");
+            writer.write("# Thank you for using Euphoria Patches - SpacEagle17\n");
+        }
+    }
+
+    public static void updateVersionLine() {
         try {
             List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
-            for (String line : lines) if (line.contains("Made for version")) return;
+            boolean versionLineFound = false;
 
-            int index = lines.indexOf("# This file stores configuration options for the Euphoria Patcher mod");
-            if (index >= 0) {
-                lines.add(index + 1, "# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
-                Files.write(CONFIG_PATH, lines, StandardCharsets.UTF_8);
-                EuphoriaPatcher.log(0, "Successfully added version info to config file");
+            for (int i = 0; i < lines.size(); i++) {
+                if (lines.get(i).startsWith("# Made for version")) {
+                    if (lines.get(i).contains(EuphoriaPatcher.PATCH_VERSION.replace("_", ""))) return;
+                    lines.set(i, "# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
+                    versionLineFound = true;
+                    break;
+                }
             }
+
+            if (!versionLineFound) {
+                int headerIndex = lines.indexOf("# This file stores configuration options for the Euphoria Patcher mod");
+                if (headerIndex >= 0) {
+                    lines.add(headerIndex + 1, "# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
+                }
+            }
+
+            Files.write(CONFIG_PATH, lines, StandardCharsets.UTF_8);
+            EuphoriaPatcher.log(0, "Successfully updated version info in config file");
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error updating config file with version: " + e.getMessage());
         }
@@ -48,15 +64,22 @@ public class Config {
             if (!Files.exists(CONFIG_PATH)) {
                 createConfig();
             } else {
-                ensureVersionLine(); // Check and add version line if needed
+                updateVersionLine(); // Always update the version line
             }
             loadProperties();
             if(!properties.containsKey(option)) {
-                try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), true)) {
-                    writer.write("\n"); // Always write a newline before a new entry
+                List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
+                try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), false)) {
+                    // Write existing lines
+                    for (String line : lines) {
+                        writer.write(line + "\n");
+                    }
+
+                    // Add new configuration
+                    writer.write("\n"); // Add newline before new entry
                     if (description != null) {
-                        String[] lines = description.split("\n");
-                        for (String line : lines) {
+                        String[] descLines = description.split("\n");
+                        for (String line : descLines) {
                             writer.write("# " + line + "\n");
                         }
                     }
@@ -71,7 +94,7 @@ public class Config {
 
     public static String readWriteConfig(String optionName, String defaultValue, String description) {
         writeConfig(optionName, defaultValue, description);
-        return properties.getProperty(optionName, defaultValue); // Provide defaultValue if the property is missing
+        return properties.getProperty(optionName, defaultValue);
     }
 
     private static void loadProperties() {
