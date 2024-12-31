@@ -20,7 +20,7 @@ import java.util.*;
 
 public class EuphoriaPatcher {
     
-    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = true; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
     private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
 
     public static final String BRAND_NAME = "Complementary";
@@ -383,11 +383,11 @@ public class EuphoriaPatcher {
         Path patchedFile = shaderpacks.resolve(patchedName);
         Path patchFile;
         if (isDevFunc()){
-             // All this code to generate the .patch file in the forge and fabric build dir for less copy-paste action
-            Path fabricBuildDir = resourcesBuildDir.resolve("resources/main");
-            Path forgeBuildDir = resourcesBuildDir.resolve("sourcesSets/main");
-            return devPatchFilePrep(fabricBuildDir, baseArchived, patchedFile, patchedArchive) &&
-                    devPatchFilePrep(forgeBuildDir, baseArchived, patchedFile, patchedArchive);
+             // All this code to generate the .patch file in the resources directory and a new directory for the patch files
+            Path resourcesDir = resourcesBuildDir.getParent().resolve("src/main/resources");
+            Path patchDir = resourcesBuildDir.getParent().resolve("EuphoriaPatchFiles");
+            return devPatchFilePrep(resourcesDir, baseArchived, patchedFile, patchedArchive) &&
+                    devPatchFilePrep(patchDir, baseArchived, patchedFile, patchedArchive);
         } else {
             patchFile = temp.resolve(patchedName + ".patch");
             return applyProductionPatch(baseArchived, patchedArchive, patchFile, patchedFile, styleUnbound, styleReimagined);
