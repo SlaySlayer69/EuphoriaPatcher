@@ -20,7 +20,7 @@ import java.util.*;
 
 public class EuphoriaPatcher {
     
-    private static final boolean IS_DEV = true; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
     private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
 
     public static final String BRAND_NAME = "Complementary";
