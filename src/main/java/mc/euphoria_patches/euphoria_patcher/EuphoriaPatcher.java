@@ -39,7 +39,7 @@ public class EuphoriaPatcher {
     // Get necessary paths
     public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
     public static Path configDirectory = ModLoaderSpecifics.configDirectory;
-    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
+    public static Path mainIntellijDir = shaderpacks.getParent().getParent();
     public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
     // Config Options
@@ -383,9 +383,9 @@ public class EuphoriaPatcher {
         Path patchedFile = shaderpacks.resolve(patchedName);
         Path patchFile;
         if (isDevFunc()){
-             // All this code to generate the .patch file in the resources directory and a new directory for the patch files
-            Path resourcesDir = resourcesBuildDir.getParent().resolve("src/main/resources");
-            Path patchDir = resourcesBuildDir.getParent().resolve("EuphoriaPatchFiles");
+            // All this code to generate the .patch file in the resources directory and a new directory for the patch files
+            Path resourcesDir = mainIntellijDir.resolve("src/main/resources");
+            Path patchDir = mainIntellijDir.resolve("EuphoriaPatchFiles");
             return devPatchFilePrep(resourcesDir, baseArchived, patchedFile, patchedArchive) &&
                     devPatchFilePrep(patchDir, baseArchived, patchedFile, patchedArchive);
         } else {
