@@ -214,9 +214,29 @@ public class EuphoriaPatcher {
 
     // Check if the patch is already installed
     private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
-        if (info.baseFile != null && Files.exists(file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION)) && !isDevFunc() && !info.isAlreadyInstalled) {
-            info.isAlreadyInstalled = true;
-            log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
+        Path potentialInstallPath = file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
+
+        if (info.baseFile != null && Files.exists(potentialInstallPath) && !isDevFunc()) {
+            // Check if any file containing "EuphoriaPatches" exists in the directory
+            try {
+                boolean containsEuphoriaFile = Files.walk(potentialInstallPath)
+                        .filter(Files::isRegularFile)
+                        .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
+
+                if (!containsEuphoriaFile) {
+                    // No EuphoriaPatches file found, delete the directory
+                    log(0, "Found incomplete installation. Cleaning up...");
+                    UsefulFunctions.deleteRecursively(potentialInstallPath);
+                    info.isAlreadyInstalled = false;
+                } else {
+                    info.isAlreadyInstalled = true;
+                    log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
+                }
+            } catch (IOException e) {
+                log(3, "Error checking installation status. Cleaning up: " + e.getMessage());
+                try {UsefulFunctions.deleteRecursively(potentialInstallPath);} catch (IOException ex) {log(3, "Error deleting directory: " + ex.getMessage());}
+                info.isAlreadyInstalled = false;
+            }
         }
     }
 
