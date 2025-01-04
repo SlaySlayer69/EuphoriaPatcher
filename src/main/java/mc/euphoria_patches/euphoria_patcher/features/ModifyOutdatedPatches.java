@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.UsefulFunctions;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -29,7 +30,7 @@ public class ModifyOutdatedPatches {
             stream.forEach(path -> {
                 try {
                     if (isOutdatedPatch(path, false)) {
-                        deleteRecursively(path);
+                        UsefulFunctions.deleteRecursively(path);
                         EuphoriaPatcher.log(0, "Successfully deleted outdated " + path.getFileName() + " shaderpack file!");
                     }
                 } catch (IOException e) {
@@ -39,21 +40,6 @@ public class ModifyOutdatedPatches {
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error reading shaderpacks directory: " + e.getMessage());
         }
-    }
-
-    private static void deleteRecursively(Path path) throws IOException { // needed to delete folders
-        if (Files.isDirectory(path)) {
-            try (Stream<Path> entries = Files.list(path)) {
-                entries.forEach(entry -> {
-                    try {
-                        deleteRecursively(entry);
-                    } catch (IOException e) {
-                        EuphoriaPatcher.log(2, 0, "Error deleting entry: " + entry + " - " + e.getMessage());
-                    }
-                });
-            }
-        }
-        Files.delete(path);
     }
 
     private static boolean isOutdatedPatch(Path path, boolean renameFile) {
