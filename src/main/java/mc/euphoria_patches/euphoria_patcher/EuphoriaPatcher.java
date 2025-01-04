@@ -225,7 +225,7 @@ public class EuphoriaPatcher {
 
                 if (!containsEuphoriaFile) {
                     // No EuphoriaPatches file found, delete the directory
-                    log(0, "Found incomplete installation. Cleaning up...");
+                    log(0, "Found incomplete installation. Cleaning up " + potentialInstallPath.getFileName());
                     UsefulFunctions.deleteRecursively(potentialInstallPath);
                     info.isAlreadyInstalled = false;
                 } else {
