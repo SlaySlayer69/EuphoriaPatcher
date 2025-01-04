@@ -216,7 +216,7 @@ public class EuphoriaPatcher {
     private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
         Path potentialInstallPath = file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
 
-        if (info.baseFile != null && Files.exists(potentialInstallPath) && !isDevFunc()) {
+        if (info.baseFile != null && Files.exists(potentialInstallPath) && !isDevFunc() && !info.isAlreadyInstalled) {
             // Check if any file containing "EuphoriaPatches" exists in the directory
             try {
                 boolean containsEuphoriaFile = Files.walk(potentialInstallPath)
