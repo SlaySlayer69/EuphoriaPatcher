@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -11,7 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class UpdateChecker {
-    private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases/latest";
+    private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases";
     private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
     public static String NEW_MOD_VERSION = null;
     public static boolean NEW_VERSION_AVAILABLE = false;
@@ -56,11 +57,25 @@ public class UpdateChecker {
         }
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            // Use the older compatible method for parsing to make it compatible with older MC versions
-            JsonElement jsonElement = new JsonParser().parse(reader);
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonElement jsonElement = new JsonParser().parse(reader); // Old method used to make it work with Java 8 for old MC versions
+            JsonArray releases = jsonElement.getAsJsonArray();
 
-            return jsonObject.get("tag_name").getAsString();
+            JsonObject latestRelease = null;
+            for (JsonElement releaseElement : releases) { // Yep GitHub sorts by tag name and not by date by default :(
+                JsonObject release = releaseElement.getAsJsonObject();
+
+                if (latestRelease == null ||
+                        release.get("published_at").getAsString().compareTo(latestRelease.get("published_at").getAsString()) > 0) {
+                    latestRelease = release;
+                }
+            }
+
+            if (latestRelease == null) {
+                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] No releases found.");
+                return MOD_VERSION;
+            }
+
+            return latestRelease.get("name").getAsString();
         } finally {
             connection.disconnect();
         }

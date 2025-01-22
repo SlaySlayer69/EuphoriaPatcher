@@ -14,7 +14,7 @@ public class ModifyPatchedShaderpacks {
 
     public static void modifyShadersProperties(Path patchedFile, boolean styleUnbound, boolean styleReimagined, String... regexAndReplacements) throws IOException {
         if (regexAndReplacements.length % 2 != 0) {
-            throw new IllegalArgumentException("Regex and replacement pairs must be provided");
+            EuphoriaPatcher.log(2, 0,"Regex and replacement pairs must be provided");
         }
 
         processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
@@ -24,14 +24,14 @@ public class ModifyPatchedShaderpacks {
                 String modifiedContent = applyReplacements(content, regexAndReplacements);
                 Files.write(shadersPropertiesPath, modifiedContent.getBytes());
             } catch (IOException e) {
-                throw new RuntimeException("Error processing shader properties", e);
+                EuphoriaPatcher.log(2, 0,"Error processing shader properties " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
     }
 
     public static void modifyLangFiles(Path patchedFile, boolean styleUnbound, boolean styleReimagined, String... regexAndReplacements) throws IOException {
         if (regexAndReplacements.length % 2 != 0) {
-            throw new IllegalArgumentException("Regex and replacement pairs must be provided");
+            EuphoriaPatcher.log(2, 0,"Regex and replacement pairs must be provided");
         }
 
         processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
@@ -45,7 +45,7 @@ public class ModifyPatchedShaderpacks {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException("Error processing lang files", e);
+                EuphoriaPatcher.log(2, 0,"Error processing lang files " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
     }
