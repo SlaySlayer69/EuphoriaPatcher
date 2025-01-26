@@ -123,8 +123,7 @@ public class EuphoriaPatcher {
             Class.forName(sodiumVersion);
             log(0, "Sodium found, using Sodium logging!");
             isSodiumInstalled = true;
-        } catch (ClassNotFoundException e) {
-            log(0, "Sodium's logging module not found or incompatible version detected. Default logging will be used.: " + e.getMessage());
+        } catch (ClassNotFoundException ignored) {
         }
     }
 
