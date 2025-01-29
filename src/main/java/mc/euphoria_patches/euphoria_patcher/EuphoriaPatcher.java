@@ -52,6 +52,7 @@ public class EuphoriaPatcher {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     public static boolean isSodiumInstalled = false;
     private static boolean ALREADY_LAUNCHED = false;
+    private static boolean IS_BASE_MESSAGE_SHOWN = false;
 
     public EuphoriaPatcher() {
         if (ALREADY_LAUNCHED) {
@@ -73,8 +74,7 @@ public class EuphoriaPatcher {
 
         if(!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null){
-                log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
-                log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
+                installBaseMessage();
                 if(!isDevFunc()) return;
             }
         } else {
@@ -84,7 +84,7 @@ public class EuphoriaPatcher {
 
         // Create temporary directory
         Path temp = createTempDirectory();
-        if (temp == null) return;
+        if (temp == null || shaderInfo.baseFile == null && !isDevFunc()) return;
 
         // Process and patch shaders
         if (!processAndPatchShaders(shaderInfo, temp)) return;
@@ -256,6 +256,13 @@ public class EuphoriaPatcher {
         }
     }
 
+    private void installBaseMessage(){
+        if (IS_BASE_MESSAGE_SHOWN) return;
+        IS_BASE_MESSAGE_SHOWN = true;
+        log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
+        log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
+    }
+
     // Detect installed directories
     private void detectInstalledDirectories(ShaderInfo info) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isComplementaryShaderDirectory)) {
@@ -306,6 +313,10 @@ public class EuphoriaPatcher {
 
     // Process and patch shaders
     private boolean processAndPatchShaders(ShaderInfo info, Path temp) {
+        if (info.baseFile == null && !isDevFunc()) {
+            installBaseMessage();
+            return false;
+        }
         String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
         String patchedName = baseName + " + " + PATCH_NAME + PATCH_VERSION;
 
