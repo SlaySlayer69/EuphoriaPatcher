@@ -64,6 +64,7 @@ shadowJar {
 	// Relocate the problematic libraries to avoid conflicts
 	relocate 'org.apache.commons', 'mc.euphoria_patches.shadow.org.apache.commons'
 	relocate 'io.sigpipe.jbsdiff', 'mc.euphoria_patches.shadow.io.sigpipe.jbsdiff'
+	relocate 'com.google.gson', 'mc.euphoria_patches.shadow.com.google.gson'
 
 	// Include license file
 	from("LICENSE") {
