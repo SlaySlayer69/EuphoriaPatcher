@@ -241,10 +241,14 @@ public class EuphoriaPatcher {
 
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
+            String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
+            if(ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")){
+                newVersionText = "value.info19.0=" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
+            }
             try {
                 Path shader = baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
                 ModifyPatchedShaderpacks.modifyShadersProperties(shader, styleUnbound, styleReimagined,"screen=<empty> <empty>", "screen=info19 info20");
-                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION);
+                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", newVersionText);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
