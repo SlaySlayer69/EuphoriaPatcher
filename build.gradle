@@ -79,6 +79,9 @@ shadowJar {
 
 	// Minimize the JAR by removing unused classes
 	minimize()
+
+	// Force the task to always run and not be UP-TO-DATE
+	outputs.upToDateWhen { false }
 }
 
 // Configure remapJar to use shadowJar

@@ -262,8 +262,15 @@ public class EuphoriaPatcher {
         }
     }
 
-    public boolean isSpacEagle() {
-        return shaderpacks.toString().contains("SpacEagle");
+    public static boolean isSpacEagle() {
+        try {
+            boolean containsSpacEagle = shaderpacks.toString().contains("SpacEagle");
+            Path euphoriaFolder = shaderpacks.resolve("Euphoria-Patches");
+            boolean hasEuphoriaFolder = Files.exists(euphoriaFolder) && Files.isDirectory(euphoriaFolder);
+            return containsSpacEagle && hasEuphoriaFolder;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
