@@ -1,9 +1,11 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -17,12 +19,14 @@ import java.util.ArrayList;
 @Mixin(targets = "net.irisshaders.iris.gl.shader.StandardMacros", remap = false)
 public class IrisStandardMacrosMixin {
 
-    // Static flag to track if we've already added the define
-    private static boolean defineAdded = false;
+    private static int injectCount = 0;
+    private static boolean injectedOnce = false;
 
-    // Shadow the define method we want to call
     @Shadow(remap = false)
     private static void define(List<?> defines, String key) {}
+
+    @Shadow(remap = false)
+    private static void define(List<?> defines, String key, String value) {}
 
     @Inject(
             method = "createStandardEnvironmentDefines",
@@ -38,18 +42,41 @@ public class IrisStandardMacrosMixin {
     )
     private static void addEuphoriaDefine(CallbackInfoReturnable<?> cir, ArrayList<?> standardDefines) {
         try {
-            // Check if we've already added the define or if we should skip
-            if (defineAdded || !EuphoriaPatcher.isSpacEagle()) {
-                return;
+            injectCount++;
+
+            if (EuphoriaPatcher.isSpacEagle()) define(standardDefines, "SPACEAGLE17");
+
+            String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
+            define(standardDefines, "CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
+
+
+            if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderUpdateMessage && !injectedOnce) {
+                define(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
+
+                if (UpdateChecker.NEW_MOD_VERSION != null) {
+                    String nextVersionFormatted = formatVersion(UpdateChecker.NEW_MOD_VERSION);
+                    define(standardDefines, "NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
+                }
             }
 
-            // Add the define
-            define(standardDefines, "SPACEAGLE17");
-            EuphoriaPatcher.log(0,"Successfully added SPACEAGLE17 define to Iris");
+            if (injectCount == 1) {
+                EuphoriaPatcher.log(0, "Added Euphoria defines to Iris shaders");
+            }
 
-            // Mark that we've successfully added the define
-            defineAdded = true;
+            injectedOnce = true;
         } catch (Exception ignored) {
         }
+    }
+    @Unique
+    private static String formatVersion(String version) {
+        String[] versionParts = version.replace("_", "").split("\\.");
+        StringBuilder versionBuilder = new StringBuilder();
+        for (int i = 0; i < versionParts.length; i++) {
+            versionBuilder.append("_").append(versionParts[i]);
+            if (i < versionParts.length - 1) {
+                versionBuilder.append(", _dot, ");
+            }
+        }
+        return versionBuilder.toString();
     }
 }
