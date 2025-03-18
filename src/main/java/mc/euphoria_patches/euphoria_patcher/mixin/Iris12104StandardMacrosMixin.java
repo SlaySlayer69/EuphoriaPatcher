@@ -11,13 +11,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 // Use @Pseudo to tell the mixin processor the class isn't available at compile time
 @Pseudo
 @Mixin(targets = "net.irisshaders.iris.gl.shader.StandardMacros", remap = false)
-public class IrisStandardMacrosMixin {
+public class Iris12104StandardMacrosMixin {
 
     private static int injectCount = 0;
     private static boolean injectedOnce = false;
@@ -60,7 +60,7 @@ public class IrisStandardMacrosMixin {
             }
 
             if (injectCount == 1) {
-                EuphoriaPatcher.log(0, "Added Euphoria defines to Iris shaders");
+                EuphoriaPatcher.log(0, "Added Euphoria Patches defines to Iris");
             }
 
             injectedOnce = true;
