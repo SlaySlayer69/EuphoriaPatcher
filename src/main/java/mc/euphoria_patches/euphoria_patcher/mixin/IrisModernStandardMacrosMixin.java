@@ -17,7 +17,7 @@ import java.util.List;
 // Use @Pseudo to tell the mixin processor the class isn't available at compile time
 @Pseudo
 @Mixin(targets = "net.irisshaders.iris.gl.shader.StandardMacros", remap = false)
-public class Iris12104StandardMacrosMixin {
+public class IrisModernStandardMacrosMixin {
 
     private static int injectCount = 0;
     private static boolean injectedOnce = false;
@@ -33,7 +33,7 @@ public class Iris12104StandardMacrosMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/irisshaders/iris/gl/shader/StandardMacros;define(Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V",
-                    ordinal = 10,
+                    ordinal = 1,
                     remap = false
             ),
             locals = LocalCapture.CAPTURE_FAILHARD,
