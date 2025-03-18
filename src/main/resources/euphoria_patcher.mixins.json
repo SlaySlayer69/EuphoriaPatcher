@@ -3,6 +3,7 @@
   "package": "mc.euphoria_patches.euphoria_patcher.mixin",
   "mixins": [
     "EuphoriaPatcherMixin",
+    "IrisLegacyStandardMacrosMixin",
     "IrisModernStandardMacrosMixin"
   ]
 }
