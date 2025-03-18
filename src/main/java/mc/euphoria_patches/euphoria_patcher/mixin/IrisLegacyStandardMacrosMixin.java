@@ -18,7 +18,9 @@ import java.util.List;
 @Mixin(targets = "net.coderbot.iris.gl.shader.StandardMacros", remap = false)
 public class IrisLegacyStandardMacrosMixin {
 
+    @Unique
     private static int injectCount = 0;
+    @Unique
     private static boolean injectedOnce = false;
 
     @Shadow(remap = false)
