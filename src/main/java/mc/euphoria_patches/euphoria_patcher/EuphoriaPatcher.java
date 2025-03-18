@@ -19,7 +19,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class EuphoriaPatcher {
-    
+
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
     private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
 
@@ -35,6 +35,7 @@ public class EuphoriaPatcher {
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
     public static final String LANG_LOCATION = "shaders/lang";
     public static final String SHADERS_PROPERTIES_LOCATION = "shaders/shaders.properties";
+    public static final String SHADER_MYFILE_LOCATION = "shaders/lib/myFile.glsl";
 
     // Get necessary paths
     public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
@@ -213,7 +214,7 @@ public class EuphoriaPatcher {
 
     // Check if the patch is already installed
     private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
-        Path potentialInstallPath = file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
+        Path potentialInstallPath = getPatchedShaderPath(file);
 
         if (info.baseFile != null && Files.exists(potentialInstallPath) && !isDevFunc() && !info.isAlreadyInstalled) {
             // Check if any file containing "EuphoriaPatches" exists in the directory
@@ -239,21 +240,52 @@ public class EuphoriaPatcher {
         }
     }
 
+    /**
+     * Gets the path for a patched shader based on the base shader file
+     *
+     * @param baseFile Path to the base shader file or directory
+     * @return Path to the patched shader, or null if baseFile is null
+     */
+    public static Path getPatchedShaderPath(Path baseFile) {
+        if (baseFile == null) {
+            log(3, "Cannot create patched shader path - base file is null");
+            return null;
+        }
+
+        try {
+            String fileName = baseFile.getFileName().toString();
+            String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
+            return baseFile.resolveSibling(baseName + " + " + PATCH_NAME + PATCH_VERSION);
+        } catch (Exception e) {
+            log(3, "Error creating patched shader path: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public boolean isSpacEagle() {
+        return shaderpacks.toString().contains("SpacEagle");
+    }
+
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
+        Path shader = getPatchedShaderPath(baseFile);
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
             String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
             if(ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")){
                 newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
             }
             try {
-                Path shader = baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
-                ModifyPatchedShaderpacks.modifyShadersProperties(shader, styleUnbound, styleReimagined,"screen=<empty> <empty>", "screen=info19 info20");
-                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", newVersionText);
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        if (shaderpacks.toString().contains("SpacEagle")) {
+        if (isSpacEagle()) {
+            try {
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "^$", "#define SPACEAGLE17");
+            } catch (IOException e) {
+                log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
+            }
             log(1, "Have fun developing Euphoria Patches!\n");
         } else {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");

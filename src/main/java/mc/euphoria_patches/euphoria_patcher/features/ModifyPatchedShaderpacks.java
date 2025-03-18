@@ -12,42 +12,49 @@ import java.util.function.Consumer;
 
 public class ModifyPatchedShaderpacks {
 
-    public static void modifyShadersProperties(Path patchedFile, boolean styleUnbound, boolean styleReimagined, String... regexAndReplacements) throws IOException {
+    /**
+     * Modifies files in shader packs based on specified path and file extension
+     *
+     * @param patchedFile The shader pack file or directory
+     * @param styleUnbound Whether to include Unbound style
+     * @param styleReimagined Whether to include Reimagined style
+     * @param targetPath Path relative to shader pack that should be modified (file or directory)
+     * @param fileExtension File extension filter for directory paths (e.g. ".lang"), null for single files
+     * @param regexAndReplacements Pairs of regex patterns and their replacements
+     * @throws IOException If an I/O error occurs
+     */
+    public static void modifyFiles(Path patchedFile, boolean styleUnbound, boolean styleReimagined,
+                                   String targetPath, String fileExtension, String... regexAndReplacements) throws IOException {
         if (regexAndReplacements.length % 2 != 0) {
-            EuphoriaPatcher.log(2, 0,"Regex and replacement pairs must be provided");
+            EuphoriaPatcher.log(2, 0, "Regex and replacement pairs must be provided");
+            return;
         }
 
         processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
             try {
-                Path shadersPropertiesPath = shaderPack.resolve(EuphoriaPatcher.SHADERS_PROPERTIES_LOCATION);
-                String content = new String(Files.readAllBytes(shadersPropertiesPath));
-                String modifiedContent = applyReplacements(content, regexAndReplacements);
-                Files.write(shadersPropertiesPath, modifiedContent.getBytes());
+                Path resolvedPath = shaderPack.resolve(targetPath);
+
+                if (fileExtension != null && Files.isDirectory(resolvedPath)) {
+                    // Process directory with file extension filter
+                    try (DirectoryStream<Path> files = Files.newDirectoryStream(resolvedPath, "*" + fileExtension)) {
+                        for (Path file : files) {
+                            modifyFile(file, regexAndReplacements);
+                        }
+                    }
+                } else {
+                    // Process single file
+                    modifyFile(resolvedPath, regexAndReplacements);
+                }
             } catch (IOException e) {
-                EuphoriaPatcher.log(2, 0,"Error processing shader properties " + shaderPack.getFileName() + ": " + e.getMessage());
+                EuphoriaPatcher.log(2, 0, "Error processing files in " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
     }
 
-    public static void modifyLangFiles(Path patchedFile, boolean styleUnbound, boolean styleReimagined, String... regexAndReplacements) throws IOException {
-        if (regexAndReplacements.length % 2 != 0) {
-            EuphoriaPatcher.log(2, 0,"Regex and replacement pairs must be provided");
-        }
-
-        processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
-            try {
-                Path langDirectory = shaderPack.resolve(EuphoriaPatcher.LANG_LOCATION);
-                try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(langDirectory, "*.lang")) {
-                    for (Path langFile : langFiles) {
-                        String content = new String(Files.readAllBytes(langFile));
-                        String modifiedContent = applyReplacements(content, regexAndReplacements);
-                        Files.write(langFile, modifiedContent.getBytes());
-                    }
-                }
-            } catch (IOException e) {
-                EuphoriaPatcher.log(2, 0,"Error processing lang files " + shaderPack.getFileName() + ": " + e.getMessage());
-            }
-        });
+    private static void modifyFile(Path filePath, String... regexAndReplacements) throws IOException {
+        String content = new String(Files.readAllBytes(filePath));
+        String modifiedContent = applyReplacements(content, regexAndReplacements);
+        Files.write(filePath, modifiedContent.getBytes());
     }
 
     private static void processShaderPacks(Path patchedFile, boolean styleUnbound, boolean styleReimagined, Consumer<Path> processor) {
