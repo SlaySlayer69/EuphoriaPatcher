@@ -32,10 +32,11 @@ public class UpdateChecker {
 
             if (isNewerVersion(NEW_MOD_VERSION)) {
                 NEW_VERSION_AVAILABLE = true;
-                EuphoriaPatcher.log(2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
-                EuphoriaPatcher.log(2, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
-                EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
-                EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Check logs for more info");
+                boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
+
+                EuphoriaPatcher.log(isIris ? 0 : 2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
+                EuphoriaPatcher.log(isIris ? 0 : 2, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
+                EuphoriaPatcher.log(isIris ? 0 : 1, 0, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
             } else {
                 EuphoriaPatcher.log(0, "[UPDATE CHECKER] The EuphoriaPatcher Mod is up to date");
             }
