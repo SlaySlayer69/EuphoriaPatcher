@@ -43,6 +43,11 @@ public class SodiumConsole {
 
     private static void initialize() {
         if (initialized) return;
+
+        if (debugLogging) {
+            initializeWithDebugLogs();
+            return;
+        }
         initialized = true;
 
         // Initialize text class
@@ -346,16 +351,6 @@ public class SodiumConsole {
     /**
      * Enable debug logging for SodiumConsole
      */
-    public static void enableDebugLogging() {
-        debugLogging = true;
-        System.out.println("[SodiumConsole] Debug logging enabled");
-
-        // Re-initialize with debug logging
-        initialized = false;
-        sodiumAvailable = false;
-        initializeWithDebugLogs();
-    }
-
     private static void initializeWithDebugLogs() {
         if (initialized) return;
         initialized = true;
