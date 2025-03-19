@@ -122,12 +122,9 @@ public class EuphoriaPatcher {
     }
 
     private void isSodiumInstalled() {
-        String sodiumVersion = "me.jellysquid.mods.sodium.client.gui.console.Console"; // "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
-        try {
-            Class.forName(sodiumVersion);
+        isSodiumInstalled = SodiumConsole.isSodiumAvailable();
+        if (isSodiumInstalled) {
             log(0, "Sodium found, using Sodium logging!");
-            isSodiumInstalled = true;
-        } catch (ClassNotFoundException ignored) {
         }
     }
 
