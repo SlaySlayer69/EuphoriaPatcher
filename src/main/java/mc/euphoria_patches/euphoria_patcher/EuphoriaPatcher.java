@@ -5,7 +5,6 @@ import mc.euphoria_patches.euphoria_patcher.util.*;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
@@ -28,8 +27,8 @@ public class EuphoriaPatcher {
     public static final String VERSION = "_r5.4";
     public static final String PATCH_VERSION = "_1.5.2";
 
-    private static final String BASE_TAR_HASH = "d2c7b2d30a992623e6b23cdecf7f997b";
-    private static final int BASE_TAR_SIZE = 1328640;
+    public static final String BASE_TAR_HASH = "d2c7b2d30a992623e6b23cdecf7f997b";
+    public static final int BASE_TAR_SIZE = 1328640;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -65,19 +64,19 @@ public class EuphoriaPatcher {
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
 
-        if(doPopUpLogging) isSodiumInstalled();
+        if (doPopUpLogging) isSodiumInstalled();
 
-        if(doUpdateChecking) UpdateChecker.checkForUpdates();
+        if (doUpdateChecking) UpdateChecker.checkForUpdates();
 
         log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();
 
-        if(!shaderInfo.isAlreadyInstalled) {
-            if (shaderInfo.baseFile == null){
+        if (!shaderInfo.isAlreadyInstalled) {
+            if (shaderInfo.baseFile == null) {
                 installBaseMessage();
-                if(!isDevFunc()) return;
+                if (!isDevFunc()) return;
             }
         } else {
             thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
@@ -97,27 +96,27 @@ public class EuphoriaPatcher {
         // Update shader loader (iris) config
         UpdateShaderLoaderConfig.updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        if(doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
-        if(doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
+        if (doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
+        if (doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
-    private void configStuff(){
+    private void configStuff() {
         // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
         // First parameter is the config name, second is the value
         // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
-        doPopUpLogging = Boolean.parseBoolean(Config.readWriteConfig("doPopUpLogging", "true","Option for the sodium message popup logging." +
+        doPopUpLogging = Boolean.parseBoolean(Config.readWriteConfig("doPopUpLogging", "true", "Option for the sodium message popup logging." +
                 "\nDefault = true"));
-        doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true","Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
+        doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true", "Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
                 "\nMore info here: https://github.com/EuphoriaPatches/PatcherUpdateChecker" +
                 "\nDefault = true"));
-        doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true","Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
+        doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true", "Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +
                 "\nDefault = true"));
-        doDeleteOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doDeleteOldShaderFiles", "false","Option that automatically deleted outdated Euphoria Patches folders and config files." +
+        doDeleteOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doDeleteOldShaderFiles", "false", "Option that automatically deleted outdated Euphoria Patches folders and config files." +
                 "\nDefault = false"));
-        doDisplayShaderUpdateMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderUpdateMessage", "true","Option that enables or disables the in-game shader overlay update message. Only works on Iris" +
+        doDisplayShaderUpdateMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderUpdateMessage", "true", "Option that enables or disables the in-game shader overlay update message. Only works on Iris" +
                 "\nDefault = true"));
     }
 
@@ -152,19 +151,12 @@ public class EuphoriaPatcher {
                 break;
         }
     }
-    public static void log(int messageLevel, String message) { // Method overloading for optional parameter
-        int messageFadeTimer = 0;
-        switch (messageLevel) {
-            case 1:
-                messageFadeTimer = 4;
-                break;
-            case 2:
-                messageFadeTimer = 8;
-                break;
-            case 3:
-                messageFadeTimer = 16;
-                break;
-        }
+
+    public static void log(int messageLevel, String message) {
+        // Map message levels to standard fade times
+        int[] fadeTimers = {0, 4, 8, 16}; // Default, Info, Warning, Error
+        int messageFadeTimer = messageLevel >= 0 && messageLevel < fadeTimers.length ?
+                fadeTimers[messageLevel] : 0;
         log(messageLevel, messageFadeTimer, message);
     }
 
@@ -172,16 +164,28 @@ public class EuphoriaPatcher {
         return IS_DEV && isDevModLoader;
     }
 
-    // Detect installed Complementary Shaders versions
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isComplementaryShader)) {
-            for (Path potentialFile : stream) {
-                processShaderFile(potentialFile, info);
-                if (info.styleReimagined && info.styleUnbound) break;
+        try {
+            // Find all potential shader paths (both files and directories)
+            List<Path> potentialShaderPaths = new ArrayList<>();
+
+            // Add files ending with .zip
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
+                    path -> isBrandNameShader(path, true))) {
+                stream.forEach(potentialShaderPaths::add);
             }
-            if (!info.styleReimagined && !info.styleUnbound) {
-                detectInstalledDirectories(info);
+
+            // Add directories
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
+                    path -> isBrandNameShader(path, false))) {
+                stream.forEach(potentialShaderPaths::add);
+            }
+
+            // Process all found paths
+            for (Path path : potentialShaderPaths) {
+                processShaderPath(path, info);
+                if (info.styleReimagined && info.styleUnbound) break;
             }
         } catch (IOException e) {
             log(3, "Error reading shaderpacks directory: " + e.getMessage());
@@ -189,27 +193,32 @@ public class EuphoriaPatcher {
         return info;
     }
 
-    // Helper method to check if a file is a Complementary Shader
-    private boolean isComplementaryShader(Path path) {
+    private boolean isBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
-        return name.matches(BRAND_NAME + ".*" + VERSION + ".*") && name.endsWith(".zip") && !name.contains(PATCH_NAME);
+        boolean matchesPattern = name.matches(BRAND_NAME + ".*" + VERSION + ".*") && !name.contains(PATCH_NAME);
+
+        if (isFile) {
+            return matchesPattern && name.endsWith(".zip");
+        } else {
+            return matchesPattern && Files.isDirectory(path);
+        }
     }
 
-    // Process each shader file
-    private void processShaderFile(Path file, ShaderInfo info) {
-        String name = file.getFileName().toString();
+    private void processShaderPath(Path path, ShaderInfo info) {
+        String name = path.getFileName().toString();
+        // Check shader style
         if (name.contains("Reimagined")) {
             info.styleReimagined = true;
             if (info.baseFile == null) {
-                info.baseFile = file;
+                info.baseFile = path;
             }
         } else if (name.contains("Unbound")) {
             info.styleUnbound = true;
             if (info.baseFile == null) {
-                info.baseFile = file;
+                info.baseFile = path;
             }
         }
-        checkIfAlreadyInstalled(file, info);
+        checkIfAlreadyInstalled(path, info);
     }
 
     // Check if the patch is already installed
@@ -234,7 +243,11 @@ public class EuphoriaPatcher {
                 }
             } catch (IOException e) {
                 log(3, "Error checking installation status. Cleaning up: " + e.getMessage());
-                try {UsefulFunctions.deleteRecursively(potentialInstallPath);} catch (IOException ex) {log(3, "Error deleting directory: " + ex.getMessage());}
+                try {
+                    UsefulFunctions.deleteRecursively(potentialInstallPath);
+                } catch (IOException ex) {
+                    log(3, "Error deleting directory: " + ex.getMessage());
+                }
                 info.isAlreadyInstalled = false;
             }
         }
@@ -277,7 +290,7 @@ public class EuphoriaPatcher {
         Path shader = getPatchedShaderPath(baseFile);
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
             String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
-            if(ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")){
+            if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
                 newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
             }
             try {
@@ -299,49 +312,11 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void installBaseMessage(){
+    private void installBaseMessage() {
         if (IS_BASE_MESSAGE_SHOWN) return;
         IS_BASE_MESSAGE_SHOWN = true;
         log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
         log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
-    }
-
-    // Detect installed directories
-    private void detectInstalledDirectories(ShaderInfo info) throws IOException {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isComplementaryShaderDirectory)) {
-            for (Path potentialFile : stream) {
-                processShaderDirectory(potentialFile, info);
-                if (info.styleReimagined && info.styleUnbound) break;
-            }
-        }
-    }
-
-    // Helper method to check if a directory is a Complementary Shader
-    private boolean isComplementaryShaderDirectory(Path path) {
-        return path.getFileName().toString().matches(BRAND_NAME + ".*" + VERSION + ".*") && Files.isDirectory(path);
-    }
-
-    // Process each shader directory
-    private void processShaderDirectory(Path directory, ShaderInfo info) {
-        String name = directory.getFileName().toString();
-        if (name.contains(PATCH_NAME)) {
-            if(name.contains(PATCH_NAME + PATCH_VERSION) && !info.isAlreadyInstalled) {
-                info.isAlreadyInstalled = true;
-                log(0, PATCH_NAME +  PATCH_VERSION + " is already installed.");
-            }
-            return;
-        }
-        if (name.contains("Reimagined")) {
-            info.styleReimagined = true;
-            if (info.baseFile == null) {
-                info.baseFile = directory;
-            }
-        } else if (name.contains("Unbound")) {
-            info.styleUnbound = true;
-            if (info.baseFile == null) {
-                info.baseFile = directory;
-            }
-        }
     }
 
     // Create temporary directory
@@ -370,7 +345,7 @@ public class EuphoriaPatcher {
 
         Path baseArchived = archiveBase(baseExtracted, temp, baseName);
 
-        if (!verifyBaseArchive(baseArchived)) return false;
+        if (!ArchiveOperations.verifyBaseArchive(baseArchived)) return false;
 
         boolean result = applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
 
@@ -386,16 +361,13 @@ public class EuphoriaPatcher {
     // Extract base shader
     private Path extractBase(Path baseFile, Path temp, String baseName) {
         Path baseExtracted = temp.resolve(baseName);
-        if (!Files.isDirectory(baseFile)) {
-            try {
-                ArchiveUtils.extract(baseFile, baseExtracted);
-            } catch (IOException | ArchiveException e) {
-                log(2, "Error extracting archive: " + e.getMessage());
-            }
-        } else {
-            baseExtracted = baseFile;
-        }
-        return baseExtracted;
+        return ArchiveOperations.extract(baseFile, baseExtracted, "extracting archive");
+    }
+
+    // Archive base shader
+    private Path archiveBase(Path baseExtracted, Path temp, String baseName) {
+        Path baseArchived = temp.resolve(baseName + ".tar");
+        return ArchiveOperations.archive(baseExtracted, baseArchived);
     }
 
     // Update common file
@@ -411,75 +383,39 @@ public class EuphoriaPatcher {
         }
     }
 
-    // Archive base shader
-    private Path archiveBase(Path baseExtracted, Path temp, String baseName) {
-        Path baseArchived = temp.resolve(baseName + ".tar");
-        try {
-            ArchiveUtils.archive(baseExtracted, baseArchived);
-        } catch (IOException e) {
-            log(2, "Error extracting archive: " + e.getMessage());
-            // Handle the error appropriately
-        }
-        return baseArchived;
-    }
-
-    // Verify base archive
-    private boolean verifyBaseArchive(Path baseArchived) {
-        try {
-            if (isDevFunc()) {
-                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
-                log(0, "Hash of base: " + hash);
-                log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
-            } else {
-                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), BASE_TAR_SIZE));
-                if (!hash.equals(BASE_TAR_HASH)) {
-                    log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
-                    log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
-                    if (baseArchived.getFileName().toString().matches(BRAND_NAME + ".*" + VERSION + ".*")) {
-                        log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected hash does not match.");
-                    } else {
-                        log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
-                    }
-                    return false;
-                }
-            }
-        } catch (IOException e) {
-            log(3, "Something went wrong during the hash verification" + e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
     // Apply patch
     private boolean applyPatch(Path baseArchived, Path temp, String patchedName, boolean styleUnbound, boolean styleReimagined) {
         Path patchedArchive = temp.resolve(patchedName + ".tar");
         Path patchedFile = shaderpacks.resolve(patchedName);
-        Path patchFile;
-        if (isDevFunc()){
-            // All this code to generate the .patch file in the resources directory and a new directory for the patch files
-            Path resourcesDir = mainIntellijDir.resolve("src/main/resources");
-            Path patchDir = mainIntellijDir.resolve("EuphoriaPatchFiles");
-            return devPatchFilePrep(resourcesDir, baseArchived, patchedFile, patchedArchive) &&
-                    devPatchFilePrep(patchDir, baseArchived, patchedFile, patchedArchive);
-        } else {
-            patchFile = temp.resolve(patchedName + ".patch");
-            return applyProductionPatch(baseArchived, patchedArchive, patchFile, patchedFile, styleUnbound, styleReimagined);
+
+        return isDevFunc()
+                ? applyDevPatch(baseArchived, patchedArchive, patchedFile)
+                : applyProductionPatch(baseArchived, patchedArchive, temp.resolve(patchedName + ".patch"),
+                patchedFile, styleUnbound, styleReimagined);
+    }
+
+    private boolean applyDevPatch(Path baseArchived, Path patchedArchive, Path patchedFile) {
+        Path[] directories = {
+                mainIntellijDir.resolve("src/main/resources"),
+                mainIntellijDir.resolve("EuphoriaPatchFiles")
+        };
+
+        boolean success = true;
+        for (Path dir : directories) {
+            checkBuildPath(dir);
+            Path patchFile = dir.resolve(PATCH_NAME + PATCH_VERSION + ".patch");
+            success &= createDevPatch(baseArchived, patchedFile, patchedArchive, patchFile);
         }
+        return success;
     }
 
-    private boolean devPatchFilePrep(Path buildDir, Path baseArchived, Path patchedFile, Path patchedArchive){
-        checkBuildPath(buildDir);
-        Path patchFile = buildDir.resolve(PATCH_NAME + PATCH_VERSION + ".patch");
-        return createDevPatch(baseArchived, patchedFile, patchedArchive, patchFile);
-    }
-
-    private void checkBuildPath(Path buildDir){
-        if (!Files.exists(buildDir)){
+    private void checkBuildPath(Path buildDir) {
+        if (!Files.exists(buildDir)) {
             try {
                 Files.createDirectories(buildDir);
-                log(2,"Build directory created successfully: " + buildDir);
+                log(2, "Build directory created successfully: " + buildDir);
             } catch (IOException e) {
-                log(3,"Failed to create directory: " + e.getMessage());
+                log(3, "Failed to create directory: " + e.getMessage());
             }
         }
     }
@@ -520,20 +456,46 @@ public class EuphoriaPatcher {
 
     // Apply style settings
     private void applyStyleSettings(Path patchedFile, boolean styleUnbound, boolean styleReimagined) throws IOException {
-        if (styleUnbound) {
-            File commons = new File(patchedFile.toFile(), COMMON_LOCATION);
-            String unboundConfig = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE 1", "SHADER_STYLE 4");
-            if (!styleReimagined) {
-                FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
-            } else if (patchedFile.getFileName().toString().contains("Reimagined")) {
-                File unbound = new File(patchedFile.getParent().toFile(), patchedFile.getFileName().toString().replace("Reimagined", "Unbound"));
-                FileUtils.copyDirectory(patchedFile.toFile(), unbound);
-                FileUtils.writeStringToFile(new File(unbound, COMMON_LOCATION), unboundConfig, "UTF-8");
-            } else {
-                File reimagined = new File(patchedFile.getParent().toFile(), patchedFile.getFileName().toString().replace("Unbound", "Reimagined"));
-                FileUtils.copyDirectory(patchedFile.toFile(), reimagined);
-                FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
-            }
+        if (!styleUnbound && !styleReimagined) return;
+
+        File commons = new File(patchedFile.toFile(), COMMON_LOCATION);
+        String commonContent = FileUtils.readFileToString(commons, "UTF-8");
+
+        // Create both style configs
+        String reimaginedConfig = commonContent.replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
+        String unboundConfig = commonContent.replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 4");
+
+        if (!styleReimagined) {
+            // Only Unbound style
+            FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
+            return;
+        }
+
+        if (!styleUnbound) {
+            // Only Reimagined style
+            FileUtils.writeStringToFile(commons, reimaginedConfig, "UTF-8");
+            return;
+        }
+
+        // Handle both styles
+        boolean isReimagined = patchedFile.getFileName().toString().contains("Reimagined");
+        String otherStyle = isReimagined ? "Unbound" : "Reimagined";
+        String currentStyle = isReimagined ? "Reimagined" : "Unbound";
+
+        File otherStyleFile = new File(patchedFile.getParent().toFile(),
+                patchedFile.getFileName().toString().replace(currentStyle, otherStyle));
+
+        FileUtils.copyDirectory(patchedFile.toFile(), otherStyleFile);
+
+        // Apply correct config to each file
+        if (isReimagined) {
+            // Current file is Reimagined, other file is Unbound
+            FileUtils.writeStringToFile(commons, reimaginedConfig, "UTF-8");
+            FileUtils.writeStringToFile(new File(otherStyleFile, COMMON_LOCATION), unboundConfig, "UTF-8");
+        } else {
+            // Current file is Unbound, other file is Reimagined
+            FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
+            FileUtils.writeStringToFile(new File(otherStyleFile, COMMON_LOCATION), reimaginedConfig, "UTF-8");
         }
     }
 

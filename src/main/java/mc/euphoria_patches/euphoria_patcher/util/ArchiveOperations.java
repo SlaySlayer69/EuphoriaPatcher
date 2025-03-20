@@ -1,0 +1,64 @@
+package mc.euphoria_patches.euphoria_patcher.util;
+
+import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.io.FileUtils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+
+public class ArchiveOperations {
+    public static Path extract(Path source, Path targetDir, String operationName) {
+        try {
+            if (!Files.isDirectory(source)) {
+                ArchiveUtils.extract(source, targetDir);
+            } else {
+                return source; // Already a directory
+            }
+            return targetDir;
+        } catch (IOException | ArchiveException e) {
+            EuphoriaPatcher.log(2, "Error " + operationName + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static Path archive(Path source, Path targetArchive) {
+        try {
+            ArchiveUtils.archive(source, targetArchive);
+            return targetArchive;
+        } catch (IOException e) {
+            EuphoriaPatcher.log(2, "Error creating archive: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Verify base archive
+    public static boolean verifyBaseArchive(Path baseArchived) {
+        try {
+            if (EuphoriaPatcher.isDevFunc()) {
+                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
+                EuphoriaPatcher.log(0, "Hash of base: " + hash);
+                EuphoriaPatcher.log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
+            } else {
+                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), EuphoriaPatcher.BASE_TAR_SIZE));
+                if (!hash.equals(EuphoriaPatcher.BASE_TAR_HASH)) {
+                    EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
+                    EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + " from " + EuphoriaPatcher.DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    if (baseArchived.getFileName().toString().matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
+                        EuphoriaPatcher.log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected hash does not match - make sure to download from official sources.");
+                    } else {
+                        EuphoriaPatcher.log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
+                    }
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+            EuphoriaPatcher.log(3, "Something went wrong during the hash verification" + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+}
