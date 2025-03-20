@@ -47,7 +47,7 @@ public class ModifyOutdatedPatches {
         if (renameFile) {
             return name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION);
         } else {
-            return (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*Complementary.* \\+ EP.*")) && !name.contains(EuphoriaPatcher.PATCH_VERSION);
+            return (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*")) && !name.contains(EuphoriaPatcher.PATCH_VERSION);
         }
     }
 }
