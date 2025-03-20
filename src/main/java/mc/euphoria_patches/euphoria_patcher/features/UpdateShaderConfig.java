@@ -67,7 +67,7 @@ public class UpdateShaderConfig {
     // Helper method to check if a file is a config file
     private static boolean isConfigFile(Path path, boolean containsPatchName) {
         String nameText = path.getFileName().toString();
-        return containsPatchName ? nameText.matches(".*?Comp(?:lementary)?.*?(?:Reimagined|Unbound)?.*") && nameText.endsWith(".txt") && (nameText.contains(EuphoriaPatcher.PATCH_NAME) || nameText.contains(" + EP_")):
+        return containsPatchName ? nameText.matches("(?:Comp\\d\\.\\d|" + EuphoriaPatcher.BRAND_NAME + ").*") && nameText.endsWith(".txt") && (nameText.contains(EuphoriaPatcher.PATCH_NAME) || nameText.contains(" + EP_")):
                 nameText.matches(".*" + EuphoriaPatcher.BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
     }
 
