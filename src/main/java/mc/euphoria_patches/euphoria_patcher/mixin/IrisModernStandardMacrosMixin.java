@@ -52,7 +52,7 @@ public class IrisModernStandardMacrosMixin {
             define(standardDefines, "CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
 
 
-            if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderUpdateMessage && !injectedOnce) {
+            if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
                 define(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
 
                 if (UpdateChecker.NEW_MOD_VERSION != null) {

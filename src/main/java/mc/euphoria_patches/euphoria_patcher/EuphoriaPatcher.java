@@ -47,7 +47,7 @@ public class EuphoriaPatcher {
     public static boolean doUpdateChecking = true;
     public static boolean doRenameOldShaderFiles = true;
     public static boolean doDeleteOldShaderFiles = false;
-    public static boolean doDisplayShaderUpdateMessage = true;
+    public static boolean doDisplayShaderInGameMessage = true;
 
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
@@ -116,7 +116,7 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
         doDeleteOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doDeleteOldShaderFiles", "false", "Option that automatically deleted outdated Euphoria Patches folders and config files." +
                 "\nDefault = false"));
-        doDisplayShaderUpdateMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderUpdateMessage", "true", "Option that enables or disables the in-game shader overlay update message. Only works on Iris" +
+        doDisplayShaderInGameMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderInGameMessage", "true", "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris" +
                 "\nDefault = true"));
     }
 
