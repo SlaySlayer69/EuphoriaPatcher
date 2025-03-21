@@ -27,7 +27,7 @@ public class JsonUtilReader {
 
     private static void loadMessages() {
         try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
+             InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
 
             JsonElement jsonElement = new JsonParser().parse(reader);
             JsonObject jsonObject = jsonElement.getAsJsonObject();
