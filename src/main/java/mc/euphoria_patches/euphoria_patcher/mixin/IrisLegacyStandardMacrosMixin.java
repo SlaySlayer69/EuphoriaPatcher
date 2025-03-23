@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Pseudo
-@Mixin(targets = "net.coderbot.iris.gl.shader.StandardMacros", remap = false)
+@Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_CLASS, remap = false)
 public class IrisLegacyStandardMacrosMixin {
 
     @Unique

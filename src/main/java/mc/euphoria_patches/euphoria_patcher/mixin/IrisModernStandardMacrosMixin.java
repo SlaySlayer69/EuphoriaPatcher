@@ -16,7 +16,7 @@ import java.util.List;
 
 // Use @Pseudo to tell the mixin processor the class isn't available at compile time
 @Pseudo
-@Mixin(targets = "net.irisshaders.iris.gl.shader.StandardMacros", remap = false)
+@Mixin(targets = EuphoriaMixinPlugin.MODERN_IRIS_CLASS, remap = false)
 public class IrisModernStandardMacrosMixin {
 
     @Unique

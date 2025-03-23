@@ -1,6 +1,7 @@
 {
   "required": false,
   "package": "mc.euphoria_patches.euphoria_patcher.mixin",
+  "plugin": "mc.euphoria_patches.euphoria_patcher.mixin.EuphoriaMixinPlugin",
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisLegacyStandardMacrosMixin",
