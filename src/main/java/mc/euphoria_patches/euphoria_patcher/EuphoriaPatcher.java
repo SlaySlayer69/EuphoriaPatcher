@@ -54,12 +54,15 @@ public class EuphoriaPatcher {
     public static boolean isSodiumInstalled = false;
     private static boolean ALREADY_LAUNCHED = false;
     private static boolean IS_BASE_MESSAGE_SHOWN = false;
+    private static EuphoriaPatcher instance;
+    private ShaderpacksWatcher shaderpacksWatcher;
 
     public EuphoriaPatcher() {
         if (ALREADY_LAUNCHED) {
             return;
         }
         ALREADY_LAUNCHED = true;
+        instance = this;
         System.out.println("\nEuphoria Patcher:");
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
@@ -87,8 +90,16 @@ public class EuphoriaPatcher {
         Path temp = createTempDirectory();
         if (temp == null || shaderInfo.baseFile == null && !isDevFunc()) return;
 
+        completeShaderPatching(shaderInfo, temp);
+    }
+
+    public static EuphoriaPatcher getInstance() {
+        return instance;
+    }
+
+    private boolean completeShaderPatching(ShaderInfo shaderInfo, Path temp) {
         // Process and patch shaders
-        if (!processAndPatchShaders(shaderInfo, temp)) return;
+        if (!processAndPatchShaders(shaderInfo, temp)) return false;
 
         // Update .txt shader config file
         UpdateShaderConfig.updateShaderTxtConfigFile(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
@@ -100,6 +111,7 @@ public class EuphoriaPatcher {
         if (doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        return true;
     }
 
     private void configStuff() {
@@ -316,7 +328,10 @@ public class EuphoriaPatcher {
         if (IS_BASE_MESSAGE_SHOWN) return;
         IS_BASE_MESSAGE_SHOWN = true;
         log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
-        log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
+        log(3, 8, "Please download it from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+
+        // Start watching for the shader to be added
+        startShaderpacksWatcher();
     }
 
     // Create temporary directory
@@ -496,6 +511,66 @@ public class EuphoriaPatcher {
             // Current file is Unbound, other file is Reimagined
             FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
             FileUtils.writeStringToFile(new File(otherStyleFile, COMMON_LOCATION), reimaginedConfig, "UTF-8");
+        }
+    }
+
+    private void startShaderpacksWatcher() {
+        if (shaderpacksWatcher != null && shaderpacksWatcher.isRunning()) return;
+
+        shaderpacksWatcher = ShaderpacksWatcher.createAndStart(this);
+        if (shaderpacksWatcher != null) {
+            log(0, "Watching shaderpacks folder for changes. No restart needed after downloading the shader!");
+        }
+    }
+
+    public ShaderpacksWatcher getShaderpacksWatcher() {
+        return shaderpacksWatcher;
+    }
+
+    private void stopShaderpacksWatcher() {
+        if (shaderpacksWatcher != null) {
+            shaderpacksWatcher.stopWatching();
+        }
+    }
+
+    public void startWatcherAfterHashFailure() {
+        if (shaderpacksWatcher != null) {
+            shaderpacksWatcher.resetAfterHashFailure();
+        } else {
+            startShaderpacksWatcher();
+        }
+    }
+
+    public synchronized boolean processNewShaderpack(Path baseFile) {
+        try {
+            log(0, "Processing newly detected shader pack: " + baseFile.getFileName());
+
+            // Create temporary directory
+            Path temp = createTempDirectory();
+            if (temp == null) return false;
+
+            // Create shader info object
+            ShaderInfo shaderInfo = new ShaderInfo();
+            shaderInfo.baseFile = baseFile;
+            String name = baseFile.getFileName().toString();
+            shaderInfo.styleReimagined = name.contains("Reimagined");
+            shaderInfo.styleUnbound = name.contains("Unbound");
+
+            // Use the common method for patching
+            boolean success = completeShaderPatching(shaderInfo, temp);
+
+            // Stop watching only if successful
+            if (success) {
+                stopShaderpacksWatcher();
+            } else if (shaderpacksWatcher != null) {
+                // Track this file as having an invalid hash
+                shaderpacksWatcher.trackInvalidHashFile(baseFile.getFileName().toString());
+            }
+
+            return success;
+        } catch (Exception e) {
+            log(3, "Error processing newly detected shader pack: " + e.getMessage());
+            return false;
         }
     }
 
