@@ -519,7 +519,8 @@ public class EuphoriaPatcher {
 
         shaderpacksWatcher = ShaderpacksWatcher.createAndStart(this);
         if (shaderpacksWatcher != null) {
-            log(0, "Watching shaderpacks folder for changes. No restart needed after downloading the shader!");
+
+            log(0, "Watching shaderpacks folder for changes...");
         }
     }
 

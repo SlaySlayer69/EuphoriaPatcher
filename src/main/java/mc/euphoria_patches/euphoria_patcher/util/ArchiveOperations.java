@@ -48,10 +48,6 @@ public class ArchiveOperations {
                 if (!hash.equals(EuphoriaPatcher.BASE_TAR_HASH)) {
                     EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
                     EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it into your shaderpacks folder.");
-
-                    // Don't mention restarting anymore
-                    EuphoriaPatcher.log(0, "Watching for the correct shader to be added - no restart needed!");
-
                     // Track the file with invalid hash
                     String fileName = baseArchived.getFileName().toString();
 
@@ -60,6 +56,8 @@ public class ArchiveOperations {
                     } else {
                         EuphoriaPatcher.log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
                     }
+
+                    EuphoriaPatcher.log(0, "Watching for the correct shader to be added...");
 
                     // Start the watcher
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
