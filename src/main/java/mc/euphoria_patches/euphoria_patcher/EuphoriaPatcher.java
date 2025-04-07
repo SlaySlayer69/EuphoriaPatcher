@@ -327,11 +327,100 @@ public class EuphoriaPatcher {
     private void installBaseMessage() {
         if (IS_BASE_MESSAGE_SHOWN) return;
         IS_BASE_MESSAGE_SHOWN = true;
+        
+        // Try to find the highest older version
+        Path highestOlderVersion = findHighestOlderVersion();
+        
         log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
-        log(3, 8, "Please download it from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+        
+        if (highestOlderVersion != null) {
+            log(3, 8, "Found older version: " + highestOlderVersion.getFileName().toString());
+            log(3, 8, "Please update to specifically " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+        } else {
+            log(3, 8, "Please download it from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+        }
 
         // Start watching for the shader to be added
         startShaderpacksWatcher();
+    }
+
+    /**
+     * Finds the highest version of any older Complementary shader
+     * @return Path to the highest version file/directory, or null if none found
+     */
+    private Path findHighestOlderVersion() {
+        Path highestVersionPath = null;
+        int[] highestVersion = {0, 0, 0}; // major, minor, patch
+        
+        try {
+            // Check files
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path path : stream) {
+                    if (isOlderBrandNameShader(path, Files.isRegularFile(path) && path.toString().endsWith(".zip"))) {
+                        int[] version = extractVersionNumbers(path.getFileName().toString());
+                        if (compareVersions(version, highestVersion) > 0) {
+                            highestVersion = version;
+                            highestVersionPath = path;
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log(3, "Error checking for older shader versions: " + e.getMessage());
+        }
+        
+        return highestVersionPath;
+    }
+
+    /**
+     * Checks if a path is an older version of Complementary shader
+     */
+    private boolean isOlderBrandNameShader(Path path, boolean isFile) {
+        String name = path.getFileName().toString();
+        // Match any Complementary shader that has an r-version pattern but is not the current version
+        boolean matchesPattern = name.contains(BRAND_NAME) && 
+                                name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") && 
+                                !name.contains(VERSION) && 
+                                !name.contains(PATCH_NAME);
+
+        if (isFile) {
+            return matchesPattern && name.endsWith(".zip");
+        } else {
+            return matchesPattern && Files.isDirectory(path);
+        }
+    }
+
+    /**
+     * Extract version numbers from a filename
+     * @return int array with [major, minor, patch]
+     */
+    private int[] extractVersionNumbers(String filename) {
+        int[] version = {0, 0, 0};
+        
+        // Extract r-version number (e.g., _r5.1 or _r5.3.2)
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("_r(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
+        java.util.regex.Matcher matcher = pattern.matcher(filename);
+        
+        if (matcher.find()) {
+            version[0] = Integer.parseInt(matcher.group(1));  // Major
+            version[1] = Integer.parseInt(matcher.group(2));  // Minor
+            version[2] = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;  // Patch
+        }
+        
+        return version;
+    }
+
+    /**
+     * Compare two version arrays
+     * @return positive if v1 > v2, 0 if equal, negative if v1 < v2
+     */
+    private int compareVersions(int[] v1, int[] v2) {
+        for (int i = 0; i < 3; i++) {
+            if (v1[i] != v2[i]) {
+                return v1[i] - v2[i];
+            }
+        }
+        return 0;
     }
 
     // Create temporary directory
