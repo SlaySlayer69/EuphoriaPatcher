@@ -241,30 +241,25 @@ public class EuphoriaPatcher {
 
     public boolean isValidShaderByHash(Path path) {
         try {
-            System.out.println("Checking hash for: " + path.getFileName());
             Path tempDir = createTempDirectory();
             if (tempDir == null) return false;
 
             String baseName = path.getFileName().toString().replace(".zip", "");
-            System.out.println("Base name: " + baseName);
 
             // Extract if it's a zip file
             Path baseExtracted = extractBase(path, tempDir, baseName);
             if (baseExtracted == null) {
-                System.out.println("Failed to extract base");
                 return false;
             }
 
             // Archive for hash comparison
             Path baseArchived = archiveBase(baseExtracted, tempDir, baseName);
             if (baseArchived == null) {
-                System.out.println("Failed to archive base");
                 return false;
             }
 
             // Check hash quietly
             boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
-            System.out.println("Hash verification result: " + result);
 
             // Clean up
             try {
