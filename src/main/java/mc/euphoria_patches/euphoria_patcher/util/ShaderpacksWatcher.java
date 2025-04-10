@@ -25,6 +25,12 @@ public class ShaderpacksWatcher {
     private final Set<String> invalidHashFiles = new HashSet<>();
     // Track file metadata to detect content changes even with the same filename
     private final Map<String, FileMetadata> fileMetadata = new HashMap<>();
+    // Cache for hash verification results to avoid repeated processing
+    private final Map<String, Boolean> hashVerificationCache = new HashMap<>();
+    // Time of last hash verification to prevent excessive checking
+    private long lastHashVerificationTime = 0;
+    // Minimum time between hash verifications (5 seconds)
+    private static final long HASH_VERIFICATION_COOLDOWN = 5000;
 
     public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
         this.patcher = patcher;
@@ -317,17 +323,69 @@ public class ShaderpacksWatcher {
             boolean nameMatches = fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*") &&
                     !fileName.contains(EuphoriaPatcher.PATCH_NAME);
 
-            if (!nameMatches) {
-                return false;
+            // Fast path: if name matches, return immediately
+            if (nameMatches) {
+                // For zip files
+                if (fileName.endsWith(".zip")) {
+                    return Files.exists(path) && Files.size(path) > 0;
+                }
+                // For directories
+                return Files.isDirectory(path);
             }
 
-            // For zip files
-            if (fileName.endsWith(".zip")) {
-                return Files.exists(path) && Files.size(path) > 0;
+            // If name doesn't match, check if we've already verified this file
+            if (hashVerificationCache.containsKey(fileName)) {
+                return hashVerificationCache.get(fileName);
             }
 
-            // For directories
-            return Files.isDirectory(path);
+            // Throttle hash verification to avoid excessive CPU usage
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastHashVerificationTime < HASH_VERIFICATION_COOLDOWN) {
+                return false; // Skip verification during cooldown
+            }
+            
+            // Update last verification time
+            lastHashVerificationTime = currentTime;
+
+            // For files of reasonable size or directories, verify by hash
+            if ((fileName.endsWith(".zip") && Files.exists(path) && Files.size(path) > 100000) ||
+                    Files.isDirectory(path)) {
+                
+                EuphoriaPatcher.log(0, "Checking if file matches by hash (watcher): " + fileName);
+                
+                // Use the EuphoriaPatcher's hash verification method
+                boolean isValidByHash = false;
+                if (patcher != null) {
+                    isValidByHash = patcher.isValidShaderByHash(path);
+                    
+                    // If valid by hash, rename the file to the correct format
+                    if (isValidByHash) {
+                        EuphoriaPatcher.log(0, "Found valid shader by hash in watcher: " + fileName);
+                        
+                        // Rename the file
+                        Path renamedPath = patcher.renameToCorrectShaderName(path);
+                        
+                        // Update the cache with both old and new names
+                        String newFileName = renamedPath.getFileName().toString();
+                        hashVerificationCache.put(fileName, true);
+                        if (!fileName.equals(newFileName)) {
+                            hashVerificationCache.put(newFileName, true);
+                            
+                            // Update tracking in case the file was renamed
+                            processedFiles.remove(fileName);
+                            invalidHashFiles.remove(fileName);
+                            fileMetadata.remove(fileName);
+                        }
+                    }
+                }
+                
+                // Cache the result
+                hashVerificationCache.put(fileName, isValidByHash);
+                
+                return isValidByHash;
+            }
+
+            return false;
 
         } catch (IOException e) {
             EuphoriaPatcher.log(2, "Error checking shader pack name: " + e.getMessage());

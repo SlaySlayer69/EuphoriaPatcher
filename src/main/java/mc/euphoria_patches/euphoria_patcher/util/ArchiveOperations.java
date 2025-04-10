@@ -35,8 +35,6 @@ public class ArchiveOperations {
         }
     }
 
-    // Verify base archive
-    // Modify the verifyBaseArchive method
     public static boolean verifyBaseArchive(Path baseArchived) {
         try {
             if (EuphoriaPatcher.isDevFunc()) {
@@ -78,5 +76,18 @@ public class ArchiveOperations {
             return false;
         }
         return true;
+    }
+
+    public static boolean verifyBaseArchiveQuiet(Path baseArchived) {
+        try {
+            if (EuphoriaPatcher.isDevFunc()) {
+                return true; // In dev mode, accept any file
+            } else {
+                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), EuphoriaPatcher.BASE_TAR_SIZE));
+                return hash.equals(EuphoriaPatcher.BASE_TAR_HASH);
+            }
+        } catch (IOException e) {
+            return false;
+        }
     }
 }

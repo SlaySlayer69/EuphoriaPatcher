@@ -158,7 +158,7 @@ public class EuphoriaPatcher {
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
         try {
-            // Find all potential shader paths (both files and directories)
+            // Find all potential shader paths (both files and directories) by name
             List<Path> potentialShaderPaths = new ArrayList<>();
 
             // Add files ending with .zip
@@ -173,10 +173,25 @@ public class EuphoriaPatcher {
                 stream.forEach(potentialShaderPaths::add);
             }
 
-            // Process all found paths
+            // Process all found paths by name
             for (Path path : potentialShaderPaths) {
                 processShaderPath(path, info);
                 if (info.styleReimagined && info.styleUnbound) break;
+            }
+
+            // If no valid shader found by name, try using hash verification
+            if (info.baseFile == null) {
+                log(0, "No shaders with expected name pattern found, checking by hash... This may take a while...");
+                Path shaderByHash = findShaderByHash();
+                if (shaderByHash != null) {
+                    log(0, "Found valid shader by hash: " + shaderByHash.getFileName());
+                    // Determine shader style from path or assume default
+                    String name = shaderByHash.getFileName().toString();
+                    info.styleReimagined = name.contains("Reimagined") || !name.contains("Unbound");
+                    info.styleUnbound = name.contains("Unbound");
+                    info.baseFile = shaderByHash;
+                    checkIfAlreadyInstalled(shaderByHash, info);
+                }
             }
         } catch (IOException e) {
             log(3, "Error reading shaderpacks directory: " + e.getMessage());
@@ -192,6 +207,119 @@ public class EuphoriaPatcher {
             return matchesPattern && name.endsWith(".zip");
         } else {
             return matchesPattern && Files.isDirectory(path);
+        }
+    }
+    
+    private Path findShaderByHash() {
+        try {
+            // First check ZIP files
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
+                    path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
+                for (Path zipFile : stream) {
+                    if (isValidShaderByHash(zipFile)) {
+                        // Found a valid shader by hash, rename it to the correct format
+                        return renameToCorrectShaderName(zipFile);
+                    }
+                }
+            }
+
+            // Then check directories
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
+                    Files::isDirectory)) {
+                for (Path dir : stream) {
+                    if (isValidShaderByHash(dir)) {
+                        // Found a valid shader by hash, rename it to the correct format
+                        return renameToCorrectShaderName(dir);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log(3, "Error searching for shaders by hash: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public boolean isValidShaderByHash(Path path) {
+        try {
+            System.out.println("Checking hash for: " + path.getFileName());
+            Path tempDir = createTempDirectory();
+            if (tempDir == null) return false;
+
+            String baseName = path.getFileName().toString().replace(".zip", "");
+            System.out.println("Base name: " + baseName);
+
+            // Extract if it's a zip file
+            Path baseExtracted = extractBase(path, tempDir, baseName);
+            if (baseExtracted == null) {
+                System.out.println("Failed to extract base");
+                return false;
+            }
+
+            // Archive for hash comparison
+            Path baseArchived = archiveBase(baseExtracted, tempDir, baseName);
+            if (baseArchived == null) {
+                System.out.println("Failed to archive base");
+                return false;
+            }
+
+            // Check hash quietly
+            boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
+            System.out.println("Hash verification result: " + result);
+
+            // Clean up
+            try {
+                FileUtils.deleteDirectory(tempDir.toFile());
+            } catch (IOException ignored) {
+                // Ignore cleanup errors
+            }
+
+            return result;
+        } catch (Exception e) {
+            System.out.println("Exception during hash check: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public Path renameToCorrectShaderName(Path path) {
+        try {
+            String fileName = path.getFileName().toString();
+            String style = "Reimagined"; // Default style
+
+            // Determine style based on name
+            if (fileName.contains("Unbound")) {
+                style = "Unbound";
+            } else if (fileName.contains("Reimagined")) {
+                style = "Reimagined";
+            }
+
+            // Create the correct name format
+            String correctName = BRAND_NAME + style + VERSION;
+            if (fileName.endsWith(".zip")) {
+                correctName += ".zip";
+            }
+
+            // If the name is already correct, return the original path
+            if (fileName.equals(correctName)) {
+                return path;
+            }
+            
+            // Create path for the renamed shader
+            Path targetPath = path.resolveSibling(correctName);
+            
+            // Skip if a file with the target name already exists
+            if (Files.exists(targetPath)) {
+                log(0, "A file with the correct name already exists: " + targetPath.getFileName());
+                return path;
+            }
+            
+            // Rename the file/directory
+            Path renamedPath = Files.move(path, targetPath);
+            log(0, "Renamed shader from \"" + fileName + "\" to \"" + correctName + "\"");
+            
+            return renamedPath;
+        } catch (IOException e) {
+            log(2, "Failed to rename shader: " + e.getMessage());
+            return path; // Return original path if renaming failed
         }
     }
 
