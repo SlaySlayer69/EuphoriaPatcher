@@ -50,12 +50,11 @@ public class EuphoriaPatcher {
     public static boolean doDisplayShaderInGameMessage = true;
 
     // Global Variables and Objects
-    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
-    public static boolean isSodiumInstalled = false;
     private static boolean ALREADY_LAUNCHED = false;
     private static boolean IS_BASE_MESSAGE_SHOWN = false;
     private static EuphoriaPatcher instance;
     private ShaderpacksWatcher shaderpacksWatcher;
+    private static EuphoriaLogger loggerInstance;
 
     public EuphoriaPatcher() {
         if (ALREADY_LAUNCHED) {
@@ -64,10 +63,16 @@ public class EuphoriaPatcher {
         ALREADY_LAUNCHED = true;
         instance = this;
         System.out.println("\nEuphoria Patcher:");
+        
+        // Initialize the logger
+        loggerInstance = new EuphoriaLogger();
+        
+        loggerInstance.checkErrorLogFileAndAddSeparator();
+        
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
 
-        if (doPopUpLogging) isSodiumInstalled();
+        if (doPopUpLogging) loggerInstance.checkAndSetupSodiumLogging();
 
         if (doUpdateChecking) UpdateChecker.checkForUpdates();
 
@@ -132,44 +137,20 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
     }
 
-    private void isSodiumInstalled() {
-        isSodiumInstalled = SodiumConsole.isSodiumAvailable();
-        if (isSodiumInstalled) {
-            log(0, "Sodium found, using Sodium logging!");
-        }
-    }
-
-    // Logging method
     public static void log(int messageLevel, int messageFadeTimer, String message) {
-        String loggingMessage = "EuphoriaPatcher: " + message;
-        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
-        if (isSodiumInstalled && messageFadeTimer > 0) {
-            SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
+        if (loggerInstance == null) {
+            System.out.println("EuphoriaPatcher (early log): " + message);
+            return;
         }
-        switch (messageLevel) {
-            case -1:
-            case 0:
-            case 1:
-                LOGGER.info(loggingMessage);
-                break;
-            case 2:
-                LOGGER.warn(loggingMessage);
-                break;
-            case 3:
-                LOGGER.error(loggingMessage);
-                break;
-            default:
-                System.out.println(loggingMessage);
-                break;
-        }
+        loggerInstance.log(messageLevel, messageFadeTimer, message);
     }
 
     public static void log(int messageLevel, String message) {
-        // Map message levels to standard fade times
-        int[] fadeTimers = {0, 4, 8, 16}; // Default, Info, Warning, Error
-        int messageFadeTimer = messageLevel >= 0 && messageLevel < fadeTimers.length ?
-                fadeTimers[messageLevel] : 0;
-        log(messageLevel, messageFadeTimer, message);
+        if (loggerInstance == null) {
+            System.out.println("EuphoriaPatcher (early log): " + message);
+            return;
+        }
+        loggerInstance.log(messageLevel, message);
     }
 
     public static boolean isDevFunc() {
