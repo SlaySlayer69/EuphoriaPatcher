@@ -305,21 +305,25 @@ public class EuphoriaPatcher {
     public Path renameToCorrectShaderName(Path path) {
         try {
             String fileName = path.getFileName().toString();
-            String style = "Reimagined"; // Default style
-
-            // Determine style based on name
+            String style = null;
+            
+            // First try to determine style from filename
             if (fileName.contains("Unbound")) {
                 style = "Unbound";
             } else if (fileName.contains("Reimagined")) {
                 style = "Reimagined";
+            } else {
+                // If not in filename, check the common.glsl file
+                style = detectStyleFromCommonFile(path);
+                log(0, "Detected " + style + " style from common.glsl file");
             }
-
+            
             // Create the correct name format
             String correctName = BRAND_NAME + style + VERSION;
             if (fileName.endsWith(".zip")) {
                 correctName += ".zip";
             }
-
+            
             // If the name is already correct, return the original path
             if (fileName.equals(correctName)) {
                 return path;
@@ -345,20 +349,91 @@ public class EuphoriaPatcher {
         }
     }
 
+        /**
+     * Determines shader style by reading the common.glsl file
+     * @param shaderPath Path to the shader file or directory
+     * @return "Reimagined" or "Unbound" based on the SHADER_STYLE value
+     */
+    private String detectStyleFromCommonFile(Path shaderPath) {
+        Path tempDir = null;
+        try {
+            // Create temp directory
+            tempDir = createTempDirectory();
+            if (tempDir == null) return "Reimagined"; // Default if we can't create temp dir
+            
+            String baseName = shaderPath.getFileName().toString().replace(".zip", "");
+            
+            // Extract if needed
+            Path extractedPath;
+            if (shaderPath.toString().endsWith(".zip")) {
+                extractedPath = extractBase(shaderPath, tempDir, baseName);
+                if (extractedPath == null) return "Reimagined";
+            } else {
+                extractedPath = shaderPath;
+            }
+            
+            // Read the common.glsl file
+            Path commonFile = extractedPath.resolve(COMMON_LOCATION);
+            if (Files.exists(commonFile)) {
+                String content = FileUtils.readFileToString(commonFile.toFile(), "UTF-8");
+                
+                // Look for SHADER_STYLE definition
+                if (content.contains("SHADER_STYLE 4")) {
+                    return "Unbound";
+                } else if (content.contains("SHADER_STYLE 1") || content.contains("SHADER_STYLE")) {
+                    return "Reimagined";
+                }
+            }
+        } catch (IOException e) {
+            log(2, "Error reading common.glsl: " + e.getMessage());
+        } finally {
+            // Clean up temp directory
+            if (tempDir != null) {
+                try {
+                    FileUtils.deleteDirectory(tempDir.toFile());
+                } catch (IOException ignored) {}
+            }
+        }
+        return "Reimagined"; // Default fallback
+    }
+
     private void processShaderPath(Path path, ShaderInfo info) {
         String name = path.getFileName().toString();
-        // Check shader style
+        
+        // Check shader style from filename first
+        boolean styleFromName = false;
+        
         if (name.contains("Reimagined")) {
             info.styleReimagined = true;
+            styleFromName = true;
             if (info.baseFile == null) {
                 info.baseFile = path;
             }
         } else if (name.contains("Unbound")) {
             info.styleUnbound = true;
+            styleFromName = true;
             if (info.baseFile == null) {
                 info.baseFile = path;
             }
         }
+        
+        // If style isn't clear from the filename, check common.glsl
+        if (!styleFromName) {
+            String detectedStyle = detectStyleFromCommonFile(path);
+            if ("Reimagined".equals(detectedStyle)) {
+                info.styleReimagined = true;
+                if (info.baseFile == null) {
+                    info.baseFile = path;
+                }
+            } else if ("Unbound".equals(detectedStyle)) {
+                info.styleUnbound = true;
+                if (info.baseFile == null) {
+                    info.baseFile = path;
+                }
+            }
+            log(0, "Shader style not in filename, detected " + detectedStyle + " from common.glsl");
+        }
+        
         checkIfAlreadyInstalled(path, info);
     }
 
@@ -825,8 +900,18 @@ public class EuphoriaPatcher {
             ShaderInfo shaderInfo = new ShaderInfo();
             shaderInfo.baseFile = baseFile;
             String name = baseFile.getFileName().toString();
-            shaderInfo.styleReimagined = name.contains("Reimagined");
-            shaderInfo.styleUnbound = name.contains("Unbound");
+            
+            // Determine style from filename or common.glsl
+            if (name.contains("Reimagined")) {
+                shaderInfo.styleReimagined = true;
+            } else if (name.contains("Unbound")) {
+                shaderInfo.styleUnbound = true;
+            } else {
+                // If not clear from filename, check common.glsl
+                String detectedStyle = detectStyleFromCommonFile(baseFile);
+                shaderInfo.styleReimagined = "Reimagined".equals(detectedStyle);
+                shaderInfo.styleUnbound = "Unbound".equals(detectedStyle);
+            }
 
             // Use the common method for patching
             boolean success = completeShaderPatching(shaderInfo, temp);
