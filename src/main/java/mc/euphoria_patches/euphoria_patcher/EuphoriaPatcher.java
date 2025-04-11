@@ -158,6 +158,12 @@ public class EuphoriaPatcher {
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
         try {
+            // First check if patched shaders already exist, even if base shader is missing
+            checkForExistingPatchedShaders(info);
+            if (info.isAlreadyInstalled) {
+                return info;
+            }
+
             // Find all potential shader paths (both files and directories) by name
             List<Path> potentialShaderPaths = new ArrayList<>();
 
@@ -197,6 +203,28 @@ public class EuphoriaPatcher {
             log(3, "Error reading shaderpacks directory: " + e.getMessage());
         }
         return info;
+    }
+
+    /**
+     * Checks for existing patched shader directories that may exist even if the base shader is gone
+     */
+    private void checkForExistingPatchedShaders(ShaderInfo info) {
+        try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
+                    path -> Files.isDirectory(path) && 
+                            path.getFileName().toString().contains(BRAND_NAME) && 
+                            path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION))) {
+                
+                for (Path path : stream) {
+                    checkIfAlreadyInstalled(path, info);
+                    if (info.isAlreadyInstalled) {
+                        return;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log(3, "Error checking for existing patched shaders: " + e.getMessage());
+        }
     }
 
     private boolean isBrandNameShader(Path path, boolean isFile) {
@@ -336,24 +364,54 @@ public class EuphoriaPatcher {
     }
 
     // Check if the patch is already installed
-    private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
-        Path potentialInstallPath = getPatchedShaderPath(file);
+    private void checkIfAlreadyInstalled(Path path, ShaderInfo info) {
+        Path potentialInstallPath;
+        boolean isDirectPatchedDir = path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION);
+        
+        if (isDirectPatchedDir) {
+            // This is already a patched shader directory
+            potentialInstallPath = path;
+            
+            // Try to reconstruct the base file name
+            String name = path.getFileName().toString();
+            String baseName = name.substring(0, name.indexOf(" + " + PATCH_NAME + PATCH_VERSION));
+            Path potentialBaseZip = shaderpacks.resolve(baseName + ".zip");
+            
+            // Set shader styles based on directory name
+            info.styleReimagined = name.contains("Reimagined");
+            info.styleUnbound = name.contains("Unbound");
+            
+            if (Files.exists(potentialBaseZip)) {
+                info.baseFile = potentialBaseZip;
+            }
+        } else {
+            // This is a base shader file
+            potentialInstallPath = getPatchedShaderPath(path);
+            if (info.baseFile == null) {
+                info.baseFile = path;
+            }
+        }
 
-        if (info.baseFile != null && Files.exists(potentialInstallPath) && !isDevFunc() && !info.isAlreadyInstalled) {
-            // Check if any file containing "EuphoriaPatches" exists in the directory
+        // Skip check in certain situations
+        if (isDevFunc() || info.isAlreadyInstalled || potentialInstallPath == null) {
+            return;
+        }
+
+        // If the patched directory exists, check if it contains EuphoriaPatches files
+        if (Files.exists(potentialInstallPath)) {
             try {
                 boolean containsEuphoriaFile = Files.walk(potentialInstallPath)
                         .filter(Files::isRegularFile)
                         .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
 
-                if (!containsEuphoriaFile) {
+                if (containsEuphoriaFile) {
+                    info.isAlreadyInstalled = true;
+                    log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
+                } else {
                     // No EuphoriaPatches file found, delete the directory
                     log(0, "Found incomplete installation. Cleaning up " + potentialInstallPath.getFileName());
                     UsefulFunctions.deleteRecursively(potentialInstallPath);
                     info.isAlreadyInstalled = false;
-                } else {
-                    info.isAlreadyInstalled = true;
-                    log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
                 }
             } catch (IOException e) {
                 log(3, "Error checking installation status. Cleaning up: " + e.getMessage());
@@ -401,8 +459,31 @@ public class EuphoriaPatcher {
     }
 
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
-        Path shader = getPatchedShaderPath(baseFile);
-        if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
+        // Create a safe way to get the shader path that handles null baseFile
+        Path shader = null;
+        if (baseFile != null) {
+            shader = getPatchedShaderPath(baseFile);
+        } else {
+            // If baseFile is null, try to find the patched shader directory directly
+            try {
+                DirectoryStream.Filter<Path> filter = path -> 
+                    Files.isDirectory(path) && 
+                    path.getFileName().toString().contains(BRAND_NAME) && 
+                    path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION);
+                    
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, filter)) {
+                    for (Path path : stream) {
+                        shader = path;
+                        break;  // Just use the first matching directory
+                    }
+                }
+            } catch (IOException e) {
+                log(3, "Error finding patched shader directory: " + e.getMessage());
+            }
+        }
+
+        // Only proceed with update checking if we found a valid shader path
+        if (shader != null && UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
             String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
             if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
                 newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
@@ -414,7 +495,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        if (isSpacEagle()) {
+        if (isSpacEagle() && shader != null) {
             try {
                 ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "^$", "#define SPACEAGLE17");
             } catch (IOException e) {
