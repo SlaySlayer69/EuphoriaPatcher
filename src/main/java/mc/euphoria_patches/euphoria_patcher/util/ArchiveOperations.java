@@ -38,21 +38,29 @@ public class ArchiveOperations {
     public static boolean verifyBaseArchive(Path baseArchived) {
         try {
             if (EuphoriaPatcher.isDevFunc()) {
-                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
-                EuphoriaPatcher.log(0, "Hash of base: " + hash);
-                EuphoriaPatcher.log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
+                long fileSize = Files.size(baseArchived);
+                EuphoriaPatcher.log(0, "Archive Name: " +  baseArchived.getFileName() + " Archive size: " + fileSize + " bytes");
             } else {
-                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), EuphoriaPatcher.BASE_TAR_SIZE));
-                if (!hash.equals(EuphoriaPatcher.BASE_TAR_HASH)) {
+                // Get the file size
+                long fileSize = Files.size(baseArchived);
+                
+                // Define acceptable size range (±5 bytes as suggested)
+                // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
+                // boolean isValidSize = Math.abs(fileSize - expectedSize) <= 5;
+                
+                // Exact match for now
+                boolean isValidSize = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
+                
+                if (!isValidSize) {
                     EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
                     EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it into your shaderpacks folder.");
-                    // Track the file with invalid hash
+                    // Track the file with invalid size
                     String fileName = baseArchived.getFileName().toString();
 
                     if (fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
-                        EuphoriaPatcher.log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected hash does not match - make sure to download from official sources.");
+                        EuphoriaPatcher.log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected byte size does not match - make sure to download from official sources.");
                     } else {
-                        EuphoriaPatcher.log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
+                        EuphoriaPatcher.log(3, 8, "Incorrect Shader Version found or unexpected error. The expected byte size does not match.");
                     }
 
                     EuphoriaPatcher.log(0, "Watching for the correct shader to be added...");
@@ -60,11 +68,11 @@ public class ArchiveOperations {
                     // Start the watcher
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
                     if (instance != null) {
-                        instance.startWatcherAfterHashFailure();
+                        instance.startWatcherAfterByteSizeFailure();
                         // If we have a watcher, track this file as invalid
                         ShaderpacksWatcher watcher = instance.getShaderpacksWatcher();
                         if (watcher != null) {
-                            watcher.trackInvalidHashFile(fileName);
+                            watcher.trackInvalidByteSizeFile(fileName);
                         }
                     }
 
@@ -72,7 +80,7 @@ public class ArchiveOperations {
                 }
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, "Something went wrong during the hash verification" + e.getMessage());
+            EuphoriaPatcher.log(3, "Something went wrong during the file size verification: " + e.getMessage());
             return false;
         }
         return true;
@@ -83,8 +91,13 @@ public class ArchiveOperations {
             if (EuphoriaPatcher.isDevFunc()) {
                 return true; // In dev mode, accept any file
             } else {
-                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), EuphoriaPatcher.BASE_TAR_SIZE));
-                return hash.equals(EuphoriaPatcher.BASE_TAR_HASH);
+                long fileSize = Files.size(baseArchived);
+                
+                // Define acceptable size range (±5 bytes)
+                // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
+                // return Math.abs(fileSize - expectedSize) <= 5;
+                
+                return fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
             }
         } catch (IOException e) {
             return false;

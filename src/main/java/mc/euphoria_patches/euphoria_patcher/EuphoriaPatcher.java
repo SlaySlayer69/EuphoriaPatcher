@@ -25,7 +25,6 @@ public class EuphoriaPatcher {
     public static final String VERSION = "_r5.4";
     public static final String PATCH_VERSION = "_1.5.2";
 
-    public static final String BASE_TAR_HASH = "d2c7b2d30a992623e6b23cdecf7f997b";
     public static final int BASE_TAR_SIZE = 1328640;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
@@ -185,18 +184,18 @@ public class EuphoriaPatcher {
                 if (info.styleReimagined && info.styleUnbound) break;
             }
 
-            // If no valid shader found by name, try using hash verification
+            // If no valid shader found by name, try using byte size verification
             if (info.baseFile == null) {
-                log(0, "No shaders with expected name pattern found, checking by hash... This may take a while...");
-                Path shaderByHash = findShaderByHash();
-                if (shaderByHash != null) {
-                    log(0, "Found valid shader by hash: " + shaderByHash.getFileName());
+                log(0, "No shaders with expected name pattern found, checking via byte size... This may take a while...");
+                Path shaderByByteSize = findShaderByByteSize();
+                if (shaderByByteSize != null) {
+                    log(0, "Found valid shader by byte size: " + shaderByByteSize.getFileName());
                     // Determine shader style from path or assume default
-                    String name = shaderByHash.getFileName().toString();
+                    String name = shaderByByteSize.getFileName().toString();
                     info.styleReimagined = name.contains("Reimagined") || !name.contains("Unbound");
                     info.styleUnbound = name.contains("Unbound");
-                    info.baseFile = shaderByHash;
-                    checkIfAlreadyInstalled(shaderByHash, info);
+                    info.baseFile = shaderByByteSize;
+                    checkIfAlreadyInstalled(shaderByByteSize, info);
                 }
             }
         } catch (IOException e) {
@@ -238,14 +237,14 @@ public class EuphoriaPatcher {
         }
     }
     
-    private Path findShaderByHash() {
+    private Path findShaderByByteSize() {
         try {
             // First check ZIP files
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
                     path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
                 for (Path zipFile : stream) {
-                    if (isValidShaderByHash(zipFile)) {
-                        // Found a valid shader by hash, rename it to the correct format
+                    if (isValidShaderByByteSize(zipFile)) {
+                        // Found a valid shader by byte size, rename it to the correct format
                         return renameToCorrectShaderName(zipFile);
                     }
                 }
@@ -255,19 +254,19 @@ public class EuphoriaPatcher {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
                     Files::isDirectory)) {
                 for (Path dir : stream) {
-                    if (isValidShaderByHash(dir)) {
-                        // Found a valid shader by hash, rename it to the correct format
+                    if (isValidShaderByByteSize(dir)) {
+                        // Found a valid shader by byte size, rename it to the correct format
                         return renameToCorrectShaderName(dir);
                     }
                 }
             }
         } catch (IOException e) {
-            log(3, "Error searching for shaders by hash: " + e.getMessage());
+            log(3, "Error searching for shaders by byte size: " + e.getMessage());
         }
         return null;
     }
 
-    public boolean isValidShaderByHash(Path path) {
+    public boolean isValidShaderByByteSize(Path path) {
         try {
             Path tempDir = createTempDirectory();
             if (tempDir == null) return false;
@@ -280,13 +279,13 @@ public class EuphoriaPatcher {
                 return false;
             }
 
-            // Archive for hash comparison
+            // Archive for byte size comparison
             Path baseArchived = archiveBase(baseExtracted, tempDir, baseName);
             if (baseArchived == null) {
                 return false;
             }
 
-            // Check hash quietly
+            // Check byte size quietly
             boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
 
             // Clean up
@@ -298,7 +297,7 @@ public class EuphoriaPatcher {
 
             return result;
         } catch (Exception e) {
-            System.out.println("Exception during hash check: " + e.getMessage());
+            System.out.println("Exception during byte size check: " + e.getMessage());
             return false;
         }
     }
@@ -806,9 +805,9 @@ public class EuphoriaPatcher {
         }
     }
 
-    public void startWatcherAfterHashFailure() {
+    public void startWatcherAfterByteSizeFailure() {
         if (shaderpacksWatcher != null) {
-            shaderpacksWatcher.resetAfterHashFailure();
+            shaderpacksWatcher.resetAfterByeSizeFailure();
         } else {
             startShaderpacksWatcher();
         }
@@ -836,8 +835,8 @@ public class EuphoriaPatcher {
             if (success) {
                 stopShaderpacksWatcher();
             } else if (shaderpacksWatcher != null) {
-                // Track this file as having an invalid hash
-                shaderpacksWatcher.trackInvalidHashFile(baseFile.getFileName().toString());
+                // Track this file as having an invalid byte size
+                shaderpacksWatcher.trackInvalidByteSizeFile(baseFile.getFileName().toString());
             }
 
             return success;

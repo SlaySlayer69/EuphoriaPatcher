@@ -21,16 +21,16 @@ public class ShaderpacksWatcher {
     private boolean isRunning = false;
     // Track processed files to avoid duplicates
     private final Set<String> processedFiles = new HashSet<>();
-    // Track files that failed hash verification so we can recheck them
-    private final Set<String> invalidHashFiles = new HashSet<>();
+    // Track files that failed byte size verification so we can recheck them
+    private final Set<String> invalidByteSizeFiles = new HashSet<>();
     // Track file metadata to detect content changes even with the same filename
     private final Map<String, FileMetadata> fileMetadata = new HashMap<>();
-    // Cache for hash verification results to avoid repeated processing
-    private final Map<String, Boolean> hashVerificationCache = new HashMap<>();
-    // Time of last hash verification to prevent excessive checking
-    private long lastHashVerificationTime = 0;
-    // Minimum time between hash verifications (5 seconds)
-    private static final long HASH_VERIFICATION_COOLDOWN = 5000;
+    // Cache for byte size verification results to avoid repeated processing
+    private final Map<String, Boolean> byteSizeVerificationCache = new HashMap<>();
+    // Time of last byte size verification to prevent excessive checking
+    private long lastByteSizeVerificationTime = 0;
+    // Minimum time between byte size verifications (5 seconds)
+    private static final long BYTE_SIZE_VERIFICATION_COOLDOWN = 5000;
 
     public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
         this.patcher = patcher;
@@ -118,7 +118,7 @@ public class ShaderpacksWatcher {
                             String fileNameStr = fileName.toString();
 
                             processedFiles.remove(fileNameStr);
-                            invalidHashFiles.remove(fileNameStr);
+                            invalidByteSizeFiles.remove(fileNameStr);
                             fileMetadata.remove(fileNameStr);
                             continue;
                         }
@@ -158,10 +158,10 @@ public class ShaderpacksWatcher {
                                     // 2. It was previously invalid
                                     // 3. Its metadata has changed
                                     boolean isNewFile = !processedFiles.contains(fileNameStr);
-                                    boolean isInvalidHash = invalidHashFiles.contains(fileNameStr);
+                                    boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileNameStr);
                                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
 
-                                    shouldProcess = isNewFile || isInvalidHash || hasChanged;
+                                    shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
 
                                     // Always update the metadata
                                     fileMetadata.put(fileNameStr, newMetadata);
@@ -171,7 +171,7 @@ public class ShaderpacksWatcher {
                                             EuphoriaPatcher.log(0, "Detected new shader pack: " + fileNameStr);
                                         } else if (hasChanged) {
                                             EuphoriaPatcher.log(0, "Detected changed shader pack: " + fileNameStr);
-                                        } else if (isInvalidHash) {
+                                        } else if (isInvalidByteSize) {
                                             EuphoriaPatcher.log(0, "Re-checking previously invalid shader pack: " + fileNameStr);
                                         }
 
@@ -180,9 +180,9 @@ public class ShaderpacksWatcher {
                                         // Update tracking sets
                                         if (wasSuccessful) {
                                             processedFiles.add(fileNameStr);
-                                            invalidHashFiles.remove(fileNameStr);
+                                            invalidByteSizeFiles.remove(fileNameStr);
                                         } else {
-                                            invalidHashFiles.add(fileNameStr);
+                                            invalidByteSizeFiles.add(fileNameStr);
                                         }
                                     }
                                 } catch (IOException e) {
@@ -220,10 +220,10 @@ public class ShaderpacksWatcher {
                     FileMetadata oldMetadata = fileMetadata.get(fileName);
 
                     boolean isNewFile = !processedFiles.contains(fileName);
-                    boolean isInvalidHash = invalidHashFiles.contains(fileName);
+                    boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileName);
                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
 
-                    boolean shouldProcess = isNewFile || isInvalidHash || hasChanged;
+                    boolean shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
 
                     // Update metadata regardless
                     fileMetadata.put(fileName, newMetadata);
@@ -233,7 +233,7 @@ public class ShaderpacksWatcher {
                             EuphoriaPatcher.log(0, "Found new shader pack during scan: " + fileName);
                         } else if (hasChanged) {
                             EuphoriaPatcher.log(0, "Found changed shader pack during scan: " + fileName);
-                        } else if (isInvalidHash) {
+                        } else if (isInvalidByteSize) {
                             EuphoriaPatcher.log(0, "Re-checking previously invalid shader pack during scan: " + fileName);
                         }
 
@@ -242,9 +242,9 @@ public class ShaderpacksWatcher {
                         // Update tracking based on success
                         if (wasSuccessful) {
                             processedFiles.add(fileName);
-                            invalidHashFiles.remove(fileName);
+                            invalidByteSizeFiles.remove(fileName);
                         } else {
-                            invalidHashFiles.add(fileName);
+                            invalidByteSizeFiles.add(fileName);
                         }
                     }
                 } catch (IOException e) {
@@ -272,13 +272,13 @@ public class ShaderpacksWatcher {
     // Method to clear processed files and force a full rescan
     public void resetProcessedFiles() {
         processedFiles.clear();
-        invalidHashFiles.clear();
+        invalidByteSizeFiles.clear();
         fileMetadata.clear();
         EuphoriaPatcher.log(0, "Resetting file watcher to detect replacements");
     }
 
-    // Method to handle hash failure case
-    public void resetAfterHashFailure() {
+    // Method to handle byte size failure case
+    public void resetAfterByeSizeFailure() {
         // Only clear processed files and metadata, keep invalid file tracking
         processedFiles.clear();
         fileMetadata.clear();
@@ -286,15 +286,15 @@ public class ShaderpacksWatcher {
             try {
                 startWatching();
             } catch (Exception e) {
-                EuphoriaPatcher.log(3, "Failed to restart watcher after hash failure: " + e.getMessage());
+                EuphoriaPatcher.log(3, "Failed to restart watcher after byte size failure: " + e.getMessage());
             }
         }
     }
 
-    // Track a file that failed hash verification
-    public void trackInvalidHashFile(String fileName) {
+    // Track a file that failed byte size verification
+    public void trackInvalidByteSizeFile(String fileName) {
         if (fileName != null && !fileName.isEmpty()) {
-            invalidHashFiles.add(fileName);
+            invalidByteSizeFiles.add(fileName);
         }
     }
 
@@ -334,55 +334,54 @@ public class ShaderpacksWatcher {
             }
 
             // If name doesn't match, check if we've already verified this file
-            if (hashVerificationCache.containsKey(fileName)) {
-                return hashVerificationCache.get(fileName);
+            if (byteSizeVerificationCache.containsKey(fileName)) {
+                return byteSizeVerificationCache.get(fileName);
             }
 
-            // Throttle hash verification to avoid excessive CPU usage
+            // Throttle byte size verification to avoid excessive CPU usage
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastHashVerificationTime < HASH_VERIFICATION_COOLDOWN) {
+            if (currentTime - lastByteSizeVerificationTime < BYTE_SIZE_VERIFICATION_COOLDOWN) {
                 return false; // Skip verification during cooldown
             }
             
             // Update last verification time
-            lastHashVerificationTime = currentTime;
+            lastByteSizeVerificationTime = currentTime;
 
-            // For files of reasonable size or directories, verify by hash
+            // For files of reasonable size or directories, verify by byte size
             if ((fileName.endsWith(".zip") && Files.exists(path) && Files.size(path) > 100000) ||
                     Files.isDirectory(path)) {
                 
-                EuphoriaPatcher.log(0, "Checking if file matches by hash (watcher): " + fileName);
+                EuphoriaPatcher.log(0, "Checking if file matches by byte size (watcher): " + fileName);
                 
-                // Use the EuphoriaPatcher's hash verification method
-                boolean isValidByHash = false;
+                boolean isValidByByteSize = false;
                 if (patcher != null) {
-                    isValidByHash = patcher.isValidShaderByHash(path);
+                    isValidByByteSize = patcher.isValidShaderByByteSize(path);
                     
-                    // If valid by hash, rename the file to the correct format
-                    if (isValidByHash) {
-                        EuphoriaPatcher.log(0, "Found valid shader by hash in watcher: " + fileName);
+                    // If valid by byte size, rename the file to the correct format
+                    if (isValidByByteSize) {
+                        EuphoriaPatcher.log(0, "Found valid shader by byte size in watcher: " + fileName);
                         
                         // Rename the file
                         Path renamedPath = patcher.renameToCorrectShaderName(path);
                         
                         // Update the cache with both old and new names
                         String newFileName = renamedPath.getFileName().toString();
-                        hashVerificationCache.put(fileName, true);
+                        byteSizeVerificationCache.put(fileName, true);
                         if (!fileName.equals(newFileName)) {
-                            hashVerificationCache.put(newFileName, true);
+                            byteSizeVerificationCache.put(newFileName, true);
                             
                             // Update tracking in case the file was renamed
                             processedFiles.remove(fileName);
-                            invalidHashFiles.remove(fileName);
+                            invalidByteSizeFiles.remove(fileName);
                             fileMetadata.remove(fileName);
                         }
                     }
                 }
                 
                 // Cache the result
-                hashVerificationCache.put(fileName, isValidByHash);
+                byteSizeVerificationCache.put(fileName, isValidByByteSize);
                 
-                return isValidByHash;
+                return isValidByByteSize;
             }
 
             return false;
