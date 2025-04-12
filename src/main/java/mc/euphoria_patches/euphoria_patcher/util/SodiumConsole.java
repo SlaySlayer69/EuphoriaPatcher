@@ -1,5 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
+import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -23,7 +25,7 @@ public class SodiumConsole {
     private static Constructor<?> textConstructor = null;
 
     // Debug flag - can be enabled to show detailed logs
-    private static boolean debugLogging = false;
+    private static boolean debugLogging = EuphoriaPatcher.doDebugLogging;
 
     // Known Sodium package paths - prioritize 1.20.1 paths first
     private static final List<String[]> KNOWN_SODIUM_PATHS = Arrays.asList(
@@ -41,13 +43,8 @@ public class SodiumConsole {
             }
     );
 
-    /**
-     * Log a message if debug logging is enabled
-     */
     private static void log(String message) {
-        if (debugLogging) {
-            System.out.println("[SodiumConsole] " + message);
-        }
+        EuphoriaLogger.debugLog("[SodiumConsole]" + message);
     }
 
     private static void initialize() {

@@ -21,7 +21,7 @@ public class UpdateShaderConfig {
 
     
     private static void debugLog(String message) {
-        EuphoriaLogger.debugLog(message);
+        EuphoriaLogger.debugLog("[UpdateShaderConfig]" + message);
     }
     
     private static String getVersionIdentifier() {
