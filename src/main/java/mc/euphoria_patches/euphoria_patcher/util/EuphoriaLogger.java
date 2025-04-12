@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
+import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,14 +10,12 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher.shaderpacks;
-import static mc.euphoria_patches.euphoria_patcher.util.SodiumConsole.isSodiumAvailable;
-import static mc.euphoria_patches.euphoria_patcher.util.SodiumConsole.logMessage;
+
 
 public class EuphoriaLogger {
     public static Logger logger = LogManager.getLogger("euphoriaPatches");
     private static final String ERROR_LOG_FILE_NAME = "1_EUPHORIA_PATCHES_ERROR_LOGS.txt";
-    private final Path errorLogFilePath = shaderpacks.resolve(ERROR_LOG_FILE_NAME);;
+    private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);;
     private boolean isSodiumInstalled;
 
 
@@ -28,7 +27,7 @@ public class EuphoriaLogger {
      * Checks if Sodium is available and sets up Sodium logging if it is
      */
     public void checkAndSetupSodiumLogging() {
-        isSodiumInstalled = isSodiumAvailable();
+        isSodiumInstalled = SodiumConsole.isSodiumAvailable();
         if (isSodiumInstalled) {
             log(0, "Sodium found, using Sodium logging!");
         }
@@ -42,7 +41,7 @@ public class EuphoriaLogger {
         if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
         
         if (isSodiumInstalled && messageFadeTimer > 0) {
-            logMessage(messageLevel, messageFadeTimer, loggingMessage);
+            SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
         
         switch (messageLevel) {
@@ -134,6 +133,12 @@ public class EuphoriaLogger {
             }
         } catch (IOException e) {
             log(0,"Failed to delete error log file: " + e.getMessage());
+        }
+    }
+
+    public static void debugLog(String message) {
+        if (EuphoriaPatcher.doDebugLogging) {
+            EuphoriaPatcher.log(0, message);
         }
     }
 }

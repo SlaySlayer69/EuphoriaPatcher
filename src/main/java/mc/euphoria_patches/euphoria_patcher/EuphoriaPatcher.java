@@ -45,6 +45,7 @@ public class EuphoriaPatcher {
     public static boolean doRenameOldShaderFiles = true;
     public static boolean doDeleteOldShaderFiles = false;
     public static boolean doDisplayShaderInGameMessage = true;
+    public static boolean doDebugLogging = false;
 
     // Global Variables and Objects
     private static boolean ALREADY_LAUNCHED = false;
@@ -132,6 +133,8 @@ public class EuphoriaPatcher {
                 "\nDefault = false"));
         doDisplayShaderInGameMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderInGameMessage", "true", "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris" +
                 "\nDefault = true"));
+        doDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
+                "\nDefault = false"));
     }
 
     public static void log(int messageLevel, int messageFadeTimer, String message) {

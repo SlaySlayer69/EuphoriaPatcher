@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +16,33 @@ import java.util.regex.Pattern;
 
 public class UpdateShaderConfig {
     private static final String EUPHORIA_IDENTIFIER = "AAA_THIS_IS_A_EUPHORIA_PATCHES_SETTINGS_FILE=true";
+    private static final String VERSION_IDENTIFIER_PREFIX = "AAB_FOR_EUPHORIA_PATCHES_VERSION_";
+    private static final String VERSION_IDENTIFIER_SUFFIX = "=true";
+
+    
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog(message);
+    }
+    
+    private static String getVersionIdentifier() {
+        // Convert PATCH_VERSION (like "_1.5.2") to format "1_5_2" for the identifier
+        String version = EuphoriaPatcher.PATCH_VERSION;
+        if (version.startsWith("_")) {
+            version = version.substring(1); // Remove leading underscore
+        }
+        version = version.replace(".", "_"); // Replace dots with underscores
+        return VERSION_IDENTIFIER_PREFIX + version + VERSION_IDENTIFIER_SUFFIX;
+    }
+    
+    // Extract version from identifier line
+    private static String extractVersionFromIdentifier(String line) {
+        if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+            String versionPart = line.substring(VERSION_IDENTIFIER_PREFIX.length(), 
+                                              line.length() - VERSION_IDENTIFIER_SUFFIX.length());
+            return "_" + versionPart.replace("_", "."); // Convert back to PATCH_VERSION format
+        }
+        return null;
+    }
     
     public static void updateShaderTxtConfigFile(boolean styleUnbound, boolean styleReimagined) {
         try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
@@ -48,38 +76,72 @@ public class UpdateShaderConfig {
                        path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME))) {
                            
             for (Path configFile : configStream) {
-                addIdentifierToSettingsFile(configFile);
+                // Only add version identifier if the file has the current PATCH_VERSION in its name
+                boolean addVersionIdentifier = configFile.getFileName().toString().contains(EuphoriaPatcher.PATCH_VERSION);
+                addIdentifierToSettingsFile(configFile, addVersionIdentifier);
             }
         } catch (IOException e) {
             EuphoriaPatcher.log(2, "Error marking settings files: " + e.getMessage());
         }
     }
 
-    private static void addIdentifierToSettingsFile(Path configFile) {
+    private static void addIdentifierToSettingsFile(Path configFile, boolean addVersionIdentifier) {
         try {
-            // Check if file already contains identifier
-            if (!hasEuphoriaPatchesFlag(configFile)) {
-                List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
-                List<String> newLines = new ArrayList<>();
+            List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
+            List<String> newLines = new ArrayList<>();
+            boolean mainIdentifierExists = false;
+            String existingVersionIdentifier = null;
+            
+            // First scan the file to check what identifiers exist
+            for (String line : lines) {
+                if (line.equals(EUPHORIA_IDENTIFIER)) {
+                    mainIdentifierExists = true;
+                } else if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                    existingVersionIdentifier = line;
+                }
+            }
+            
+            // If we don't need to add the main identifier and either:
+            // 1. We don't need to add the version identifier, or
+            // 2. The version identifier already exists and matches the current version
+            if (mainIdentifierExists && 
+                (!addVersionIdentifier || 
+                 (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
+                return; // Nothing to do
+            }
+            
+            // We need to modify the file - create new content
+            if (lines.isEmpty()) {
+                // Empty file - just add identifiers
+                newLines.add(EUPHORIA_IDENTIFIER);
+                if (addVersionIdentifier) {
+                    newLines.add(getVersionIdentifier());
+                }
+            } else {
+                // Non-empty file
+                // Add first line (timestamp/header)
+                newLines.add(lines.get(0));
                 
-                if (lines.isEmpty()) {
-                    // If the file is empty, just add the identifier
-                    newLines.add(EUPHORIA_IDENTIFIER);
-                } else {
-                    // Add the first line (timestamp/header)
-                    newLines.add(lines.get(0));
-                    
-                    // Add our identifier as the second line
-                    newLines.add(EUPHORIA_IDENTIFIER);
-                    
-                    // Add remaining lines if they exist
-                    if (lines.size() > 1) {
-                        newLines.addAll(lines.subList(1, lines.size()));
-                    }
+                // Add identifiers
+                newLines.add(EUPHORIA_IDENTIFIER);
+                if (addVersionIdentifier) {
+                    newLines.add(getVersionIdentifier());
                 }
                 
-                Files.write(configFile, newLines, StandardCharsets.UTF_8);
+                // Add remaining lines, skipping any existing identifiers
+                if (lines.size() > 1) {
+                    for (int i = 1; i < lines.size(); i++) {
+                        String line = lines.get(i);
+                        if (!line.equals(EUPHORIA_IDENTIFIER) && 
+                            !(line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
+                            newLines.add(line);
+                        }
+                    }
+                }
             }
+            
+            Files.write(configFile, newLines, StandardCharsets.UTF_8);
+            EuphoriaPatcher.log(0, "Updated identifiers in settings file: " + configFile.getFileName());
         } catch (IOException e) {
             EuphoriaPatcher.log(2, "Error adding identifier to settings file " + configFile.getFileName() + ": " + e.getMessage());
         }
@@ -92,8 +154,8 @@ public class UpdateShaderConfig {
             Path newPath = configFilePath.resolveSibling(newName);
             Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
             
-            // Add our identifier to the new config file
-            addIdentifierToSettingsFile(newPath);
+            // Add our identifiers to the new config file - include version since the name has current version
+            addIdentifierToSettingsFile(newPath, true);
             
             EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
         } catch (IOException e) {
@@ -112,8 +174,8 @@ public class UpdateShaderConfig {
                         Path newPath = latestShaderConfigFilePath.resolveSibling(newName);
                         Files.copy(latestShaderConfigFilePath, newPath);
                         
-                        // Add our identifier to this copy too
-                        addIdentifierToSettingsFile(newPath);
+                        // Add our identifiers to this copy too
+                        addIdentifierToSettingsFile(newPath, true);
                         
                         EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
                     } catch (IOException e) {
@@ -129,8 +191,23 @@ public class UpdateShaderConfig {
     // Helper method to check if a file is a config file
     private static boolean isConfigFile(Path path, boolean containsPatchName) {
         String nameText = path.getFileName().toString();
-        return containsPatchName ? nameText.matches("(?:Comp\\d\\.\\d|" + EuphoriaPatcher.BRAND_NAME + ").*") && nameText.endsWith(".txt") && (nameText.contains(EuphoriaPatcher.PATCH_NAME) || nameText.contains(" + EP_")):
-                nameText.matches(".*" + EuphoriaPatcher.BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
+        
+        // If we're specifically looking for patched files
+        if (containsPatchName) {
+            // Check for our standard naming first
+            boolean hasStandardName = nameText.matches("(?:Comp\\d\\.\\d|" + EuphoriaPatcher.BRAND_NAME + ").*") && 
+                                     nameText.endsWith(".txt") && 
+                                     (nameText.contains(EuphoriaPatcher.PATCH_NAME) || nameText.contains(" + EP_"));
+            
+            // If it doesn't have our standard name, check ANY .txt file since it might have our identifier
+            if (!hasStandardName) {
+                return nameText.endsWith(".txt");
+            }
+            return true;
+        } else {
+            // Original logic for base files
+            return nameText.matches(".*" + EuphoriaPatcher.BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
+        }
     }
 
     private static Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldEuphoriaConfigs) {
@@ -138,72 +215,127 @@ public class UpdateShaderConfig {
         List<Path> baseFiles = new ArrayList<>();
         List<Path> flaggedFiles = new ArrayList<>();
 
+        // Categorize all files
         for (Path potentialTextFile : textStream) {
             String name = potentialTextFile.getFileName().toString();
             if (name.endsWith(".txt")) {
                 if (name.contains("EuphoriaPatches") || name.contains("EP_")) {
                     euphoriaFiles.add(potentialTextFile);
+                    debugLog("Found Euphoria named file: " + name);
                 } else {
                     // Check if this file contains our hidden flag
-                    if (hasEuphoriaPatchesFlag(potentialTextFile)) {
+                    String versionFromFile = getEuphoriaPatchesVersionFromFile(potentialTextFile);
+                    if (versionFromFile != null) {
                         flaggedFiles.add(potentialTextFile);
+                        debugLog("Found flagged file: " + name + " with version " + versionFromFile);
                     } else {
-                        baseFiles.add(potentialTextFile);
+                        // Only add to baseFiles if it matches the base file pattern
+                        if (name.matches(".*" + EuphoriaPatcher.BRAND_NAME + ".*(Reimagined|Unbound).*")) {
+                            baseFiles.add(potentialTextFile);
+                            debugLog("Found base file: " + name);
+                        } else {
+                            debugLog("Skipping non-matching file: " + name);
+                        }
                     }
                 }
             }
         }
 
-        // First, try to find the latest Euphoria version by name (including dev versions)
+        debugLog("Found " + euphoriaFiles.size() + " Euphoria files, " + 
+                flaggedFiles.size() + " flagged files, and " + baseFiles.size() + " base files");
+
+        // STEP 1: Try to find Euphoria files by name
+        Path selectedFile = null;
+        
         if (!euphoriaFiles.isEmpty()) {
+            debugLog("Sorting Euphoria files by version...");
             euphoriaFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
             Path latestEuphoriaConfig = euphoriaFiles.get(euphoriaFiles.size() - 1);
             String latestName = latestEuphoriaConfig.getFileName().toString();
-
+            
             if (searchOldEuphoriaConfigs) {
                 if (!latestName.contains(EuphoriaPatcher.PATCH_VERSION) || latestName.contains("dev")) {
+                    debugLog("Selected old Euphoria config: " + latestName);
                     return latestEuphoriaConfig;
                 }
+                // Continue to check flagged files if no suitable Euphoria file found
             } else {
+                debugLog("Selected latest Euphoria config: " + latestName);
                 return latestEuphoriaConfig;
             }
         }
         
-        // Next, try to find files with our hidden flag
+        // STEP 2: If no suitable Euphoria file by name, try flagged files
         if (!flaggedFiles.isEmpty()) {
+            debugLog("Sorting flagged files by embedded version...");
             flaggedFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
-            return flaggedFiles.get(flaggedFiles.size() - 1);
+            Path latestFlaggedFile = flaggedFiles.get(flaggedFiles.size() - 1);
+            String latestName = latestFlaggedFile.getFileName().toString();
+            debugLog("Selected flagged file: " + latestName + 
+                       " with embedded version: " + getEuphoriaPatchesVersionFromFile(latestFlaggedFile));
+            return latestFlaggedFile;
         }
 
-        // If no suitable Euphoria version is found, fall back to base versions
+        // STEP 3: Only as last resort, fall back to base versions
         if (!baseFiles.isEmpty()) {
+            debugLog("No Euphoria files found, falling back to base files");
             baseFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
-            return baseFiles.get(baseFiles.size() - 1);
+            Path latestBaseFile = baseFiles.get(baseFiles.size() - 1);
+            debugLog("Selected base file: " + latestBaseFile.getFileName());
+            return latestBaseFile;
+        }
+
+        debugLog("No suitable config file found");
+        return null;
+    }
+
+    private static String getEuphoriaPatchesVersionFromFile(Path file) {
+        try {
+             // Read first few lines of the file to check for our flags
+            BufferedReader reader = Files.newBufferedReader(file);
+            String line;
+            boolean foundMainIdentifier = false;
+            // Check first 10 lines, our flags should be at the top
+            for (int i = 0; i < 10 && (line = reader.readLine()) != null; i++) {
+                if (line.trim().equals(EUPHORIA_IDENTIFIER)) {
+                    foundMainIdentifier = true;
+                    debugLog("Found main identifier in file: " + file.getFileName());
+                } else if (foundMainIdentifier &&
+                          line.startsWith(VERSION_IDENTIFIER_PREFIX) &&
+                          line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                    // Extract version from the identifier line
+                    String version = extractVersionFromIdentifier(line);
+                    debugLog("Found version identifier in file: " + file.getFileName() + " - " + version);
+                    return version;
+                }
+            }
+
+            // If we found the main identifier but no version, return a default version
+            if (foundMainIdentifier) {
+                debugLog("Found main identifier but no version in file: " + file.getFileName() + " - using default 1.0.0");
+                return "_1.0.0";  // Default version if no version identifier is found
+            }
+            debugLog("Main identifier not found in file: " + file.getFileName());
+        } catch (IOException e) {
+            // Keep error logging even when debug is off
+            EuphoriaPatcher.log(0, "Error reading file " + file.getFileName() + ": " + e.getMessage());
+            e.printStackTrace();
         }
 
         return null;
     }
 
-    private static boolean hasEuphoriaPatchesFlag(Path file) {
-        try {
-            // Read first few lines of the file to check for our flag
-            try (BufferedReader reader = Files.newBufferedReader(file)) {
-                String line;
-                // Check first 10 lines, our flag should be at the top
-                for (int i = 0; i < 10 && (line = reader.readLine()) != null; i++) {
-                    if (line.trim().equals(EUPHORIA_IDENTIFIER)) {
-                        return true;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            // Just log at debug level and return false
-            EuphoriaPatcher.log(0, "Could not check for Euphoria Patches flag in " + file.getFileName() + ": " + e.getMessage());
-        }
-        return false;
-    }
-
     private static String getConfigFileVersion(Path path) {
+        // First try to get version from file content
+        String versionFromFile = getEuphoriaPatchesVersionFromFile(path);
+        if (versionFromFile != null) {
+            // Use any version found in file for patched configs
+            String result = versionFromFile.substring(1) + "|0"; // Remove leading underscore
+            debugLog("Using embedded version for " + path.getFileName() + ": " + result);
+            return result;
+        }
+        
+        // Fall back to parsing from filename
         String name = path.getFileName().toString();
         Pattern pattern = Pattern.compile("(?:[a-zA-Z_]+)?[rdp]?(\\d+(?:\\.\\d+)*)(?:[rdp]\\d+)?(?: \\+ )?(?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*(?:-dev\\d+)?)");
         Matcher matcher = pattern.matcher(name);
@@ -211,10 +343,14 @@ public class UpdateShaderConfig {
             String mainVersion = matcher.group(1);
             String patchVersion = matcher.group(2);
             if (patchVersion != null) {
-                return patchVersion + "|" + mainVersion; // Euphoria Patches version first
+                String result = patchVersion + "|" + mainVersion;
+                debugLog("Extracted version from filename " + name + ": " + result);
+                return result; // Euphoria Patches version first
             }
+            debugLog("Found main version only in " + name + ": 0|" + mainVersion);
             return "0|" + mainVersion; // If no Euphoria Patches version, use 0
         }
+        debugLog("Could not extract version from " + name + ", using default 0|0");
         return "0|0"; // Default version if pattern doesn't match
     }
 
@@ -225,11 +361,14 @@ public class UpdateShaderConfig {
         // Compare Euphoria Patches versions first
         int epCompare = compareVersionParts(fullVersion1[0], fullVersion2[0]);
         if (epCompare != 0) {
+            debugLog("Comparing versions: " + v1 + " vs " + v2 + " - patch versions differ: " + epCompare);
             return epCompare;
         }
 
         // If Euphoria Patches versions are the same, compare main versions
-        return compareVersionParts(fullVersion1[1], fullVersion2[1]);
+        int result = compareVersionParts(fullVersion1[1], fullVersion2[1]);
+        debugLog("Comparing versions: " + v1 + " vs " + v2 + " - main versions: " + result);
+        return result;
     }
 
     private static int compareVersionParts(String p1, String p2) {
@@ -248,7 +387,7 @@ public class UpdateShaderConfig {
                 // Both are dev versions, compare them
                 String[] devParts1 = part1.split("dev");
                 String[] devParts2 = part2.split("dev");
-                EuphoriaPatcher.log(0,devParts1[1] + "  " + devParts2[1]);
+                debugLog(devParts1[1] + "  " + devParts2[1]);
                 int mainCompare = Integer.compare(Integer.parseInt(devParts1[1]), Integer.parseInt(devParts2[1]));
                 if (mainCompare != 0) {
                     return mainCompare;
