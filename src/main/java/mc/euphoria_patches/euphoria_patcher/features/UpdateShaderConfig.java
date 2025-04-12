@@ -21,7 +21,7 @@ public class UpdateShaderConfig {
 
     
     private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[UpdateShaderConfig]" + message);
+        EuphoriaLogger.debugLog("[UpdateShaderConfig] " + message);
     }
     
     private static String getVersionIdentifier() {
@@ -337,21 +337,34 @@ public class UpdateShaderConfig {
         
         // Fall back to parsing from filename
         String name = path.getFileName().toString();
-        Pattern pattern = Pattern.compile("(?:[a-zA-Z_]+)?[rdp]?(\\d+(?:\\.\\d+)*)(?:[rdp]\\d+)?(?: \\+ )?(?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*(?:-dev\\d+)?)");
-        Matcher matcher = pattern.matcher(name);
-        if (matcher.find()) {
-            String mainVersion = matcher.group(1);
-            String patchVersion = matcher.group(2);
+        
+        // First try to match Euphoria pattern
+        Pattern euphoriaPattern = Pattern.compile("(?:[a-zA-Z_]+)?[rdp]?(\\d+(?:\\.\\d+)*)(?:[rdp]\\d+)?(?: \\+ )?(?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*(?:-dev\\d+)?)");
+        Matcher euphoriaMatcher = euphoriaPattern.matcher(name);
+        if (euphoriaMatcher.find()) {
+            String mainVersion = euphoriaMatcher.group(1);
+            String patchVersion = euphoriaMatcher.group(2);
             if (patchVersion != null) {
                 String result = patchVersion + "|" + mainVersion;
-                debugLog("Extracted version from filename " + name + ": " + result);
+                debugLog("Extracted Euphoria version from filename " + name + ": " + result);
                 return result; // Euphoria Patches version first
             }
             debugLog("Found main version only in " + name + ": 0|" + mainVersion);
             return "0|" + mainVersion; // If no Euphoria Patches version, use 0
         }
-        debugLog("Could not extract version from " + name + ", using default 0|0");
-        return "0|0"; // Default version if pattern doesn't match
+        
+        // For base files (Complementary shaders without Euphoria)
+        Pattern basePattern = Pattern.compile(".*" + EuphoriaPatcher.BRAND_NAME + ".*[_r]([\\d.]+).*");
+        Matcher baseMatcher = basePattern.matcher(name);
+        if (baseMatcher.find()) {
+            String baseVersion = baseMatcher.group(1);
+            String result = "0|" + baseVersion; // No Euphoria version, only base version
+            debugLog("Extracted base version from filename " + name + ": " + result);
+            return result;
+        }
+        
+        debugLog("Could not extract any version from " + name + ", using default 0|0");
+        return "0|0"; // Default version if no pattern matches
     }
 
     private static int compareConfigFileVersions(String v1, String v2) {

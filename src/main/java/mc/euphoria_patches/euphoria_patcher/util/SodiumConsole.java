@@ -44,7 +44,7 @@ public class SodiumConsole {
     );
 
     private static void log(String message) {
-        EuphoriaLogger.debugLog("[SodiumConsole]" + message);
+        EuphoriaLogger.debugLog("[SodiumConsole] " + message);
     }
 
     private static void initialize() {

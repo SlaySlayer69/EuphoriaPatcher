@@ -153,6 +153,10 @@ public class EuphoriaPatcher {
         loggerInstance.log(messageLevel, message);
     }
 
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[EuphoriaPatcher] " + message);
+    }
+
     public static boolean isDevFunc() {
         return IS_DEV && isDevModLoader;
     }
@@ -714,7 +718,7 @@ public class EuphoriaPatcher {
         boolean result = applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
 
         try {
-            log(0, "Cleaning up the temporary directory...");
+            debugLog("Cleaning up the temporary directory...");
             FileUtils.deleteDirectory(temp.toFile());
         } catch (IOException e) {
             log(2, "Error cleaning up temporary directory: " + e.getMessage());

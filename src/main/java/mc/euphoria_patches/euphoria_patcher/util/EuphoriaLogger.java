@@ -29,7 +29,7 @@ public class EuphoriaLogger {
     public void checkAndSetupSodiumLogging() {
         isSodiumInstalled = SodiumConsole.isSodiumAvailable();
         if (isSodiumInstalled) {
-            log(0, "Sodium found, using Sodium logging!");
+            debugLog("Sodium found, using Sodium logging!");
         }
     }
 
