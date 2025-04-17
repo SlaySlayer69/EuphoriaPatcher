@@ -27,6 +27,23 @@ public class ReloadShadersOnDimensionChangeMixin {
     @Inject(method = "setWorld", at = @At("RETURN"))
     private void onDimensionChange(CallbackInfo ci) {
         debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
+
+        Class<?> irisClass = null;
+
+        // Try both possible Iris class locations
+        try {
+            irisClass = Class.forName("net.irisshaders.iris.Iris");
+            debugLog("Found Iris class at net.irisshaders.iris.Iris");
+        } catch (ClassNotFoundException e1) {
+            try {
+                irisClass = Class.forName("net.coderbot.iris.Iris");
+                debugLog("Found Iris class at net.coderbot.iris.Iris");
+            } catch (ClassNotFoundException e2) {
+                // Iris isn't installed, this is fine - just log to debug
+                debugLog("Iris not found - this is normal if Iris isn't installed");
+                return;
+            }
+        }
         
         // Get current dimension
         String currentDimension = ModLoaderSpecifics.getCurrentDimension();
@@ -45,34 +62,16 @@ public class ReloadShadersOnDimensionChangeMixin {
             
             // Schedule shader reload for next game tick
             try {
+                Class<?> finalIrisClass = irisClass;
                 MinecraftClient.getInstance().execute(() -> {
-                    Class<?> irisClass = null;
-                    
-                    // Try both possible Iris class locations
-                    try {
-                        irisClass = Class.forName("net.irisshaders.iris.Iris");
-                        debugLog("Found Iris class at net.irisshaders.iris.Iris");
-                    } catch (ClassNotFoundException e1) {
-                        try {
-                            irisClass = Class.forName("net.coderbot.iris.Iris");
-                            debugLog("Found Iris class at net.coderbot.iris.Iris");
-                        } catch (ClassNotFoundException e2) {
-                            // Iris isn't installed, this is fine - just log to debug
-                            debugLog("Iris not found - this is normal if Iris isn't installed");
-                            return;
-                        }
-                    }
-                    
                     // Only attempt to reload if we found a valid Iris class
-                    if (irisClass != null) {
-                        try {
-                            irisClass.getMethod("reload").invoke(null);
-                            debugLog("Successfully reloaded shaders after dimension change");
-                        } catch (Exception e) {
-                            // This is an actual error since we found Iris but couldn't reload
-                            EuphoriaPatcher.log(2, 0, "Error reloading Iris shaders: " + e.getMessage());
-                            debugLog("Error details: " + e.getClass().getName() + ": " + e.getMessage());
-                        }
+                    try {
+                        finalIrisClass.getMethod("reload").invoke(null);
+                        debugLog("Successfully reloaded shaders after dimension change");
+                    } catch (Exception e) {
+                        // This is an actual error since we found Iris but couldn't reload
+                        EuphoriaPatcher.log(2, 0, "Error reloading Iris shaders: " + e.getMessage());
+                        debugLog("Error details: " + e.getClass().getName() + ": " + e.getMessage());
                     }
                 });
             } catch (Exception e) {
