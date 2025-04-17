@@ -71,8 +71,8 @@ public class UpdateShaderConfig {
         try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
                 path -> Files.isRegularFile(path) && 
                        path.toString().endsWith(".txt") && 
-                       path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME) ||
-                       path.getFileName().toString().contains("Euphoria-Patches"))) {
+                       (path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME) ||
+                       path.getFileName().toString().contains("Euphoria-Patches")))) {
                            
             for (Path configFile : configStream) {
                 // Only add version identifier if the file has the current PATCH_VERSION in its name
