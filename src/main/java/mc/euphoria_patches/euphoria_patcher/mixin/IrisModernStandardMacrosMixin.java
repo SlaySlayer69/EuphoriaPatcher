@@ -52,6 +52,8 @@ public class IrisModernStandardMacrosMixin {
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
             define(standardDefines, "CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
 
+            define(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
+
             define(standardDefines, "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimension().toUpperCase());
 
             if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
