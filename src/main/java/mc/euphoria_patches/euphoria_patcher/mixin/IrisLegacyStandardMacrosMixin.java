@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
