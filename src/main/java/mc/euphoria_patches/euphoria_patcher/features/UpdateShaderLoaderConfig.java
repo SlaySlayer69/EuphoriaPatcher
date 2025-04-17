@@ -57,4 +57,50 @@ public class UpdateShaderLoaderConfig {
         String newName = EuphoriaPatcher.BRAND_NAME + style + EuphoriaPatcher.VERSION + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION;
         return oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
     }
+    
+    /**
+     * Gets the path to the currently selected shaderpack
+     * @return Path to the current shaderpack directory or zip file, or null if none is selected or an error occurs
+     */
+    public static Path getCurrentShaderpackPath() {
+        Path shaderLoaderConfig = getShaderLoaderPath();
+        if (shaderLoaderConfig == null) {
+            return null;
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(shaderLoaderConfig.toFile()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("shaderPack=")) {
+                    String shaderpackName = line.substring("shaderPack=".length()).trim();
+                    
+                    // Check if no shaderpack is selected (empty or "OFF")
+                    if (shaderpackName.isEmpty() || shaderpackName.equalsIgnoreCase("OFF")) {
+                        return null;
+                    }
+                    
+                    Path shaderpackPath;
+                    // If the name ends with .zip, it's a zip file
+                    if (shaderpackName.endsWith(".zip")) {
+                        shaderpackPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
+                    } else {
+                        // Otherwise it's a directory
+                        shaderpackPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
+                    }
+                    
+                    // Verify the path exists before returning
+                    if (Files.exists(shaderpackPath)) {
+                        return shaderpackPath;
+                    } else {
+                        EuphoriaPatcher.log(2,0, "Shaderpack specified in config doesn't exist: " + shaderpackPath);
+                        return null;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            EuphoriaPatcher.log(3,0, "Error reading shader loader config: " + e.getMessage());
+        }
+        
+        return null;
+    }
 }

@@ -6,5 +6,8 @@
     "EuphoriaPatcherMixin",
     "IrisLegacyStandardMacrosMixin",
     "IrisModernStandardMacrosMixin"
+  ],
+  "client": [
+    "ReloadShadersOnDimensionChangeMixin"
   ]
 }

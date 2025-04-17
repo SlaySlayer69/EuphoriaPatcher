@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -51,6 +52,7 @@ public class IrisModernStandardMacrosMixin {
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
             define(standardDefines, "CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
 
+            define(standardDefines, "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimension().toUpperCase());
 
             if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
                 define(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
