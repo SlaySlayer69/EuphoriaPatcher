@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import org.spongepowered.asm.mixin.Mixin;
@@ -64,6 +65,8 @@ public class IrisModernStandardMacrosMixin {
                     define(standardDefines, "NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
                 }
             }
+
+            UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
 
             if (injectCount == 1) {
                 EuphoriaPatcher.log(0, "Added Euphoria Patches defines to Iris");

@@ -159,6 +159,16 @@ public class EuphoriaPatcher {
         EuphoriaLogger.debugLog("[EuphoriaPatcher] " + message);
     }
 
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                UpdateShaderConfig.shutdownFileWriter();
+            } catch (Exception e) {
+                // Ignore exceptions during shutdown
+            }
+        }));
+    }
+
     public static boolean isDevFunc() {
         return IS_DEV && isDevModLoader;
     }

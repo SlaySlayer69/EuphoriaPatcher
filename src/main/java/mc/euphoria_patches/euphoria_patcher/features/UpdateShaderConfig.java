@@ -19,7 +19,24 @@ public class UpdateShaderConfig {
     private static final String VERSION_IDENTIFIER_PREFIX = "AAB_FOR_EUPHORIA_PATCHES_VERSION_";
     private static final String VERSION_IDENTIFIER_SUFFIX = "=true";
 
-    
+    private static final java.util.concurrent.ScheduledExecutorService scheduler = 
+        java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "EuphoriaPatcher-FileWriter");
+            t.setDaemon(true); // Make sure it doesn't prevent game exit
+            return t;
+        });
+
+    public static void shutdownFileWriter() {
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+        }
+    }
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UpdateShaderConfig] " + message);
     }
@@ -68,81 +85,142 @@ public class UpdateShaderConfig {
     }
 
     public static void markEuphoriaPatchesSettingsFiles() {
-        try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
-                path -> Files.isRegularFile(path) && 
-                       path.toString().endsWith(".txt") && 
-                       (path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME) ||
-                       path.getFileName().toString().contains("Euphoria-Patches")))) {
-                           
-            for (Path configFile : configStream) {
-                // Only add version identifier if the file has the current PATCH_VERSION in its name
-                boolean addVersionIdentifier = configFile.getFileName().toString().contains(EuphoriaPatcher.PATCH_VERSION);
-                addIdentifierToSettingsFile(configFile, addVersionIdentifier);
+        try {
+            // Get all the files that need to be updated
+            List<Path> filesToUpdate = new ArrayList<>();
+            List<Boolean> addVersionFlags = new ArrayList<>();
+            
+            try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
+                    path -> Files.isRegularFile(path) && 
+                           path.toString().endsWith(".txt") && 
+                           (path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME) ||
+                           path.getFileName().toString().contains("Euphoria-Patches")))) {
+                
+                for (Path configFile : configStream) {
+                    boolean addVersionIdentifier = configFile.getFileName().toString().contains(EuphoriaPatcher.PATCH_VERSION);
+                    filesToUpdate.add(configFile);
+                    addVersionFlags.add(addVersionIdentifier);
+                }
+            }
+            
+            // Schedule the updates to happen after a delay
+            if (!filesToUpdate.isEmpty()) {
+                debugLog("Scheduling identifier updates for " + filesToUpdate.size() + " files after shader reload");
+                
+                // Schedule the task to run 1 second after shader reload completes
+                scheduler.schedule(() -> {
+                    for (int i = 0; i < filesToUpdate.size(); i++) {
+                        Path configFile = filesToUpdate.get(i);
+                        boolean addVersionIdentifier = addVersionFlags.get(i);
+                        
+                        debugLog("Delayed processing of file: " + configFile.getFileName());
+                        addIdentifierToSettingsFile(configFile, addVersionIdentifier);
+                    }
+                }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(2, 0, "Error marking settings files: " + e.getMessage());
+            EuphoriaPatcher.log(2, 0, "Error preparing to mark settings files: " + e.getMessage());
         }
     }
 
     private static void addIdentifierToSettingsFile(Path configFile, boolean addVersionIdentifier) {
-        try {
-            List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
-            List<String> newLines = new ArrayList<>();
-            boolean mainIdentifierExists = false;
-            String existingVersionIdentifier = null;
-            
-            // First scan the file to check what identifiers exist
-            for (String line : lines) {
-                if (line.equals(EUPHORIA_IDENTIFIER)) {
-                    mainIdentifierExists = true;
-                } else if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                    existingVersionIdentifier = line;
-                }
-            }
-            
-            // If we don't need to add the main identifier and either:
-            // 1. We don't need to add the version identifier, or
-            // 2. The version identifier already exists and matches the current version
-            if (mainIdentifierExists && 
-                (!addVersionIdentifier || 
-                 (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
-                return; // Nothing to do
-            }
-            
-            // We need to modify the file - create new content
-            if (lines.isEmpty()) {
-                // Empty file - just add identifiers
-                newLines.add(EUPHORIA_IDENTIFIER);
-                if (addVersionIdentifier) {
-                    newLines.add(getVersionIdentifier());
-                }
-            } else {
-                // Non-empty file
-                // Add first line (timestamp/header)
-                newLines.add(lines.get(0));
-                
-                // Add identifiers
-                newLines.add(EUPHORIA_IDENTIFIER);
-                if (addVersionIdentifier) {
-                    newLines.add(getVersionIdentifier());
+        // Try with increasing delay between attempts
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                if (attempt > 0) {
+                    // Wait before retrying
+                    Thread.sleep(200 * attempt);
+                    EuphoriaPatcher.log(0, "Retry attempt " + attempt + " for file: " + configFile.getFileName());
                 }
                 
-                // Add remaining lines, skipping any existing identifiers
-                if (lines.size() > 1) {
-                    for (int i = 1; i < lines.size(); i++) {
-                        String line = lines.get(i);
-                        if (!line.equals(EUPHORIA_IDENTIFIER) && 
-                            !(line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
-                            newLines.add(line);
+                debugLog("Starting to process file: " + configFile.getFileName());
+                
+                if (!Files.isWritable(configFile)) {
+                    debugLog("File is not writable: " + configFile.getFileName());
+                    return;
+                }
+                
+                List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
+                List<String> newLines = new ArrayList<>();
+                boolean mainIdentifierExists = false;
+                String existingVersionIdentifier = null;
+                
+                // First scan the file to check what identifiers exist
+                for (String line : lines) {
+                    if (line.trim().equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
+                        mainIdentifierExists = true;
+                    } else if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                        existingVersionIdentifier = line;
+                    }
+                }
+                
+                // If we don't need to add the main identifier and either:
+                // 1. We don't need to add the version identifier, or
+                // 2. The version identifier already exists and matches the current version
+                if (mainIdentifierExists && 
+                    (!addVersionIdentifier || 
+                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
+                    return; // Nothing to do
+                }
+                
+                // We need to modify the file - create new content
+                if (lines.isEmpty()) {
+                    // Empty file - just add identifiers
+                    newLines.add(EUPHORIA_IDENTIFIER);
+                    if (addVersionIdentifier) {
+                        newLines.add(getVersionIdentifier());
+                    }
+                } else {
+                    // Non-empty file
+                    // Add first line (timestamp/header)
+                    newLines.add(lines.get(0));
+                    
+                    // Add identifiers
+                    newLines.add(EUPHORIA_IDENTIFIER);
+                    if (addVersionIdentifier) {
+                        newLines.add(getVersionIdentifier());
+                    }
+                    
+                    // Add remaining lines, skipping any existing identifiers
+                    if (lines.size() > 1) {
+                        for (int i = 1; i < lines.size(); i++) {
+                            String line = lines.get(i);
+                            if (!line.equals(EUPHORIA_IDENTIFIER) && 
+                                !(line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
+                                newLines.add(line);
+                            }
                         }
                     }
                 }
+                
+                debugLog("About to write to file: " + configFile.getFileName());
+                
+                // Use try-with-resources to ensure streams are properly closed
+                try (java.io.BufferedWriter writer = java.nio.file.Files.newBufferedWriter(
+                        configFile, StandardCharsets.UTF_8)) {
+                    
+                    for (String line : newLines) {
+                        writer.write(line);
+                        writer.newLine();
+                    }
+                    
+                    // Make sure to flush
+                    writer.flush();
+                }
+                
+                EuphoriaPatcher.log(0, "Updated identifiers in settings file: " + configFile.getFileName());
+                
+                // If we got here without errors, break the retry loop
+                break;
+            } catch (IOException e) {
+                if (attempt == 2) { // The Last attempt failed
+                    EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " + 
+                                        configFile.getFileName() + ": " + e.getMessage());
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
-            
-            Files.write(configFile, newLines, StandardCharsets.UTF_8);
-            EuphoriaPatcher.log(0, "Updated identifiers in settings file: " + configFile.getFileName());
-        } catch (IOException e) {
-            EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " + configFile.getFileName() + ": " + e.getMessage());
         }
     }
 
