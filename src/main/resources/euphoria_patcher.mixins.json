@@ -8,6 +8,7 @@
     "IrisModernStandardMacrosMixin"
   ],
   "client": [
+    "ClientTickMixin",
     "ReloadShadersOnDimensionChangeMixin"
   ]
 }

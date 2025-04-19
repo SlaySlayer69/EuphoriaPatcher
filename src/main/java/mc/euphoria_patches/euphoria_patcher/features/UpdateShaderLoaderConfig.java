@@ -1,18 +1,42 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class UpdateShaderLoaderConfig {
+
+    private static volatile boolean pendingReload = false;
+    private static volatile Class<?> pendingIrisClass = null;
+
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[UpdateShaderLoaderConfig] " + message);
+    }
+
     private static Path getShaderLoaderPath(){
         Path shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("iris.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
         if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
         return shaderLoaderConfig;
+    }
+
+    public static void checkPendingReload() {
+        if (pendingReload && pendingIrisClass != null) {
+            try {
+                debugLog("Processing pending shader reload on main thread");
+                pendingIrisClass.getMethod("reload").invoke(null);
+                debugLog("Successfully reloaded shaders");
+            } catch (Exception e) {
+                EuphoriaPatcher.log(2, 0, "Error reloading Iris shaders:" + e.getMessage());
+            } finally {
+                pendingReload = false;
+                pendingIrisClass = null;
+            }
+        }
     }
 
     public static void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
@@ -47,6 +71,27 @@ public class UpdateShaderLoaderConfig {
         } catch (IOException e) {
             EuphoriaPatcher.log(3,0, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());
         }
+
+        Class<?> irisClass;
+
+        // Try both possible Iris class locations
+        try {
+            irisClass = Class.forName("net.irisshaders.iris.Iris");
+            debugLog("Found Iris class at net.irisshaders.iris.Iris");
+        } catch (ClassNotFoundException e1) {
+            try {
+                irisClass = Class.forName("net.coderbot.iris.Iris");
+                debugLog("Found Iris class at net.coderbot.iris.Iris");
+            } catch (ClassNotFoundException e2) {
+                // Iris isn't installed, this is fine - just log to debug
+                debugLog("Iris not found - this is normal if Iris isn't installed");
+                return;
+            }
+        }
+        
+        debugLog("Scheduling shader reload on next game tick");
+        pendingIrisClass = irisClass;
+        pendingReload = true;
     }
 
     private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
