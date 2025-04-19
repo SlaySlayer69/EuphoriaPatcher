@@ -53,6 +53,8 @@ public class EuphoriaPatcher {
     private static EuphoriaPatcher instance;
     private ShaderpacksWatcher shaderpacksWatcher;
     private static EuphoriaLogger loggerInstance;
+    private static int filesScannedCounter = 0;
+    private static int totalFilesToScan = 0;
 
     public EuphoriaPatcher() {
         if (ALREADY_LAUNCHED) {
@@ -207,7 +209,9 @@ public class EuphoriaPatcher {
 
             // If no valid shader found by name, try using byte size verification
             if (info.baseFile == null) {
-                log(0, "No shaders with expected name pattern found, checking via byte size... This may take a while...");
+                log(2, 0, "No shaders with expected name pattern found, checking via byte size...");
+                log(2, 0, "If you have a lot of shaders installed, this may take a while. Please be patient.");
+                log(2, 0, "Please wait... \n");
                 Path shaderByByteSize = findShaderByByteSize();
                 if (shaderByByteSize != null) {
                     log(0, "Found valid shader by byte size: " + shaderByByteSize.getFileName());
@@ -258,8 +262,37 @@ public class EuphoriaPatcher {
         }
     }
     
+    private void resetFilesScannedCounter() {
+        filesScannedCounter = 0;
+        totalFilesToScan = 0;
+        debugLog("Reset files scanned counter");
+    }
+
     private Path findShaderByByteSize() {
         try {
+            // Reset counter at the start of a new scan
+            resetFilesScannedCounter();
+            
+            // Count total files first
+            int zipFileCount = 0;
+            int dirCount = 0;
+            
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, 
+                    path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
+                for (Path ignored : stream) {
+                    zipFileCount++;
+                }
+            }
+            
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, Files::isDirectory)) {
+                for (Path ignored : stream) {
+                    dirCount++;
+                }
+            }
+            
+            totalFilesToScan = zipFileCount + dirCount;
+            debugLog("Total files to scan: " + totalFilesToScan + " (" + zipFileCount + " ZIP files, " + dirCount + " directories)");
+            
             // First check ZIP files
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
                     path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
@@ -289,35 +322,56 @@ public class EuphoriaPatcher {
 
     public boolean isValidShaderByByteSize(Path path) {
         try {
+            // Increment counter and show progress message every 5 files
+            filesScannedCounter++;
+            if (filesScannedCounter % 5 == 0) {
+                log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
+            }
+            
+            debugLog("Checking if shader is valid by byte size (" + filesScannedCounter + "/" + totalFilesToScan + "): " + path.getFileName());
+            
             Path tempDir = createTempDirectory();
-            if (tempDir == null) return false;
+            if (tempDir == null) {
+                debugLog("Failed to create temp directory for byte size check");
+                return false;
+            }
+            debugLog("Created temp directory: " + tempDir);
 
             String baseName = path.getFileName().toString().replace(".zip", "");
+            debugLog("Base name for extraction: " + baseName);
 
             // Extract if it's a zip file
             Path baseExtracted = extractBase(path, tempDir, baseName);
             if (baseExtracted == null) {
+                debugLog("Failed to extract base for byte size check");
                 return false;
             }
+            debugLog("Successfully extracted to: " + baseExtracted);
 
             // Archive for byte size comparison
             Path baseArchived = archiveBase(baseExtracted, tempDir, baseName);
             if (baseArchived == null) {
+                debugLog("Failed to archive base for byte size check");
                 return false;
             }
+            debugLog("Successfully archived to: " + baseArchived);
 
             // Check byte size quietly
             boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
+            debugLog("Byte size verification result for " + path.getFileName() + ": " + result);
 
             // Clean up
             try {
+                debugLog("Cleaning up temp directory: " + tempDir);
                 FileUtils.deleteDirectory(tempDir.toFile());
             } catch (IOException ignored) {
                 // Ignore cleanup errors
+                debugLog("Failed to clean up temp directory: " + ignored.getMessage());
             }
 
             return result;
         } catch (Exception e) {
+            debugLog("Exception during byte size check: " + e.getMessage());
             System.out.println("Exception during byte size check: " + e.getMessage());
             return false;
         }

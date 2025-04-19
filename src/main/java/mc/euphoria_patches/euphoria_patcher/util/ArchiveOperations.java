@@ -1,25 +1,31 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 
 public class ArchiveOperations {
+
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[ArchiveOperations] " + message);
+    }
+
     public static Path extract(Path source, Path targetDir, String operationName) {
         try {
+            debugLog("Extracting: " + source.getFileName() + " to " + targetDir);
             if (!Files.isDirectory(source)) {
                 ArchiveUtils.extract(source, targetDir);
+                debugLog("Extraction completed successfully");
             } else {
+                debugLog("Source is already a directory, no extraction needed");
                 return source; // Already a directory
             }
             return targetDir;
         } catch (IOException | ArchiveException e) {
+            debugLog("Error " + operationName + ": " + e.getMessage());
             EuphoriaPatcher.log(2, "Error " + operationName + ": " + e.getMessage());
             return null;
         }
@@ -27,9 +33,12 @@ public class ArchiveOperations {
 
     public static Path archive(Path source, Path targetArchive) {
         try {
+            debugLog("Archiving: " + source.getFileName() + " to " + targetArchive);
             ArchiveUtils.archive(source, targetArchive);
+            debugLog("Archiving completed successfully");
             return targetArchive;
         } catch (IOException e) {
+            debugLog("Error creating archive: " + e.getMessage());
             EuphoriaPatcher.log(2, "Error creating archive: " + e.getMessage());
             return null;
         }
@@ -37,12 +46,14 @@ public class ArchiveOperations {
 
     public static boolean verifyBaseArchive(Path baseArchived) {
         try {
+            debugLog("Verifying archive: " + baseArchived.getFileName());
             if (EuphoriaPatcher.isDevFunc()) {
                 long fileSize = Files.size(baseArchived);
                 EuphoriaPatcher.log(0, "Archive Name: " +  baseArchived.getFileName() + " Archive size: " + fileSize + " bytes");
             } else {
                 // Get the file size
                 long fileSize = Files.size(baseArchived);
+                debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes");
                 
                 // Define acceptable size range (±5 bytes as suggested)
                 // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
@@ -52,6 +63,7 @@ public class ArchiveOperations {
                 boolean isValidSize = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
                 
                 if (!isValidSize) {
+                    debugLog("Invalid archive size: verification failed");
                     EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
                     EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it into your shaderpacks folder.");
                     // Track the file with invalid size
@@ -78,8 +90,10 @@ public class ArchiveOperations {
 
                     return false;
                 }
+                debugLog("Archive size verification passed");
             }
         } catch (IOException e) {
+            debugLog("Error during archive size verification: " + e.getMessage());
             EuphoriaPatcher.log(3, "Something went wrong during the file size verification: " + e.getMessage());
             return false;
         }
@@ -88,7 +102,9 @@ public class ArchiveOperations {
 
     public static boolean verifyBaseArchiveQuiet(Path baseArchived) {
         try {
+            debugLog("Quietly verifying archive: " + baseArchived.getFileName());
             if (EuphoriaPatcher.isDevFunc()) {
+                debugLog("Dev mode: bypassing size verification (returning true)");
                 return true; // In dev mode, accept any file
             } else {
                 long fileSize = Files.size(baseArchived);
@@ -97,9 +113,12 @@ public class ArchiveOperations {
                 // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
                 // return Math.abs(fileSize - expectedSize) <= 5;
                 
-                return fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
+                boolean isValid = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
+                debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes, valid: " + isValid);
+                return isValid;
             }
         } catch (IOException e) {
+            debugLog("Error during quiet archive verification: " + e.getMessage());
             return false;
         }
     }
