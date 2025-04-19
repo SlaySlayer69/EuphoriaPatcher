@@ -709,17 +709,24 @@ public class EuphoriaPatcher {
      */
     private boolean isOlderBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
-        // Match any Complementary shader that has an r-version pattern but is not the current version
-        boolean matchesPattern = name.contains(BRAND_NAME) && 
-                                name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") && 
-                                !name.contains(VERSION) && 
-                                !name.contains(PATCH_NAME);
-
-        if (isFile) {
-            return matchesPattern && name.endsWith(".zip");
-        } else {
-            return matchesPattern && Files.isDirectory(path);
+        
+        // First check if it's a Complementary shader without the patch
+        boolean isComplementary = name.contains(BRAND_NAME) && 
+                                 name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") && 
+                                 !name.contains(PATCH_NAME);
+        
+        if (isComplementary) {
+            // Extract version numbers and compare
+            int[] fileVersion = extractVersionNumbers(name);
+            int[] targetVersion = extractVersionNumbers(VERSION);
+            
+            // Only consider it "older" if the version is actually lower
+            boolean isOlder = compareVersions(fileVersion, targetVersion) < 0;
+            
+            return isOlder && (isFile ? name.endsWith(".zip") : Files.isDirectory(path));
         }
+        
+        return false;
     }
 
     /**
