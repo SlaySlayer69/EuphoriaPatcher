@@ -119,7 +119,7 @@ public class EuphoriaPatcher {
         return true;
     }
 
-    private void configStuff() {
+    public void configStuff() {
         // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
         // First parameter is the config name, second is the value
         // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
@@ -137,6 +137,8 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
         doDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
                 "\nDefault = false"));
+        
+        Config.startConfigWatcher();
     }
 
     public static void log(int messageLevel, int messageFadeTimer, String message) {
@@ -163,8 +165,8 @@ public class EuphoriaPatcher {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 UpdateShaderConfig.shutdownFileWriter();
+                Config.stopConfigWatcher();
             } catch (Exception e) {
-                // Ignore exceptions during shutdown
             }
         }));
     }

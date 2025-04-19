@@ -6,12 +6,23 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Config {
     private static final Path CONFIG_PATH = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher.properties");
     private static final Properties properties = new Properties();
+    private static FileTime lastModified = null;
+    private static boolean watcherActive = false;
+    private static ScheduledExecutorService scheduler;
+
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[Config] " + message);
+    }
 
     public static void createConfig() {
         try {
@@ -97,11 +108,44 @@ public class Config {
         return properties.getProperty(optionName, defaultValue);
     }
 
-    private static void loadProperties() {
+    public static void loadProperties() {
         try (InputStream in = Files.newInputStream(CONFIG_PATH)) {
             properties.load(in);
+            lastModified = Files.getLastModifiedTime(CONFIG_PATH);
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error loading properties: " + e.getMessage());
+        }
+    }
+
+    public static void startConfigWatcher() {
+        if (watcherActive) return;
+
+        watcherActive = true;
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "EuphoriaConfigWatcher");
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                if (Files.exists(CONFIG_PATH)) {
+                    FileTime currentModified = Files.getLastModifiedTime(CONFIG_PATH);
+                    if (!currentModified.equals(lastModified)) {
+                        debugLog("Config file changed, reloading settings");
+                        loadProperties();
+                        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+                        if (instance != null) instance.configStuff();
+                    }
+                }
+            } catch (IOException ignored) {}
+        }, 10, 10, TimeUnit.SECONDS);
+    }
+
+    public static void stopConfigWatcher() {
+        if (watcherActive && scheduler != null) {
+            scheduler.shutdown();
+            watcherActive = false;
         }
     }
 }
