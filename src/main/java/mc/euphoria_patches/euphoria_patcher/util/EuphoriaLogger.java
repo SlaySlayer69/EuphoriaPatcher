@@ -52,11 +52,11 @@ public class EuphoriaLogger {
                 break;
             case 2:
                 logger.warn(loggingMessage);
-                appendToErrorLogFile("[WARNING] " + loggingMessage);
+                if(messageFadeTimer > 0) appendToErrorLogFile("[WARNING] " + loggingMessage);
                 break;
             case 3:
                 logger.error(loggingMessage);
-                appendToErrorLogFile("[ERROR] " + loggingMessage);
+                if(messageFadeTimer > 0) appendToErrorLogFile("[ERROR] " + loggingMessage);
                 break;
             default:
                 System.out.println(loggingMessage);
