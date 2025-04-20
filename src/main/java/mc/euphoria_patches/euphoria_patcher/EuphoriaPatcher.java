@@ -168,7 +168,8 @@ public class EuphoriaPatcher {
             try {
                 UpdateShaderConfig.shutdownFileWriter();
                 Config.stopConfigWatcher();
-            } catch (Exception e) {
+                instance.shaderpacksWatcher.stopWatching();
+            } catch (Exception ignored) {
             }
         }));
     }
