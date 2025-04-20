@@ -14,10 +14,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class EuphoriaPatcher {
 
-    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = false; // Manual Boolean. REMEMBER TO SET TO FALSE BEFORE COMPILING
     private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
 
     public static final String BRAND_NAME = "Complementary";
@@ -365,9 +366,9 @@ public class EuphoriaPatcher {
             try {
                 debugLog("Cleaning up temp directory: " + tempDir);
                 FileUtils.deleteDirectory(tempDir.toFile());
-            } catch (IOException ignored) {
+            } catch (IOException e) {
                 // Ignore cleanup errors
-                debugLog("Failed to clean up temp directory: " + ignored.getMessage());
+                debugLog("Failed to clean up temp directory: " + e.getMessage());
             }
 
             return result;
@@ -381,7 +382,7 @@ public class EuphoriaPatcher {
     public Path renameToCorrectShaderName(Path path) {
         try {
             String fileName = path.getFileName().toString();
-            String style = null;
+            String style;
             
             // First try to determine style from filename
             if (fileName.contains("Unbound")) {
@@ -550,9 +551,12 @@ public class EuphoriaPatcher {
         // If the patched directory exists, check if it contains EuphoriaPatches files
         if (Files.exists(potentialInstallPath)) {
             try {
-                boolean containsEuphoriaFile = Files.walk(potentialInstallPath)
-                        .filter(Files::isRegularFile)
-                        .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
+                boolean containsEuphoriaFile;
+                try (Stream<Path> pathStream = Files.walk(potentialInstallPath)) {
+                    containsEuphoriaFile = pathStream
+                            .filter(Files::isRegularFile)
+                            .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
+                }
 
                 if (containsEuphoriaFile) {
                     info.isAlreadyInstalled = true;
@@ -624,7 +628,7 @@ public class EuphoriaPatcher {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, filter)) {
                     for (Path path : stream) {
                         shader = path;
-                        break;  // Just use the first matching directory
+                        break;  // Use the first matching directory
                     }
                 }
             } catch (IOException e) {
@@ -779,6 +783,7 @@ public class EuphoriaPatcher {
             installBaseMessage();
             return false;
         }
+        assert info.baseFile != null;
         String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
         String patchedName = baseName + " + " + PATCH_NAME + PATCH_VERSION;
 
