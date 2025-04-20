@@ -208,7 +208,7 @@ public class UpdateShaderConfig {
                     writer.flush();
                 }
                 
-                EuphoriaPatcher.log(0, "Updated identifiers in settings file: " + configFile.getFileName());
+                debugLog("Updated identifiers in settings file: " + configFile.getFileName());
                 
                 // If we got here without errors, break the retry loop
                 break;
