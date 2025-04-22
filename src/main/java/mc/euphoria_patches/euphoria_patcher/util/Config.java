@@ -64,7 +64,7 @@ public class Config {
             }
 
             Files.write(CONFIG_PATH, lines, StandardCharsets.UTF_8);
-            EuphoriaPatcher.log(0, "Successfully updated version info in config file");
+            debugLog("Successfully updated version info in config file");
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error updating config file with version: " + e.getMessage());
         }
@@ -95,7 +95,7 @@ public class Config {
                         }
                     }
                     writer.write(option + "=" + value + "\n");
-                    EuphoriaPatcher.log(0, "Successfully wrote to config file: " + option + "=" + value);
+                    debugLog("Successfully wrote to config file: " + option + "=" + value);
                 }
             }
         } catch (IOException e) {
