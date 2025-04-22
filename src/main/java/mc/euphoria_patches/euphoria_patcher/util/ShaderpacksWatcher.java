@@ -81,12 +81,12 @@ public class ShaderpacksWatcher {
                         BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
                         fileMetadata.put(fileName, new FileMetadata(attrs.size(), attrs.lastModifiedTime().toMillis()));
                     } catch (IOException e) {
-                        EuphoriaPatcher.log(2, "Error reading file attributes: " + e.getMessage());
+                        EuphoriaPatcher.log(2, 0, "Error reading file attributes: " + e.getMessage());
                     }
                 }
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(2, "Error during initial directory scan: " + e.getMessage());
+            EuphoriaPatcher.log(2, 0, "Error during initial directory scan: " + e.getMessage());
         }
     }
 
@@ -186,21 +186,21 @@ public class ShaderpacksWatcher {
                                         }
                                     }
                                 } catch (IOException e) {
-                                    EuphoriaPatcher.log(2, "Error reading file attributes: " + e.getMessage());
+                                    EuphoriaPatcher.log(2, 0, "Error reading file attributes: " + e.getMessage());
                                 }
                             } catch (InterruptedException ie) {
                                 // Thread was interrupted, likely during shutdown - no need to log an error
                                 Thread.currentThread().interrupt(); // Restore the interrupted status
                                 return;
                             } catch (Exception e) {
-                                EuphoriaPatcher.log(3, "Error in shader pack watcher: " + e.getMessage());
+                                EuphoriaPatcher.log(3, 0, "Error in shader pack watcher: " + e.getMessage());
                             }
                         }
                     }
                     key.reset();
                 }
             } catch (Exception e) {
-                EuphoriaPatcher.log(3, "Error in shader pack watcher: " + e.getMessage());
+                EuphoriaPatcher.log(3, 0, "Error in shader pack watcher: " + e.getMessage());
             }
         }, 0, 2, TimeUnit.SECONDS);
     }
@@ -248,11 +248,11 @@ public class ShaderpacksWatcher {
                         }
                     }
                 } catch (IOException e) {
-                    EuphoriaPatcher.log(2, "Error reading file attributes during scan: " + e.getMessage());
+                    EuphoriaPatcher.log(2, 0, "Error reading file attributes during scan: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(2, "Error scanning directory: " + e.getMessage());
+            EuphoriaPatcher.log(2, 0, "Error scanning directory: " + e.getMessage());
         }
     }
 
@@ -286,7 +286,7 @@ public class ShaderpacksWatcher {
             try {
                 startWatching();
             } catch (Exception e) {
-                EuphoriaPatcher.log(3, "Failed to restart watcher after byte size failure: " + e.getMessage());
+                EuphoriaPatcher.log(3, 0, "Failed to restart watcher after byte size failure: " + e.getMessage());
             }
         }
     }
@@ -310,7 +310,7 @@ public class ShaderpacksWatcher {
             watcher.startWatching();
             return watcher;
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, "Failed to create shaderpacks watcher: " + e.getMessage());
+            EuphoriaPatcher.log(3, 0, "Failed to create shaderpacks watcher: " + e.getMessage());
             return null;
         }
     }
@@ -343,33 +343,33 @@ public class ShaderpacksWatcher {
             if (currentTime - lastByteSizeVerificationTime < BYTE_SIZE_VERIFICATION_COOLDOWN) {
                 return false; // Skip verification during cooldown
             }
-            
+
             // Update last verification time
             lastByteSizeVerificationTime = currentTime;
 
             // For files of reasonable size or directories, verify by byte size
             if ((fileName.endsWith(".zip") && Files.exists(path) && Files.size(path) > 100000) ||
                     Files.isDirectory(path)) {
-                
+
                 EuphoriaPatcher.log(0, "Checking if file matches by byte size (watcher): " + fileName);
-                
+
                 boolean isValidByByteSize = false;
                 if (patcher != null) {
                     isValidByByteSize = patcher.isValidShaderByByteSize(path);
-                    
+
                     // If valid by byte size, rename the file to the correct format
                     if (isValidByByteSize) {
                         EuphoriaPatcher.log(0, "Found valid shader by byte size in watcher: " + fileName);
-                        
+
                         // Rename the file
                         Path renamedPath = patcher.renameToCorrectShaderName(path);
-                        
+
                         // Update the cache with both old and new names
                         String newFileName = renamedPath.getFileName().toString();
                         byteSizeVerificationCache.put(fileName, true);
                         if (!fileName.equals(newFileName)) {
                             byteSizeVerificationCache.put(newFileName, true);
-                            
+
                             // Update tracking in case the file was renamed
                             processedFiles.remove(fileName);
                             invalidByteSizeFiles.remove(fileName);
@@ -377,17 +377,17 @@ public class ShaderpacksWatcher {
                         }
                     }
                 }
-                
+
                 // Cache the result
                 byteSizeVerificationCache.put(fileName, isValidByByteSize);
-                
+
                 return isValidByByteSize;
             }
 
             return false;
 
         } catch (IOException e) {
-            EuphoriaPatcher.log(2, "Error checking shader pack name: " + e.getMessage());
+            EuphoriaPatcher.log(2, 0, "Error checking shader pack name: " + e.getMessage());
             return false;
         }
     }
