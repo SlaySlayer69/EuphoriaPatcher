@@ -37,9 +37,6 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// Mod dependencies (not shadowed)
-	modImplementation "maven.modrinth:sodium:mc1.20.4-0.5.8"
-
 	// Dependencies to be shadowed
 	shade 'io.sigpipe:jbsdiff:1.0'
 	shade 'com.google.code.gson:gson:2.8.9'
