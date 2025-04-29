@@ -23,10 +23,10 @@ public class EuphoriaPatcher {
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
-    public static final String VERSION = "_r5.4";
-    public static final String PATCH_VERSION = "_1.5.2";
+    public static final String VERSION = "_r5.5";
+    public static final String PATCH_VERSION = "_1.6.0";
 
-    public static final int BASE_TAR_SIZE = 1328640;
+    public static final int BASE_TAR_SIZE = 1339904;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
