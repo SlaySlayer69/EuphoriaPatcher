@@ -23,10 +23,10 @@ public class EuphoriaPatcher {
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
-    public static final String VERSION = "_r5.5";
-    public static final String PATCH_VERSION = "_1.6.0";
+    public static final String VERSION = "_r5.5.1";
+    public static final String PATCH_VERSION = "_1.6.1";
 
-    public static final int BASE_TAR_SIZE = 1339904;
+    public static final int BASE_TAR_SIZE = 1340416;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -255,7 +255,18 @@ public class EuphoriaPatcher {
 
     private boolean isBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
-        boolean matchesPattern = name.matches(BRAND_NAME + ".*" + VERSION + ".*") && !name.contains(PATCH_NAME);
+        
+        // Basic conditions
+        boolean hasBrandName = name.startsWith(BRAND_NAME);
+        boolean notPatched = !name.contains(PATCH_NAME);
+        boolean hasExactVersion = name.contains(VERSION);
+        
+        // Exclude development or pre-release versions
+        boolean isNotDevVersion = !name.contains("_dev");
+        boolean isNotPreVersion = !name.contains("_pre");
+        
+        boolean matchesPattern = hasBrandName && notPatched && hasExactVersion && 
+                                isNotDevVersion && isNotPreVersion;
 
         if (isFile) {
             return matchesPattern && name.endsWith(".zip");
