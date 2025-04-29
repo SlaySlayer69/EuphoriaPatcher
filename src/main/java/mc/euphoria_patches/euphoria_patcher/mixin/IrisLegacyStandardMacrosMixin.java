@@ -1,13 +1,9 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
-import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
-import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
-import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
+import mc.euphoria_patches.euphoria_patcher.util.IrisDefineHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -19,11 +15,6 @@ import java.util.List;
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_CLASS, remap = false)
 public class IrisLegacyStandardMacrosMixin {
-
-    @Unique
-    private static int injectCount = 0;
-    @Unique
-    private static boolean injectedOnce = false;
 
     @Shadow(remap = false)
     private static void define(List<?> defines, String key) {}
@@ -44,48 +35,11 @@ public class IrisLegacyStandardMacrosMixin {
             remap = false
     )
     private static void addEuphoriaDefine(CallbackInfoReturnable<?> cir, ArrayList<?> standardDefines) {
-        try {
-            injectCount++;
-
-            if (EuphoriaPatcher.isSpacEagle()) define(standardDefines, "SPACEAGLE17");
-
-            String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
-            define(standardDefines, "CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
-
-            define(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
-
-            define(standardDefines, "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimension().toUpperCase());
-
-            if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
-                define(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
-
-                if (UpdateChecker.NEW_MOD_VERSION != null) {
-                    String nextVersionFormatted = formatVersion(UpdateChecker.NEW_MOD_VERSION);
-                    define(standardDefines, "NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
-                }
-            }
-
-            UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
-
-            if (injectCount == 1) {
-                EuphoriaPatcher.log(0, "Added Euphoria Patches defines to Iris (Legacy)");
-            }
-
-            injectedOnce = true;
-        } catch (Exception ignored) {
-        }
-    }
-
-    @Unique
-    private static String formatVersion(String version) {
-        String[] versionParts = version.replace("_", "").split("\\.");
-        StringBuilder versionBuilder = new StringBuilder();
-        for (int i = 0; i < versionParts.length; i++) {
-            versionBuilder.append("_").append(versionParts[i]);
-            if (i < versionParts.length - 1) {
-                versionBuilder.append(", _dot, ");
-            }
-        }
-        return versionBuilder.toString();
+        IrisDefineHelper.addEuphoriaDefines(
+            standardDefines, 
+            true,  // isLegacy = true
+            IrisLegacyStandardMacrosMixin::define,
+            (defines, keyValue) -> define(defines, keyValue[0], keyValue[1])
+        );
     }
 }
