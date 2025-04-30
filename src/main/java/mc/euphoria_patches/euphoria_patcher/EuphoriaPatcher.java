@@ -746,10 +746,38 @@ public class EuphoriaPatcher {
     }
 
     /**
+     * Checks if the given filename represents a newer version of the shader than what's expected
+     * @param fileName The filename to check
+     * @return true if it's a newer version, false otherwise
+     */
+    public static boolean isNewerShaderVersion(String fileName) {
+        // First check if it's a Complementary shader
+        if (!fileName.contains(BRAND_NAME)) {
+            return false;
+        }
+        
+        // Extract version numbers using regex
+        int[] fileVersion = extractVersionNumbers(fileName);
+        int[] targetVersion = extractVersionNumbers(VERSION);
+        
+        // Compare versions - positive means fileVersion is newer than targetVersion
+        return compareVersions(fileVersion, targetVersion) > 0;
+    }
+
+    public static String getVersionStringFromFileName(String fileName) {
+        int[] versionNumbers = EuphoriaPatcher.extractVersionNumbers(fileName);
+        StringBuilder sb = new StringBuilder("r").append(versionNumbers[0]).append(".").append(versionNumbers[1]);
+        if (versionNumbers[2] > 0) {
+            sb.append(".").append(versionNumbers[2]);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Extract version numbers from a filename
      * @return int array with [major, minor, patch]
      */
-    private int[] extractVersionNumbers(String filename) {
+    public static int[] extractVersionNumbers(String filename) {
         int[] version = {0, 0, 0};
         
         // Extract r-version number (e.g., _r5.1 or _r5.3.2)
@@ -769,7 +797,7 @@ public class EuphoriaPatcher {
      * Compare two version arrays
      * @return positive if v1 > v2, 0 if equal, negative if v1 < v2
      */
-    private int compareVersions(int[] v1, int[] v2) {
+    private static int compareVersions(int[] v1, int[] v2) {
         for (int i = 0; i < 3; i++) {
             if (v1[i] != v2[i]) {
                 return v1[i] - v2[i];
