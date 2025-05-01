@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 public class ModifyOutdatedPatches {
     
     private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[OutdatedPatches] " + message);
+        EuphoriaLogger.debugLog("[ModifyOutdatedPatches] " + message);
     }
     
     public static void rename() {
