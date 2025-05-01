@@ -40,6 +40,11 @@ public class IrisDefineHelper {
             String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimension().toUpperCase();
             defineKey.accept(standardDefines, currentDimension);
             debugLog("Adding " + currentDimension + " define");
+
+            if (ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS)) {
+                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_IRIS");
+                debugLog("Adding EUPHORIA_PATCHES_IRIS define");
+            }
             
             // Check for potato.png file and add the define if it doesn't exist
             Path currentShaderpack = UpdateShaderLoaderConfig.getCurrentShaderpackPath();
