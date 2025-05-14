@@ -1,7 +1,5 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -38,7 +36,7 @@ public class Main {
         
         ImageIcon icon = null;
         try {
-            icon = new ImageIcon(Objects.requireNonNull(Main.class.getResource("/assets/euphoria_patcher/icon32x.png")));
+            icon = new ImageIcon(Objects.requireNonNull(Main.class.getResource("/icon32x.png")));
             dialog.setIconImage(icon.getImage());
         } catch (Exception ignored) {}
         
@@ -76,7 +74,7 @@ public class Main {
         dialog.setVisible(true);
     }
 
-    private static @NotNull JLabel getJLabel(JDialog dialog) {
+    private static  JLabel getJLabel(JDialog dialog) {
         JLabel message = getMessage();
         message.addMouseListener(new MouseAdapter() {
             @Override
@@ -99,7 +97,7 @@ public class Main {
         return message;
     }
 
-    private static @NotNull JLabel getMessage() {
+    private static JLabel getMessage() {
         JLabel message = new JLabel(
             "<html>" +
             "<div style='color: rgb(220,220,220);'>" +
@@ -115,7 +113,7 @@ public class Main {
         return message;
     }
 
-    private static @NotNull JButton getJButton(JDialog dialog) {
+    private static JButton getJButton(JDialog dialog) {
         JButton okButton = new JButton("OK") {
             @Override
             protected void paintComponent(Graphics g) {
