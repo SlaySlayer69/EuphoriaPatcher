@@ -77,6 +77,8 @@ public class EuphoriaPatcher {
 
         if (doUpdateChecking) UpdateChecker.checkForUpdates();
 
+        ShaderLoader.getShaderLoader();
+
         log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 
         UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
