@@ -10,7 +10,7 @@ public class ShaderLoader {
     public static final String IRIS = "iris";
     public static final String OCULUS = "oculus";
     public static final String OPTIFINE = "optifine";
-    public static final String ANGELICA = "angelica";  // Add Angelica constant
+    public static final String ANGELICA = "angelica";
     public static final String UNKNOWN = "unknown";
 
     // Pattern to validate Minecraft version format (1.X.Y or 1.XX.YY)
