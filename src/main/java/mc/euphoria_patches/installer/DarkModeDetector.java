@@ -1,4 +1,4 @@
-package net.hypercubemc.iris_installer;
+package mc.euphoria_patches.installer;
 
 import java.io.BufferedReader;
 import java.io.IOException;

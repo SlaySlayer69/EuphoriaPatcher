@@ -1,11 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
-package net.hypercubemc.iris_installer;
-
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
+package mc.euphoria_patches.installer;
 
 import java.awt.*;
 import java.awt.event.ItemEvent;
@@ -25,11 +18,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 
+import mc.euphoria_patches.installer.layouts.Settings;
 import net.fabricmc.installer.Main;
 import net.fabricmc.installer.util.MetaHandler;
 import net.fabricmc.installer.util.Utils;
-import net.hypercubemc.iris_installer.layouts.Settings;
-import org.json.JSONException;
+import com.google.gson.JsonParseException;
 
 /**
  *
@@ -38,8 +31,8 @@ import org.json.JSONException;
 @SuppressWarnings("serial")
 public class NewInstaller extends JFrame {
 
-    private static boolean dark = false;
-    private boolean installAsMod;
+    static boolean dark = false;
+    private static boolean installAsMod;
     private boolean styleIsUnbound = true;
     private String outdatedPlaceholder = "Warning: Iris shader loader has ended support for <version>.";
     private String snapshotPlaceholder = "Warning: <version> is a snapshot build and may";
@@ -48,7 +41,7 @@ public class NewInstaller extends JFrame {
     private InstallerMeta.Version selectedVersion;
     private final List<InstallerMeta.Version> GAME_VERSIONS;
     private final InstallerMeta INSTALLER_META;
-    private Path customInstallDir;
+    public static Path customInstallDir;
 
     Settings settings = new Settings();
 
@@ -77,7 +70,7 @@ public class NewInstaller extends JFrame {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "The installer was unable to fetch metadata from the server, please check your internet connection and try again later.", "Please check your internet connection!", JOptionPane.ERROR_MESSAGE);
             throw new RuntimeException(e);
-        } catch (JSONException e) {
+        } catch (JsonParseException e) {  // Changed from JSONException to JsonParseException
             System.out.println("Failed to fetch installer metadata from the server!");
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Installer metadata parsing failed, please contact the Iris support team via Discord! \nError: " + e, "Metadata Parsing Failed!", JOptionPane.ERROR_MESSAGE);
@@ -500,51 +493,37 @@ public class NewInstaller extends JFrame {
         settings.add(installationType, gridBagConstraints);
 
         installationTypesContainer.setLayout(new java.awt.BorderLayout(10, 0));
-            installType.add(standaloneType);
-            standaloneType.setFont(standaloneType.getFont().deriveFont((float)16));
-            standaloneType.setSelected(true);
-            standaloneType.setText("Iris Only");
-            standaloneType.setToolTipText("Installs Iris + Sodium by itself, without any mods. And adds Complementary + Euphoria Patches.");
-            standaloneType.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseReleased(java.awt.event.MouseEvent evt) {
-                    standaloneTypeMouseClicked(evt);
-                }
-            });
-            installationTypesContainer.add(standaloneType, java.awt.BorderLayout.LINE_START);
+        installType.add(standaloneType);
+        standaloneType.setFont(standaloneType.getFont().deriveFont((float)16));
+        standaloneType.setSelected(true);
+        standaloneType.setText("Iris Only");
+        standaloneType.setToolTipText("Installs Iris + Sodium by itself, without any mods. And adds Complementary + Euphoria Patches.");
+        standaloneType.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                standaloneTypeMouseClicked(evt);
+            }
+        });
+        installationTypesContainer.add(standaloneType, java.awt.BorderLayout.LINE_START);
 
-            installType.add(fabricType);
-            fabricType.setFont(fabricType.getFont().deriveFont((float)16));
-            fabricType.setText("Iris + Fabric");
-            fabricType.setToolTipText("This installs Iris + Sodium alongside an installation of Fabric to be able to use other mods. Then adds Complementary + Euphoria Patches.");
-            fabricType.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseReleased(java.awt.event.MouseEvent evt) {
-                    fabricTypeMouseClicked(evt);
-                }
-            });
-            installationTypesContainer.add(fabricType, java.awt.BorderLayout.LINE_END);
-            gridBagConstraints = new java.awt.GridBagConstraints();
-            gridBagConstraints.gridx = 1;
-            gridBagConstraints.gridy = 4;
-            gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        installType.add(fabricType);
+        fabricType.setFont(fabricType.getFont().deriveFont((float)16));
+        fabricType.setText("Iris + Fabric");
+        fabricType.setToolTipText("This installs Iris + Sodium alongside an installation of Fabric to be able to use other mods. Then adds Complementary + Euphoria Patches.");
+        fabricType.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                fabricTypeMouseClicked(evt);
+            }
+        });
+        installationTypesContainer.add(fabricType, java.awt.BorderLayout.LINE_END);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
         settings.add(installationTypesContainer, gridBagConstraints);
 
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
-
-    private void directoryNameMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_directoryNameMouseClicked
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setFileHidingEnabled(false);
-
-        int option = fileChooser.showOpenDialog(this);
-
-        if (option == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            customInstallDir = file.toPath();
-            directoryName.setText(file.getName());
-        }
-    }//GEN-LAST:event_directoryNameMouseClicked
 
     private void gameVersionListItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_gameVersionListItemStateChanged
         if (evt.getStateChange() == ItemEvent.SELECTED) {
@@ -567,10 +546,10 @@ public class NewInstaller extends JFrame {
         }
     }//GEN-LAST:event_gameVersionListItemStateChanged
 
-    private void standaloneTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_standaloneTypeMouseClicked
+    public static void standaloneTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_standaloneTypeMouseClicked
         installAsMod = false;
     }//GEN-LAST:event_standaloneTypeMouseClicked
-    private void fabricTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_fabricTypeMouseClicked
+    public static void fabricTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_fabricTypeMouseClicked
         installAsMod = true;
     }//GEN-LAST:event_fabricTypeMouseClicked
 
@@ -580,6 +559,20 @@ public class NewInstaller extends JFrame {
     private void reimaginedStyleMouseClicked(java.awt.event.MouseEvent evt) {
         styleIsUnbound = false;
     }
+
+    public void directoryNameMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_directoryNameMouseClicked
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fileChooser.setFileHidingEnabled(false);
+
+        int option = fileChooser.showOpenDialog(this);
+
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            NewInstaller.customInstallDir = file.toPath();
+            NewInstaller.directoryName.setText(file.getName());
+        }
+    }//GEN-LAST:event_directoryNameMouseClicked
 
     private void installButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_installButtonMouseClicked
         if (!isInternetAvailable()) {
@@ -746,10 +739,10 @@ public class NewInstaller extends JFrame {
 
                         in.close();
                     } catch (IOException e) {
-                        System.out.println("Failed to download Comp!");
+                        System.out.println("Failed to download Euphoria Patches!");
                         e.getCause().printStackTrace();
 
-                        String msg = String.format("An error occurred while attempting to download Complementary files, please check your internet connection and try again! \nError: (Code C1) %s",
+                        String msg = String.format("An error occurred while attempting to download Euphoria Patches files, please check your internet connection and try again! \nError: (Code C1) %s",
                                 e.getCause().toString());
                         installButton.setEnabled(true);
                         installButton.setText("Download Failed!");
@@ -760,11 +753,11 @@ public class NewInstaller extends JFrame {
                         return;
                     }
 
-                    String compDownURL;
+                    String euphoriaDownURL;
                     String base64ep = Base64.getEncoder().withoutPadding().encodeToString(finalShaderName.getBytes());
-                    compDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
+                    euphoriaDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
 
-                    final Downloader downloaderC = getDownloader(installDir, finalShaderName, compDownURL);
+                    final Downloader downloaderC = getDownloader(installDir, finalShaderName, euphoriaDownURL);
 
                     downloaderC.execute();
                 } else {
@@ -779,7 +772,7 @@ public class NewInstaller extends JFrame {
         downloaderI.execute();
     }//GEN-LAST:event_installButtonMouseClicked
 
-    private Downloader getDownloader(File installDir, String finalShaderName, String compDownURL) {
+    private Downloader getDownloader(File installDir, String finalShaderName, String euphoriaDownURL) {
         // Add timeout settings for all connections
         System.setProperty("sun.net.client.defaultConnectTimeout", "5000");
         System.setProperty("sun.net.client.defaultReadTimeout", "5000");
@@ -795,7 +788,7 @@ public class NewInstaller extends JFrame {
                 throw new IOException("Internet connection unavailable");
             }
             
-            String confirmationURL = compDownURL.substring(0, compDownURL.lastIndexOf("/") + 1) + "aaaDownloadConfirmation.txt";
+            String confirmationURL = euphoriaDownURL.substring(0, euphoriaDownURL.lastIndexOf("/") + 1) + "aaaDownloadConfirmation.txt";
             File confirmationFile = new File(shaderDir, "aaaDownloadConfirmation.txt");
             
             // Download the confirmation file
@@ -813,7 +806,7 @@ public class NewInstaller extends JFrame {
             System.out.println("Could not download confirmation file: " + e.getMessage());
         }
 
-        final Downloader downloaderC = new Downloader(compDownURL, shaderLoc);
+        final Downloader downloaderC = new Downloader(euphoriaDownURL, shaderLoc);
         downloaderC.addPropertyChangeListener(eventC -> {
             if ("progress".equals(eventC.getPropertyName())) {
                 progressBar.setValue(50 + ((Integer) eventC.getNewValue()) / 2);
@@ -827,7 +820,7 @@ public class NewInstaller extends JFrame {
                     
                     decryptEuphoriaPatches(shaderLoc);
                 } catch (InterruptedException | ExecutionException e) {
-                    System.out.println("Failed to download Comp!");
+                    System.out.println("Failed to download Euphoria Patches!");
                     e.getCause().printStackTrace();
 
                     String msg;
@@ -835,7 +828,7 @@ public class NewInstaller extends JFrame {
                         e.getCause() instanceof java.net.SocketTimeoutException) {
                         msg = "Internet connection lost while downloading shader pack. Please check your connection and try again.";
                     } else {
-                        msg = String.format("An error occurred while attempting to download Complementary files, please check your internet connection and try again! \nError: (Code C2) %s",
+                        msg = String.format("An error occurred while attempting to download Euphoria Patches files, please check your internet connection and try again! \nError: (Code C2) %s",
                                 e.getCause().toString());
                     }
                     installButton.setEnabled(true);
@@ -846,7 +839,7 @@ public class NewInstaller extends JFrame {
                             msg, "Download Failed!", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 } catch (Exception e) {
-                    System.out.println("Failed to download Comp! (error kind 2)");
+                    System.out.println("Failed to download Euphoria Patches! (error kind 2)");
                     e.printStackTrace();
                     
                     // Check if it's a network error
@@ -868,19 +861,51 @@ public class NewInstaller extends JFrame {
                 }
                 File ipDir = new File(configDir, "iris.properties");
                 Properties irisProp = new Properties();
+
+                // Check if the file already exists and was created by our installer
+                boolean fileCreatedByInstaller = false;
                 if (ipDir.exists()) {
-                    try (InputStream is = Files.newInputStream(ipDir.toPath())) {
-                        irisProp.load(is);
+                    try {
+                        // First read the file as text to check for our installer comment
+                        List<String> lines = Files.readAllLines(ipDir.toPath());
+                        if (!lines.isEmpty() && lines.get(0).contains("File written by Euphoria Patches Installer")) {
+                            fileCreatedByInstaller = true;
+                            System.out.println("Found existing installer-created iris.properties");
+                        }
+                        
+                        // Load the properties
+                        try (InputStream is = Files.newInputStream(ipDir.toPath())) {
+                            irisProp.load(is);
+                        }
                     } catch (IOException e) {
-                        System.out.println("Failed to read iris.properties");
+                        System.out.println("Failed to read iris.properties: " + e.getMessage());
                     }
                 }
+
+                // Update the properties
                 irisProp.setProperty("shaderPack", finalShaderName);
                 irisProp.setProperty("enableShaders", "true");
+
+                // Generate the correct folder path comment
+                String folderPath = installAsMod ? "mods" : "iris-reserved/" + selectedVersion.name;
+                String comment = "Iris Properties";
+
+                // Write the properties back to the file
                 try (OutputStream os = Files.newOutputStream(ipDir.toPath())) {
-                    irisProp.store(os, "File written by Comp Installer");
+                    irisProp.store(os, comment);
+                    System.out.println("Successfully wrote iris.properties");
                 } catch (IOException e) {
-                    System.out.println("Failed to write iris.properties");
+                    System.out.println("Failed to write iris.properties: " + e.getMessage());
+                }
+
+                // Create a separate file with the installation information
+                File installInfoFile = new File(configDir, "installedByEPInstaller.txt");
+                try {
+                    String installInfo = "File written by Euphoria Patches Installer - in the " + folderPath + " folder";
+                    Files.write(installInfoFile.toPath(), Collections.singletonList(installInfo));
+                    System.out.println("Successfully wrote installation info file");
+                } catch (IOException e) {
+                    System.out.println("Failed to write installation info file: " + e.getMessage());
                 }
 
                 installButton.setText("Completed!");
@@ -924,82 +949,6 @@ public class NewInstaller extends JFrame {
         return downloaderC;
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        dark = DarkModeDetector.isDarkMode();
-
-        System.setProperty("apple.awt.application.appearance", "system");
-
-        Color accentColor = dark ? new Color(199, 21, 133) : new Color(230, 24, 150);
-        
-        if (dark) {
-            // Make background darker (adjust the RGB values as needed)
-            UIManager.put("Panel.background", new Color(24, 24, 30));
-            UIManager.put("ComboBox.background", new Color(45, 45, 45));
-            UIManager.put("TextField.background", new Color(45, 45, 45));
-            UIManager.put("Button.background", new Color(60, 60, 60));
-            
-            // Set darker background for the entire window
-            UIManager.put("@background", new Color(30, 30, 30));
-        }
-
-        UIManager.put("hyperlink.foreground", new Color(199, 21, 133));
-
-        UIManager.put("Button.outlineColor", accentColor);
-        UIManager.put("Button.focusedBorderColor", accentColor.darker());
-        UIManager.put("Button.hoverBorderColor", accentColor);
-        UIManager.put("Button.default.focusColor", new Color(199, 21, 133, 50));
-
-
-        UIManager.put("OptionPane.buttonBackground", new Color(60, 60, 60));
-        UIManager.put("OptionPane.background", dark ? new Color(30, 30, 30) : null);
-        UIManager.put("OptionPane.messageForeground", dark ? Color.WHITE : null);
-        UIManager.put("Button.default.background", accentColor);
-        UIManager.put("Button.default.outlineColor", accentColor.darker());
-        UIManager.put("Button.default.foreground", Color.WHITE);
-
-        UIManager.put("Component.focusColor", accentColor);
-        UIManager.put("Component.focusWidth", 1);
-        UIManager.put("Button.focusColor", accentColor);
-
-        UIManager.put("OptionPane.buttonType", "roundRect");
-        UIManager.put("Button.innerFocusWidth", 0);
-        UIManager.put("Button.innerFocusColor", new Color(0, 0, 0, 0)); // Transparent
-        UIManager.put("Button.hoverBorderColor", accentColor);
-        UIManager.put("Button.focusedBorderColor", accentColor);
-        UIManager.put("Button.default.borderColor", accentColor);
-        UIManager.put("Button.default.focusColor", accentColor);
-        UIManager.put("Button.default.focusedBorderColor", accentColor);
-
-        UIManager.put("CheckBox.icon.checkmarkColor", accentColor);
-        UIManager.put("CheckBox.icon.selectedBackground", dark ? new Color(60, 60, 60) : Color.WHITE);
-        UIManager.put("CheckBox.icon.selectedBorderColor", accentColor);
-        UIManager.put("CheckBox.icon.focusedBorderColor", accentColor);
-        UIManager.put("CheckBox.icon.selectedFocusedBorderColor", accentColor);
-        UIManager.put("CheckBox.icon.hoverBorderColor", accentColor);
-
-        UIManager.put("ComboBox.selectionBackground", accentColor);
-        UIManager.put("ComboBox.selectionForeground", Color.WHITE);
-        UIManager.put("ComboBox.popupBackground", dark ? new Color(45, 45, 45) : Color.WHITE);
-        UIManager.put("ComboBox.buttonArrowColor", accentColor);
-        UIManager.put("ComboBox.buttonHoverArrowColor", accentColor);
-        UIManager.put("ComboBox.buttonPressedArrowColor", accentColor);
-        
-        // Set up FlatLaf after all UI properties are configured
-        if (dark) {
-            FlatDarkLaf.setup();
-        } else {
-            FlatLightLaf.setup();
-        }
-
-        System.out.println("Launching installer...");
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new NewInstaller().setVisible(true));
-    }
-
     public static void openURL(URI uri) {
         if (!Desktop.isDesktopSupported()) {
             return;
@@ -1018,10 +967,10 @@ public class NewInstaller extends JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton directoryName;
+    public static javax.swing.JButton directoryName;
     private javax.swing.JLabel gameVersionLabel;
     private javax.swing.JComboBox<String> gameVersionList;
-    private javax.swing.JLabel installationDirectory;
+    public javax.swing.JLabel installationDirectory;
     private javax.swing.JRadioButton fabricType;
     private javax.swing.JRadioButton standaloneType;
     private javax.swing.JButton installButton;

@@ -1,7 +1,9 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -38,27 +40,70 @@ public class ModifyPatchedShaderpacks {
 
         processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
             try {
-                Path resolvedPath = shaderPack.resolve(targetPath);
-                debugLog("Processing in shader pack: " + shaderPack.getFileName());
-
-                if (fileExtension != null && Files.isDirectory(resolvedPath)) {
-                    // Process directory with file extension filter
-                    debugLog("Processing directory: " + resolvedPath + " with extension filter: " + fileExtension);
-                    try (DirectoryStream<Path> files = Files.newDirectoryStream(resolvedPath, "*" + fileExtension)) {
-                        for (Path file : files) {
-                            modifyFile(file, regexAndReplacements);
-                        }
-                    }
+                // Handle ZIP files or directories appropriately
+                if (Files.isRegularFile(shaderPack) && shaderPack.toString().endsWith(".zip")) {
+                    processZipShaderpack(shaderPack, targetPath, fileExtension, regexAndReplacements);
                 } else {
-                    // Process single file
-                    debugLog("Processing single file: " + resolvedPath);
-                    modifyFile(resolvedPath, regexAndReplacements);
+                    processDirectoryShaderpack(shaderPack, targetPath, fileExtension, regexAndReplacements);
                 }
             } catch (IOException e) {
                 EuphoriaPatcher.log(2, 0, "Error processing files in " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
+        
         debugLog("Finished modifying files for target path: " + targetPath);
+    }
+    
+    private static void processZipShaderpack(Path zipFile, String targetPath, String fileExtension, 
+                                          String... regexAndReplacements) throws IOException {
+        debugLog("Processing ZIP shader pack: " + zipFile.getFileName());
+        Path tempDir = Files.createTempDirectory("shader-patch-");
+        try {
+            // Extract ZIP using existing ArchiveOperations utility
+            Path extractedDir = ArchiveOperations.extract(zipFile, tempDir, "extracting shader pack");
+            if (extractedDir == null) {
+                EuphoriaPatcher.log(2, 0, "Failed to extract shader pack: " + zipFile.getFileName());
+                return;
+            }
+            
+            // Process the extracted directory
+            processDirectoryShaderpack(extractedDir, targetPath, fileExtension, regexAndReplacements);
+            
+            // Archive the modified directory back to the original ZIP
+            if (ArchiveOperations.archive(extractedDir, zipFile) == null) {
+                EuphoriaPatcher.log(2, 0, "Failed to update shader pack: " + zipFile.getFileName());
+            }
+        } finally {
+            // Clean up temporary directory
+            try {
+                FileUtils.deleteDirectory(tempDir.toFile());
+                debugLog("Cleaned up temporary directory: " + tempDir);
+            } catch (IOException e) {
+                debugLog("Failed to clean up temporary directory: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void processDirectoryShaderpack(Path shaderPack, String targetPath, String fileExtension,
+                                               String... regexAndReplacements) throws IOException {
+        Path resolvedPath = shaderPack.resolve(targetPath);
+        debugLog("Processing in shader pack directory: " + shaderPack.getFileName());
+
+        if (fileExtension != null && Files.isDirectory(resolvedPath)) {
+            // Process directory with file extension filter
+            debugLog("Processing directory: " + resolvedPath + " with extension filter: " + fileExtension);
+            try (DirectoryStream<Path> files = Files.newDirectoryStream(resolvedPath, "*" + fileExtension)) {
+                for (Path file : files) {
+                    modifyFile(file, regexAndReplacements);
+                }
+            }
+        } else if (Files.exists(resolvedPath)) {
+            // Process single file
+            debugLog("Processing single file: " + resolvedPath);
+            modifyFile(resolvedPath, regexAndReplacements);
+        } else {
+            debugLog("Target path not found: " + resolvedPath);
+        }
     }
 
     private static void modifyFile(Path filePath, String... regexAndReplacements) throws IOException {

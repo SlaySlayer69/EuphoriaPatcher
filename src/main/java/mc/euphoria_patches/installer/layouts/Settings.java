@@ -1,29 +1,30 @@
-package net.hypercubemc.iris_installer.layouts;
+package mc.euphoria_patches.installer.layouts;
 
+import mc.euphoria_patches.installer.NewInstaller;
 import net.fabricmc.installer.util.Utils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.Objects;
 
 public class Settings extends JFrame {
     public Settings() {
-        super("Complementary Installer Settings");
+        super("Euphoria Patches Installer Settings");
 
         setIconImage(new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("euphoriaPatchesIcon.png"))).getImage());
-        setMaximumSize(new java.awt.Dimension(400, 360));
-        setMinimumSize(new java.awt.Dimension(400, 360));
-        setPreferredSize(new java.awt.Dimension(400, 360));
+        setMaximumSize(new Dimension(400, 360));
+        setMinimumSize(new Dimension(400, 360));
+        setPreferredSize(new Dimension(400, 360));
         setResizable(false);
-        getContentPane().setLayout(new java.awt.GridBagLayout());
+        getContentPane().setLayout(new GridBagLayout());
 
-        java.awt.GridBagConstraints gridBagConstraints;
-
+        GridBagConstraints gridBagConstraints;
         JButton doneButton = getDoneButton();
-        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 20;
-        gridBagConstraints.insets = new java.awt.Insets(20, 0, 0, 0);
+        gridBagConstraints.insets = new Insets(20, 0, 0, 0);
         getContentPane().add(doneButton, gridBagConstraints);
 
         int x = (Toolkit.getDefaultToolkit().getScreenSize().width - getWidth()) / 2;
@@ -33,7 +34,7 @@ public class Settings extends JFrame {
 
     private JButton getDoneButton() {
         JButton doneButton = new JButton();
-        doneButton.setFont(doneButton.getFont().deriveFont((float)16));
+        doneButton.setFont(new Font("Dialog", Font.PLAIN, 16));  // Use a default font instead of deriving
         doneButton.setText("Done");
         doneButton.setToolTipText("");
         doneButton.setMargin(new Insets(10, 30, 10, 30));
@@ -45,7 +46,7 @@ public class Settings extends JFrame {
                 SettingsFrame.setVisible(false);
             }
         });
-        doneButton.putClientProperty( "JButton.buttonType", "roundRect" );
+        doneButton.putClientProperty("JButton.buttonType", "roundRect");
         return doneButton;
     }
 }

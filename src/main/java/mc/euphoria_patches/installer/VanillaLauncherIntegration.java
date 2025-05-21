@@ -1,11 +1,12 @@
-package net.hypercubemc.iris_installer;
+package mc.euphoria_patches.installer;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import mjson.Json;
 import net.fabricmc.installer.client.ProfileInstaller;
-import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class VanillaLauncherIntegration {
@@ -61,7 +63,8 @@ public class VanillaLauncherIntegration {
 
         // Add the JVM argument -Diris.installer=true so Iris can detect if the installer is used
         json.getOrDefault("arguments", Json.array()).asJsonMap().getOrDefault("jvm", Json.array()).asJsonList().add(factory.string("-Diris.installer=true"));
-        json.getOrDefault("arguments", Json.array()).asJsonMap().getOrDefault("jvm", Json.array()).asJsonList().add(factory.string("-Dfabric.modsFolder=" + modsFolder.toAbsolutePath().toString()));    }
+        json.getOrDefault("arguments", Json.array()).asJsonMap().getOrDefault("jvm", Json.array()).asJsonList().add(factory.string("-Dfabric.modsFolder=" + modsFolder.toAbsolutePath().toString()));
+    }
 
     private static void installProfile(Component parent, Path mcDir, Path instanceDir, String profileName, String versionId, Icon icon, ProfileInstaller.LauncherType launcherType) throws IOException {
         Path launcherProfiles = mcDir.resolve(launcherType.profileJsonName);
@@ -72,49 +75,58 @@ public class VanillaLauncherIntegration {
 
         System.out.println("Creating profile");
 
-        JSONObject jsonObject = null;
+        JsonObject jsonObject = null;
 
         try {
-            jsonObject = new JSONObject(Utils.readString(launcherProfiles));
-        } catch (JSONException e) {
+            jsonObject = JsonParser.parseString(Utils.readString(launcherProfiles)).getAsJsonObject();
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(parent, "Failed to add profile, you might not have logged into the launcher.");
             return;
         }
 
-        JSONObject profiles = jsonObject.getJSONObject("profiles");
+        JsonObject profiles = jsonObject.getAsJsonObject("profiles");
 
         String foundProfileName = profileName;
 
-        for (Iterator<String> it = profiles.keys(); it.hasNext();) {
-            String key = it.next();
-
-            JSONObject foundProfile = profiles.getJSONObject(key);
-            if (foundProfile.has("lastVersionId") && foundProfile.getString("lastVersionId").equals(versionId) && foundProfile.has("gameDir") && foundProfile.getString("gameDir").equals(instanceDir.toString())) {
+        for (Entry<String, JsonElement> entry : profiles.entrySet()) {
+            String key = entry.getKey();
+            JsonObject foundProfile = entry.getValue().getAsJsonObject();
+            
+            if (foundProfile.has("lastVersionId") && 
+                foundProfile.get("lastVersionId").getAsString().equals(versionId) && 
+                foundProfile.has("gameDir") && 
+                foundProfile.get("gameDir").getAsString().equals(instanceDir.toString())) {
                 foundProfileName = key;
             }
         }
 
         // If the profile already exists, use it instead of making a new one so that user's settings are kept (e.g icon)
-        JSONObject profile = profiles.has(foundProfileName) ? profiles.getJSONObject(foundProfileName) : createProfile(profileName, instanceDir, versionId, icon);
-        profile.put("name", profileName);
-        profile.put("lastUsed", Utils.ISO_8601.format(new Date())); // Update timestamp to bring to top of profile list
-        profile.put("lastVersionId", versionId);
+        JsonObject profile;
+        if (profiles.has(foundProfileName)) {
+            profile = profiles.getAsJsonObject(foundProfileName);
+        } else {
+            profile = createProfile(profileName, instanceDir, versionId, icon);
+        }
+        
+        profile.add("name", new JsonPrimitive(profileName));
+        profile.add("lastUsed", new JsonPrimitive(Utils.ISO_8601.format(new Date()))); // Update timestamp to bring to top of profile list
+        profile.add("lastVersionId", new JsonPrimitive(versionId));
 
-        profiles.put(foundProfileName, profile);
-        jsonObject.put("profiles", profiles);
+        profiles.add(foundProfileName, profile);
+        jsonObject.add("profiles", profiles);
 
         Utils.writeToFile(launcherProfiles, jsonObject.toString());
     }
 
-    private static JSONObject createProfile(String name, Path instanceDir, String versionId, Icon icon) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", name);
-        jsonObject.put("type", "custom");
-        jsonObject.put("created", Utils.ISO_8601.format(new Date()));
-        jsonObject.put("gameDir", instanceDir.toString());
-        jsonObject.put("lastUsed", Utils.ISO_8601.format(new Date()));
-        jsonObject.put("lastVersionId", versionId);
-        jsonObject.put("icon", getProfileIcon(icon));
+    private static JsonObject createProfile(String name, Path instanceDir, String versionId, Icon icon) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("name", name);
+        jsonObject.addProperty("type", "custom");
+        jsonObject.addProperty("created", Utils.ISO_8601.format(new Date()));
+        jsonObject.addProperty("gameDir", instanceDir.toString());
+        jsonObject.addProperty("lastUsed", Utils.ISO_8601.format(new Date()));
+        jsonObject.addProperty("lastVersionId", versionId);
+        jsonObject.addProperty("icon", getProfileIcon(icon));
         return jsonObject;
     }
 
@@ -162,7 +174,6 @@ public class VanillaLauncherIntegration {
             return "TNT";
         }
     }
-
 
     private static ProfileInstaller.LauncherType showLauncherTypeSelection() {
         String[] options = new String[]{Utils.BUNDLE.getString("prompt.launcher.type.xbox"), Utils.BUNDLE.getString("prompt.launcher.type.win32")};

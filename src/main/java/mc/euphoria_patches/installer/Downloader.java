@@ -1,15 +1,16 @@
-package net.hypercubemc.iris_installer;
+package mc.euphoria_patches.installer;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.swing.*;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.net.URL;
-import javax.net.ssl.HttpsURLConnection;
-import javax.swing.SwingWorker;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+
 /**
  *
  * @author ims
@@ -41,7 +42,7 @@ public class Downloader extends SwingWorker<Void, Void> {
 
         try ( java.io.BufferedInputStream in = new java.io.BufferedInputStream(connection.getInputStream())) {
             java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
-            try ( java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024)) {
+            try ( BufferedOutputStream bout = new BufferedOutputStream(fos, 1024)) {
                 byte[] data = new byte[1024];
                 int i;
 

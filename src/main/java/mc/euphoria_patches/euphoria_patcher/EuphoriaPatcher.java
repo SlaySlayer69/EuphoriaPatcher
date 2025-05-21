@@ -38,7 +38,7 @@ public class EuphoriaPatcher {
     public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
     public static Path configDirectory = ModLoaderSpecifics.configDirectory;
     public static Path mainIntellijDir = shaderpacks.getParent().getParent();
-    public static Path modDirectory = shaderpacks.getParent().resolve("mods");
+    public static Path modDirectory = shaderpacks.getParent().resolve("mods");;
 
     // Config Options
     public static boolean doPopUpLogging = true;
@@ -72,6 +72,7 @@ public class EuphoriaPatcher {
         
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
+        modDirectory = determineModsDirectory();
 
         if (doPopUpLogging) loggerInstance.checkAndSetupSodiumLogging();
 
@@ -181,6 +182,56 @@ public class EuphoriaPatcher {
         return IS_DEV && isDevModLoader;
     }
 
+    private static Path determineModsDirectory() {
+        // Default mods directory
+        Path defaultModsDir = shaderpacks.getParent().resolve("mods");
+
+        // Check if the installation info file exists
+        Path installInfoPath = configDirectory.resolve("installedByEPInstaller.txt");
+        if (!Files.exists(installInfoPath)) {
+            debugLog("Installation info file not found, using default mods directory");
+            return defaultModsDir;
+        }
+        
+        try {
+            // Read the first line of the installation info file
+            String line = Files.readAllLines(installInfoPath).get(0);
+            String prefix = "in the ";
+            String suffix = " folder";
+            
+            if (line.contains(prefix) && line.contains(suffix)) {
+                // Extract the path part between "in the " and " folder"
+                int startIndex = line.indexOf(prefix) + prefix.length();
+                int endIndex = line.indexOf(suffix);
+                
+                if (startIndex >= prefix.length() && endIndex > startIndex) {
+                    String customPath = line.substring(startIndex, endIndex);
+                    debugLog("Found custom path in installation info file: " + customPath);
+                    
+                    if (customPath.equals("mods")) {
+                        debugLog("Custom path is the standard mods folder");
+                        return defaultModsDir;
+                    }
+                    
+                    // Construct the potential custom mods path
+                    Path customModsDir = shaderpacks.getParent().resolve(customPath);
+                    
+                    // Verify this path exists
+                    if (Files.exists(customModsDir) && Files.isDirectory(customModsDir)) {
+                        debugLog("Using custom mods directory: " + customModsDir);
+                        return customModsDir;
+                    } else {
+                        debugLog("Custom mods directory doesn't exist: " + customModsDir + ", falling back to default");
+                    }
+                }
+            }
+        } catch (IOException | IndexOutOfBoundsException e) {
+            debugLog("Error reading installation info file: " + e.getMessage());
+        }
+        
+        return defaultModsDir;
+    }
+
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
         try {
@@ -238,11 +289,15 @@ public class EuphoriaPatcher {
      */
     private void checkForExistingPatchedShaders(ShaderInfo info) {
         try {
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
-                    path -> Files.isDirectory(path) && 
-                            path.getFileName().toString().contains(BRAND_NAME) && 
-                            path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION))) {
-                
+            // First check for directories
+            // Common filter for finding patched shaders
+            DirectoryStream.Filter<Path> patchedFilter = path -> 
+                path.getFileName().toString().contains(BRAND_NAME) && 
+                path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION) &&
+                (Files.isDirectory(path) || 
+                 (Files.isRegularFile(path) && path.toString().endsWith(".zip")));
+            
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, patchedFilter)) {
                 for (Path path : stream) {
                     checkIfAlreadyInstalled(path, info);
                     if (info.isAlreadyInstalled) {
@@ -617,8 +672,10 @@ public class EuphoriaPatcher {
     public static boolean isSpacEagle() {
         try {
             boolean containsSpacEagle = shaderpacks.toString().contains("SpacEagle");
+            debugLog("Contains SpacEagle in Path: " + containsSpacEagle);
             Path euphoriaFolder = shaderpacks.resolve("Euphoria-Patches");
             boolean hasEuphoriaFolder = Files.exists(euphoriaFolder) && Files.isDirectory(euphoriaFolder);
+            debugLog("Euphoria-Patches folder exists: " + hasEuphoriaFolder);
             return containsSpacEagle && hasEuphoriaFolder;
         } catch (Exception ignored) {
             return false;
@@ -634,7 +691,8 @@ public class EuphoriaPatcher {
             // If baseFile is null, try to find the patched shader directory directly
             try {
                 DirectoryStream.Filter<Path> filter = path -> 
-                    Files.isDirectory(path) && 
+                    (Files.isDirectory(path) || 
+                    (Files.isRegularFile(path) && path.toString().endsWith(".zip"))) && 
                     path.getFileName().toString().contains(BRAND_NAME) && 
                     path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION);
                     

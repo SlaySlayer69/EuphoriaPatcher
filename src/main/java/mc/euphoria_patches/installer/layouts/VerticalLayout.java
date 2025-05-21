@@ -1,4 +1,4 @@
-package net.hypercubemc.iris_installer.layouts;
+package mc.euphoria_patches.installer.layouts;
 
 /**
  THIS PROGRAM IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES (OR CONDITIONS),
@@ -6,7 +6,10 @@ package net.hypercubemc.iris_installer.layouts;
  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK ARISING OUT OF USE OR
  PERFORMANCE OF THE PROGRAM AND DOCUMENTATION REMAINS WITH THE USER.
  */
-import java.awt.*; import java.util.*;
+
+import java.awt.*;
+import java.util.Hashtable;
+
 /**
  *
  * A vertical layout manager similar to java.awt.FlowLayout.
@@ -76,7 +79,7 @@ public class VerticalLayout implements LayoutManager{
      * @param vgap An int value indicating the vertical seperation of the components
      * @param alignment An int value which is one of <code>RIGHT, LEFT, CENTER, BOTH</code> for the horizontal alignment.
      */
-    public VerticalLayout(int vgap,int alignment){
+    public VerticalLayout(int vgap, int alignment){
         this(vgap,alignment,TOP);
     }
     /**
@@ -87,7 +90,7 @@ public class VerticalLayout implements LayoutManager{
      * @param anchor An int value which is one of <code>TOP, BOTTOM, CENTER</code> indicating where the components are
      * to appear if the display area exceeds the minimum necessary.
      */
-    public VerticalLayout(int vgap,int alignment,int anchor){
+    public VerticalLayout(int vgap, int alignment, int anchor){
         this.vgap=vgap; this.alignment=alignment; this.anchor=anchor;
     }
     //----------------------------------------------------------------------------
