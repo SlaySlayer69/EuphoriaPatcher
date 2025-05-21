@@ -788,8 +788,8 @@ public class NewInstaller extends JFrame {
                 throw new IOException("Internet connection unavailable");
             }
             
-            String confirmationURL = euphoriaDownURL.substring(0, euphoriaDownURL.lastIndexOf("/") + 1) + "aaaDownloadConfirmation.txt";
-            File confirmationFile = new File(shaderDir, "aaaDownloadConfirmation.txt");
+            String confirmationURL = euphoriaDownURL.substring(0, euphoriaDownURL.lastIndexOf("/") + 1) + "aaaConfirmEPDownload.txt";
+            File confirmationFile = new File(shaderDir, "aaaConfirmEPDownload.txt");
             
             // Download the confirmation file
             System.out.println("Downloading confirmation file from: " + confirmationURL);
@@ -915,7 +915,7 @@ public class NewInstaller extends JFrame {
                 System.out.println("Finished Successful Install");
                 
                 // Delete confirmation file if installation was successful
-                File confirmationFile = new File(shaderDir, "aaaDownloadConfirmation.txt");
+                File confirmationFile = new File(shaderDir, "aaaConfirmEPDownload.txt");
                 if (confirmationFile.exists()) {
                     boolean deleted = confirmationFile.delete();
                     if (deleted) {
@@ -924,10 +924,56 @@ public class NewInstaller extends JFrame {
                         System.out.println("Failed to delete confirmation file");
                     }
                 }
+                
+                // Copy the installer jar to the mods folder
+                try {
+                    File modsFolder = installAsMod ? getInstallDir().resolve("mods").toFile() : 
+                                    getInstallDir().resolve("iris-reserved").resolve(selectedVersion.name).toFile();
+                    
+                    // Get the path to the current jar file (the installer)
+                    String jarPath = NewInstaller.class.getProtectionDomain()
+                                    .getCodeSource()
+                                    .getLocation()
+                                    .toURI()
+                                    .getPath();
+                                    
+                    // On Windows, remove leading slash if present
+                    if (jarPath.startsWith("/") && System.getProperty("os.name").toLowerCase().contains("win")) {
+                        jarPath = jarPath.substring(1);
+                    }
+                    
+                    File installerJar = new File(jarPath);
+                    File targetJar = new File(modsFolder, installerJar.getName());
+                    
+                    // Only copy if this is actually a jar file and not running from an IDE
+                    if (installerJar.exists() && jarPath.toLowerCase().endsWith(".jar")) {
+                        System.out.println("Copying EuphoriaPatcher jar to mods folder: " + targetJar.getAbsolutePath());
+                        
+                        // First delete the existing file if it exists
+                        if (targetJar.exists()) {
+                            boolean deleted = targetJar.delete();
+                            if (deleted) {
+                                System.out.println("Deleted existing EuphoriaPatcher jar from mods folder");
+                            } else {
+                                System.out.println("Failed to delete existing EuphoriaPatcher jar - attempting copy anyway");
+                            }
+                        }
+                        
+                        Files.copy(installerJar.toPath(), targetJar.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
+                                                
+                        System.out.println("Successfully copied EuphoriaPatcher to mods folder");
+                    } else {
+                        System.out.println("Not copying installer - not running from jar file");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Failed to copy EuphoriaPatcher jar to mods folder: " + e.getMessage());
+                    e.printStackTrace();
+                    // Non-critical error, continue with installation
+                }
 
                 String loaderSt = installAsMod ? "fabric-loader" : "iris-fabric-loader";
-                String msg = "Successfully installed Iris, Sodium, and "
-                             + finalShaderName +"."+
+                String msg = "Successfully installed Iris, Sodium, EuphoriaPatcher and "
+                             + finalShaderName +"." +
                              "\nYou can run the game by selecting "+loaderSt+" in your Minecraft launcher.";
                 JOptionPane.showMessageDialog(this,
                         msg, "Installation Complete!", JOptionPane.PLAIN_MESSAGE, new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("green_tick.png"))));
@@ -967,10 +1013,10 @@ public class NewInstaller extends JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    public static javax.swing.JButton directoryName;
+    private static javax.swing.JButton directoryName;
     private javax.swing.JLabel gameVersionLabel;
     private javax.swing.JComboBox<String> gameVersionList;
-    public javax.swing.JLabel installationDirectory;
+    private javax.swing.JLabel installationDirectory;
     private javax.swing.JRadioButton fabricType;
     private javax.swing.JRadioButton standaloneType;
     private javax.swing.JButton installButton;
