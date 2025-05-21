@@ -74,7 +74,6 @@ shadowJar {
 	from("LICENSE_NOTICE.txt")
 	from("LICENSE_INSTALLER.txt") {
 		rename { "LICENSE_${project.base.archivesName.get()}_installer.txt"}
-		into "installer"
 	}
 
 	// Only include necessary files

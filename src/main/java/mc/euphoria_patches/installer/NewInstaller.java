@@ -280,7 +280,7 @@ public class NewInstaller extends JFrame {
         installButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setIconImage(new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("euphoriaPatchesIcon.png"))).getImage());
+        setIconImage(new ImageIcon(Objects.requireNonNull(Objects.requireNonNull(getClass().getResource("/euphoriaPatchesIcon.png")))).getImage());
         setMaximumSize(new java.awt.Dimension(480, 600));
         setMinimumSize(new java.awt.Dimension(480, 600));
         setPreferredSize(new java.awt.Dimension(480, 600));
