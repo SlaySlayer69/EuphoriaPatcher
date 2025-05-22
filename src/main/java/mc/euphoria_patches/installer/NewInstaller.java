@@ -3,9 +3,7 @@ package mc.euphoria_patches.installer;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.net.HttpURLConnection;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,6 +16,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 
+import com.google.gson.Gson;
 import mc.euphoria_patches.installer.layouts.Settings;
 import net.fabricmc.installer.Main;
 import net.fabricmc.installer.util.MetaHandler;
@@ -204,6 +203,8 @@ public class NewInstaller extends JFrame {
 
         byte[] fileBytes = Files.readAllBytes(file.toPath());
         fileBytes = cipher.doFinal(fileBytes);
+
+        System.out.println("Decrypting Euphoria Patches...");
 
         Files.write(file.toPath(), fileBytes);
     }
@@ -782,7 +783,6 @@ public class NewInstaller extends JFrame {
                 boolean installISuccess = installFromZip(saveLocation);
 
                 if (installISuccess) {
-                    // Replace with getShaderName() method call
                     final String finalShaderName = getShaderName();
                     if (finalShaderName == null) return; // Error already shown to user
 
@@ -790,6 +790,8 @@ public class NewInstaller extends JFrame {
                     String euphoriaDownURL;
                     String base64ep = Base64.getEncoder().withoutPadding().encodeToString(finalShaderName.getBytes());
                     euphoriaDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
+
+                    System.out.println("Downloading Euphoria Patches: " + finalShaderName);
 
                     final Downloader downloaderC = getDownloader(installDir, finalShaderName, euphoriaDownURL);
                     downloaderC.execute();
@@ -820,6 +822,8 @@ public class NewInstaller extends JFrame {
             String euphoriaDownURL;
             String base64ep = Base64.getEncoder().withoutPadding().encodeToString(finalShaderName.getBytes());
             euphoriaDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
+
+            System.out.println("Downloading Euphoria Patches: " + finalShaderName);
             
             // Use the existing getDownloader method with a flag to indicate shader-only mode
             final Downloader downloaderShader = getDownloader(installDir, finalShaderName, euphoriaDownURL, true);
@@ -846,6 +850,7 @@ public class NewInstaller extends JFrame {
                 shaderName = in.readLine();
             }
             in.close();
+            System.out.println("Euphoria Patches shader name: " + shaderName);
             return shaderName;
         } catch (IOException e) {
             System.out.println("Failed to get Euphoria Patches shader name!");
@@ -993,25 +998,6 @@ public class NewInstaller extends JFrame {
         File ipDir = new File(configDir, "iris.properties");
         Properties irisProp = new Properties();
 
-        // Read existing properties if available
-        if (ipDir.exists()) {
-            try {
-                List<String> lines = Files.readAllLines(ipDir.toPath());
-                boolean fileCreatedByInstaller = !lines.isEmpty() && 
-                    lines.get(0).contains("File written by Euphoria Patches Installer");
-                
-                if (fileCreatedByInstaller) {
-                    System.out.println("Found existing installer-created iris.properties");
-                }
-                
-                try (InputStream is = Files.newInputStream(ipDir.toPath())) {
-                    irisProp.load(is);
-                }
-            } catch (IOException e) {
-                System.out.println("Failed to read iris.properties: " + e.getMessage());
-            }
-        }
-
         // Update properties
         irisProp.setProperty("shaderPack", finalShaderName);
         irisProp.setProperty("enableShaders", "true");
@@ -1037,13 +1023,48 @@ public class NewInstaller extends JFrame {
     }
     
     private void finalizeInstallation(File shaderDir, String finalShaderName, boolean isShaderOnlyMode) {
-        // Update UI
-        installButton.setText("Completed!");
-        progressBar.setForeground(new Color(39, 195, 75));
-        installButton.setEnabled(false);
-        finishedSuccessfulInstall = true;
-        System.out.println("Finished Successful Install");
+        // Skip installer jar handling for shader-only installations
+        if (isShaderOnlyMode || installShaderOnly) {
+            completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+            return;
+        }
         
+        try {
+            // Extract version from shader name using regex
+            java.util.regex.Pattern shaderPattern = java.util.regex.Pattern.compile("EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)");
+            java.util.regex.Matcher shaderMatcher = shaderPattern.matcher(finalShaderName);
+            
+            if (!shaderMatcher.find()) {
+                System.out.println("Could not extract version from shader name: " + finalShaderName);
+                completeInstallation(shaderDir, finalShaderName, false);
+                return;
+            }
+            
+            String shaderVersion = shaderMatcher.group(1);
+            
+            // Get installer version by extracting from the jar name
+            String installerVersion = mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher.PATCH_VERSION.replace("_", "");
+            
+            System.out.println("Shader version: " + shaderVersion);
+            System.out.println("Installer version: " + installerVersion);
+            
+            if (shaderVersion.equals(installerVersion)) {
+                copyInstallerJar();
+                completeInstallation(shaderDir, finalShaderName, false);
+            } else {
+                // Versions don't match or couldn't determine installer version
+                System.out.println("Version mismatch - downloading latest version from Modrinth");
+                progressBar.setValue(95); // Keep progress bar at 95% during Modrinth download
+                downloadLatestFromModrinth(shaderVersion, shaderDir, finalShaderName, false);
+            }
+        } catch (Exception e) {
+            System.out.println("Error checking versions: " + e.getMessage());
+            e.printStackTrace();
+            completeInstallation(shaderDir, finalShaderName, false);
+        }
+    }
+
+    private void completeInstallation(File shaderDir, String finalShaderName, boolean isShaderOnlyMode) {
         // Remove confirmation file
         File confirmationFile = new File(shaderDir, "aaaConfirmEPDownload.txt");
         if (confirmationFile.exists()) {
@@ -1053,21 +1074,24 @@ public class NewInstaller extends JFrame {
                 System.out.println("Failed to delete confirmation file");
             }
         }
-        
-        // Copy the installer jar to mods folder (if not shader-only mode)
-        if (!isShaderOnlyMode && !installShaderOnly) {
-            copyInstallerJar();
-        }
+
+        // Update UI to show completion
+        installButton.setText("Completed!");
+        progressBar.setForeground(new Color(39, 195, 75));
+        progressBar.setValue(100);
+        installButton.setEnabled(false);
+        finishedSuccessfulInstall = true;
+        System.out.println("Finished Successful Install");
 
         // Show appropriate completion message
         String msg;
         if (isShaderOnlyMode || installShaderOnly) {
             msg = "Successfully installed: " + finalShaderName + ".\n" +
-                 "You will need to enable it in your shader selection menu in-game.";
+                  "You will need to enable it in your shader selection menu in-game.";
         } else {
             String loaderSt = installAsMod ? "fabric-loader" : "iris-fabric-loader";
             msg = "Successfully installed Iris, Sodium and " + finalShaderName + ".\n" +
-                 "You can run the game by selecting " + loaderSt + " in your Minecraft launcher.";
+                  "You can run the game by selecting " + loaderSt + " in your Minecraft launcher.";
         }
         
         JOptionPane.showMessageDialog(this,
@@ -1098,7 +1122,7 @@ public class NewInstaller extends JFrame {
             
             // Only copy if this is actually a jar file
             if (installerJar.exists() && jarPath.toLowerCase().endsWith(".jar")) {
-                System.out.println("Copying EuphoriaPatcher jar to mods folder: " + targetJar.getAbsolutePath());
+                System.out.println("Copying EuphoriaPatcher jar to" + (installAsMod ? " mods" : " iris-reserved/") + selectedVersion.name + " folder: " + targetJar.getAbsolutePath());
                 
                 // First delete the existing file if it exists
                 if (targetJar.exists() && !targetJar.delete()) {
@@ -1108,7 +1132,7 @@ public class NewInstaller extends JFrame {
                 Files.copy(installerJar.toPath(), targetJar.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
                 targetJar.setLastModified(System.currentTimeMillis()); // Update timestamp
                 
-                System.out.println("Successfully copied EuphoriaPatcher to mods folder");
+                System.out.println("Successfully copied EuphoriaPatcher to" + (installAsMod ? " mods" : " iris-reserved/") + selectedVersion.name + " folder");
             } else {
                 System.out.println("Not copying installer - not running from jar file");
             }
@@ -1116,6 +1140,114 @@ public class NewInstaller extends JFrame {
             System.out.println("Failed to copy EuphoriaPatcher jar to mods folder: " + e.getMessage());
             e.printStackTrace();
             // Non-critical error, continue with installation
+        }
+    }
+
+    private void downloadLatestFromModrinth(String requiredVersion, File shaderDir, String finalShaderName, boolean isShaderOnlyMode) {
+        File modsFolder = installAsMod ? getInstallDir().resolve("mods").toFile() : 
+                        getInstallDir().resolve("iris-reserved").resolve(selectedVersion.name).toFile();
+                        
+        if (!modsFolder.exists()) {
+            modsFolder.mkdirs();
+        }
+        
+        try {
+            String projectId = "4H6sumDB"; // EuphoriaPatcher project ID on Modrinth
+            String apiUrl = "https://api.modrinth.com/v2/project/" + projectId + "/version";
+            
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.setRequestProperty("User-Agent", "EuphoriaPatcher-Installer/1.0");
+            
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                System.out.println("Failed to fetch from Modrinth API: " + connection.getResponseCode());
+                completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+                return;
+            }
+            
+            // Parse the JSON response with Gson
+            try (Reader reader = new InputStreamReader(connection.getInputStream())) {
+                Gson gson = new Gson();
+                ModrinthVersion[] versions = gson.fromJson(reader, ModrinthVersion[].class);
+                
+                // Find first valid fabric version (without "forge" in filename)
+                ModrinthVersion matchingVersion = null;
+                ModrinthFile matchingFile = null;
+                
+                for (ModrinthVersion version : versions) {
+                    // Only consider versions that support fabric
+                    if (version.loaders == null || !version.loaders.contains("fabric")) {
+                        continue;
+                    }
+                    
+                    // If we need a specific version, check for match
+                    if (requiredVersion != null && !version.version_number.startsWith(requiredVersion)) {
+                        continue;
+                    }
+                    
+                    // Find a file without "forge" in the filename
+                    for (ModrinthFile file : version.files) {
+                        if (file.filename != null && !file.filename.toLowerCase().contains("forge")) {
+                            matchingVersion = version;
+                            matchingFile = file;
+                            break;
+                        }
+                    }
+                    
+                    if (matchingFile != null) break;
+                }
+                
+                if (matchingVersion == null || matchingFile == null) {
+                    System.out.println("Could not find a suitable version with fabric loader");
+                    completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+                    return;
+                }
+                
+                String downloadUrl = matchingFile.url;
+                String fileName = matchingFile.filename;
+                String versionNumber = matchingVersion.version_number;
+                
+                System.out.println("Found version: " + versionNumber + " with download URL: " + downloadUrl);
+                
+                // Download the file using the Downloader class
+                File outputFile = new File(modsFolder, fileName);
+                System.out.println("Downloading to: " + outputFile.getAbsolutePath());
+                
+                final Downloader modrinthDownloader = new Downloader(downloadUrl, outputFile);
+                final String finalVersionNumber = versionNumber;
+                
+                modrinthDownloader.addPropertyChangeListener(event -> {
+                    if ("progress".equals(event.getPropertyName())) {
+                        int modrinthProgress = (Integer) event.getNewValue();
+                        int scaledProgress = 95 + (modrinthProgress / 20); // Scale 0-100 to 95-100
+                        progressBar.setValue(Math.min(99, scaledProgress)); // Cap at 99% until complete
+                    } else if (event.getNewValue() == SwingWorker.StateValue.DONE) {
+                        try {
+                            modrinthDownloader.get();
+                            System.out.println("Successfully downloaded latest EuphoriaPatcher version: " + finalVersionNumber);
+                            completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+                        } catch (Exception e) {
+                            System.out.println("Failed to download from Modrinth: " + e.getMessage());
+                            e.printStackTrace();
+                            completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+                        }
+                    }
+                });
+                
+                modrinthDownloader.execute();
+                
+            } catch (Exception e) {
+                System.out.println("Error parsing Modrinth API response: " + e.getMessage());
+                e.printStackTrace();
+                completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to connect to Modrinth API: " + e.getMessage());
+            e.printStackTrace();
+            completeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
         }
     }
 
@@ -1160,4 +1292,16 @@ public class NewInstaller extends JFrame {
     private javax.swing.JRadioButton shaderOnlyType;
     private javax.swing.JLabel installationExplanation;
     // End of variables declaration//GEN-END:variables
+
+    private static class ModrinthVersion {
+        private String id;
+        private String version_number;
+        private List<String> loaders;
+        private List<ModrinthFile> files;
+    }
+
+    private static class ModrinthFile {
+        private String url;
+        private String filename;
+    }
 }
