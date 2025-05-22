@@ -33,6 +33,7 @@ public class NewInstaller extends JFrame {
 
     static boolean dark = false;
     private static boolean installAsMod;
+    private static boolean installShaderOnly;
     private boolean styleIsUnbound = true;
     private String outdatedPlaceholder = "Warning: Iris shader loader has ended support for <version>.";
     private String snapshotPlaceholder = "Warning: <version> is a snapshot build and may";
@@ -272,12 +273,14 @@ public class NewInstaller extends JFrame {
         fabricType = new javax.swing.JRadioButton();
         unboundType = new javax.swing.JRadioButton();
         reimaginedType = new javax.swing.JRadioButton();
+        shaderOnlyType = new javax.swing.JRadioButton();
         styleType = new javax.swing.ButtonGroup();
         visualStyleContainer = new javax.swing.JPanel();
         gameVersionList = new javax.swing.JComboBox<>();
         directoryName = new javax.swing.JButton();
         progressBar = new javax.swing.JProgressBar();
         installButton = new javax.swing.JButton();
+        installationExplanation = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setIconImage(new ImageIcon(Objects.requireNonNull(Objects.requireNonNull(getClass().getResource("/euphoriaPatchesIcon.png")))).getImage());
@@ -492,7 +495,7 @@ public class NewInstaller extends JFrame {
         gridBagConstraints.insets = new java.awt.Insets(20, 0, 0, 0);
         settings.add(installationType, gridBagConstraints);
 
-        installationTypesContainer.setLayout(new java.awt.BorderLayout(10, 0));
+        installationTypesContainer.setLayout(new java.awt.GridLayout(3, 1, 0, 5));
         installType.add(standaloneType);
         standaloneType.setFont(standaloneType.getFont().deriveFont((float)16));
         standaloneType.setSelected(true);
@@ -503,7 +506,7 @@ public class NewInstaller extends JFrame {
                 standaloneTypeMouseClicked(evt);
             }
         });
-        installationTypesContainer.add(standaloneType, java.awt.BorderLayout.LINE_START);
+        installationTypesContainer.add(standaloneType);
 
         installType.add(fabricType);
         fabricType.setFont(fabricType.getFont().deriveFont((float)16));
@@ -514,12 +517,54 @@ public class NewInstaller extends JFrame {
                 fabricTypeMouseClicked(evt);
             }
         });
-        installationTypesContainer.add(fabricType, java.awt.BorderLayout.LINE_END);
+        installationTypesContainer.add(fabricType);
+
+        // Add new shader-only option
+        installType.add(shaderOnlyType);
+        shaderOnlyType.setFont(shaderOnlyType.getFont().deriveFont((float)16));
+        shaderOnlyType.setText("Shader Only");
+        shaderOnlyType.setToolTipText("Only install the Euphoria Patches shader without Iris or Fabric. Use this if you already have a Shader Loader Mod installed.");
+        shaderOnlyType.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                shaderOnlyTypeMouseClicked(evt);
+            }
+        });
+        installationTypesContainer.add(shaderOnlyType);
+
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
         settings.add(installationTypesContainer, gridBagConstraints);
+
+        installationExplanation = new javax.swing.JLabel();
+        installationExplanation.setFont(installationExplanation.getFont().deriveFont((float)16));
+        installationExplanation.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        installationExplanation.setText("<html><center>Recommended one-click solution for shader installation</center></html>");
+        installationExplanation.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 5; // Place it below the radio buttons
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        settings.add(installationExplanation, gridBagConstraints);
+
+        // Update existing radio button listeners to also update the explanation text
+        standaloneType.addActionListener(e -> {
+            standaloneTypeMouseClicked(null);
+            installationExplanation.setText("<html><center>Recommended one-click solution for shader installation</center></html>");
+        });
+        
+        fabricType.addActionListener(e -> {
+            fabricTypeMouseClicked(null);
+            installationExplanation.setText("<html><center>Choose this if you want to use other Fabric mods alongside shaders</center></html>");
+        });
+        
+        shaderOnlyType.addActionListener(e -> {
+            shaderOnlyTypeMouseClicked(null);
+            installationExplanation.setText("<html><center>Select if you already have a Shader Loader Mod installed such as Iris</center></html>");
+        });
 
         pack();
         setLocationRelativeTo(null);
@@ -546,11 +591,17 @@ public class NewInstaller extends JFrame {
         }
     }//GEN-LAST:event_gameVersionListItemStateChanged
 
+    public static void shaderOnlyTypeMouseClicked(java.awt.event.MouseEvent evt) {
+        installAsMod = false;
+        installShaderOnly = true;
+    }
     public static void standaloneTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_standaloneTypeMouseClicked
         installAsMod = false;
+        installShaderOnly = false;
     }//GEN-LAST:event_standaloneTypeMouseClicked
     public static void fabricTypeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_fabricTypeMouseClicked
         installAsMod = true;
+        installShaderOnly = false;
     }//GEN-LAST:event_fabricTypeMouseClicked
 
     private void unboundStyleMouseClicked(java.awt.event.MouseEvent evt) {
@@ -589,6 +640,12 @@ public class NewInstaller extends JFrame {
         installButton.setEnabled(false);
         progressBar.setForeground(new Color(199, 21, 133));
         progressBar.setValue(0);
+
+        // For shader-only installation, skip launcher integration and mod installation
+        if (installShaderOnly) {
+            downloadShaderOnly();
+            return;
+        }
 
         String loaderName = installAsMod ? "fabric-loader" : "iris-fabric-loader";
 
@@ -725,40 +782,16 @@ public class NewInstaller extends JFrame {
                 boolean installISuccess = installFromZip(saveLocation);
 
                 if (installISuccess) {
-                    final String finalShaderName;
-                    try {
-                        String url;
-                        url = "https://raw.githubusercontent.com/EuphoriaPatches/Complementary-Installer-Files/main/epLatest.txt";
-                        BufferedReader in = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+                    // Replace with getShaderName() method call
+                    final String finalShaderName = getShaderName();
+                    if (finalShaderName == null) return; // Error already shown to user
 
-                        String shaderName = in.readLine();
-                        if (styleIsUnbound) {
-                            shaderName = in.readLine();
-                        }
-                        finalShaderName = shaderName;
-
-                        in.close();
-                    } catch (IOException e) {
-                        System.out.println("Failed to download Euphoria Patches!");
-                        e.getCause().printStackTrace();
-
-                        String msg = String.format("An error occurred while attempting to download Euphoria Patches files, please check your internet connection and try again! \nError: (Code C1) %s",
-                                e.getCause().toString());
-                        installButton.setEnabled(true);
-                        installButton.setText("Download Failed!");
-                        progressBar.setForeground(new Color(204, 0, 0));
-                        progressBar.setValue(100);
-                        JOptionPane.showMessageDialog(this,
-                                msg, "Download Failed!", JOptionPane.ERROR_MESSAGE, null);
-                        return;
-                    }
-
+                    // Create euphoriaDownURL 
                     String euphoriaDownURL;
                     String base64ep = Base64.getEncoder().withoutPadding().encodeToString(finalShaderName.getBytes());
                     euphoriaDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
 
                     final Downloader downloaderC = getDownloader(installDir, finalShaderName, euphoriaDownURL);
-
                     downloaderC.execute();
                 } else {
                     installButton.setText("Failed!");
@@ -772,7 +805,69 @@ public class NewInstaller extends JFrame {
         downloaderI.execute();
     }//GEN-LAST:event_installButtonMouseClicked
 
+    private void downloadShaderOnly() {
+        try {
+            File installDir = getInstallDir().toFile();
+            if (!installDir.exists() || !installDir.isDirectory()) {
+                installDir.mkdir();
+            }
+            
+            // Get shader name
+            final String finalShaderName = getShaderName();
+            if (finalShaderName == null) return; // Error already shown to user
+            
+            // Set up download for the shader
+            String euphoriaDownURL;
+            String base64ep = Base64.getEncoder().withoutPadding().encodeToString(finalShaderName.getBytes());
+            euphoriaDownURL = "https://github.com/EuphoriaPatches/Complementary-Installer-Files/releases/download/release/" + base64ep;
+            
+            // Use the existing getDownloader method with a flag to indicate shader-only mode
+            final Downloader downloaderShader = getDownloader(installDir, finalShaderName, euphoriaDownURL, true);
+            
+            // Start the download
+            downloaderShader.execute();
+            
+        } catch (Exception e) {
+            System.out.println("Error in shader-only installation: " + e.getMessage());
+            e.printStackTrace();
+            installButton.setEnabled(true);
+            installButton.setText("Install");
+            progressBar.setValue(0);
+        }
+    }
+
+    private String getShaderName() {
+        try {
+            String url = "https://raw.githubusercontent.com/EuphoriaPatches/Complementary-Installer-Files/main/epLatest.txt";
+            BufferedReader in = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+            
+            String shaderName = in.readLine();
+            if (styleIsUnbound) {
+                shaderName = in.readLine();
+            }
+            in.close();
+            return shaderName;
+        } catch (IOException e) {
+            System.out.println("Failed to get Euphoria Patches shader name!");
+            e.printStackTrace();
+            
+            String msg = String.format("An error occurred while attempting to get Euphoria Patches shader name, please check your internet connection and try again! \nError: %s",
+                    e.getMessage());
+            installButton.setEnabled(true);
+            installButton.setText("Download Failed!");
+            progressBar.setForeground(new Color(204, 0, 0));
+            progressBar.setValue(100);
+            JOptionPane.showMessageDialog(this,
+                    msg, "Download Failed!", JOptionPane.ERROR_MESSAGE, null);
+            return null;
+        }
+    }
+
     private Downloader getDownloader(File installDir, String finalShaderName, String euphoriaDownURL) {
+        return getDownloader(installDir, finalShaderName, euphoriaDownURL, false);
+    }
+
+    private Downloader getDownloader(File installDir, String finalShaderName, String euphoriaDownURL, boolean isShaderOnlyMode) {
         // Add timeout settings for all connections
         System.setProperty("sun.net.client.defaultConnectTimeout", "5000");
         System.setProperty("sun.net.client.defaultReadTimeout", "5000");
@@ -809,7 +904,12 @@ public class NewInstaller extends JFrame {
         final Downloader downloaderC = new Downloader(euphoriaDownURL, shaderLoc);
         downloaderC.addPropertyChangeListener(eventC -> {
             if ("progress".equals(eventC.getPropertyName())) {
-                progressBar.setValue(50 + ((Integer) eventC.getNewValue()) / 2);
+                // Set progress differently based on mode
+                if (isShaderOnlyMode) {
+                    progressBar.setValue((Integer) eventC.getNewValue());
+                } else {
+                    progressBar.setValue(50 + ((Integer) eventC.getNewValue()) / 2);
+                }
             } else if (eventC.getNewValue() == SwingWorker.StateValue.DONE) {
                 try {
                     downloaderC.get();
@@ -820,168 +920,31 @@ public class NewInstaller extends JFrame {
                     
                     decryptEuphoriaPatches(shaderLoc);
                 } catch (InterruptedException | ExecutionException e) {
-                    System.out.println("Failed to download Euphoria Patches!");
-                    e.getCause().printStackTrace();
-
-                    String msg;
-                    if (e.getCause() instanceof java.net.UnknownHostException || 
-                        e.getCause() instanceof java.net.SocketTimeoutException) {
-                        msg = "Internet connection lost while downloading shader pack. Please check your connection and try again.";
-                    } else {
-                        msg = String.format("An error occurred while attempting to download Euphoria Patches files, please check your internet connection and try again! \nError: (Code C2) %s",
-                                e.getCause().toString());
-                    }
-                    installButton.setEnabled(true);
-                    installButton.setText("Download Failed!");
-                    progressBar.setForeground(new Color(204, 0, 0));
-                    progressBar.setValue(100);
-                    JOptionPane.showMessageDialog(this,
-                            msg, "Download Failed!", JOptionPane.ERROR_MESSAGE, null);
+                    handleDownloadError(e, "shader pack");
                     return;
                 } catch (Exception e) {
                     System.out.println("Failed to download Euphoria Patches! (error kind 2)");
                     e.printStackTrace();
                     
-                    // Check if it's a network error
-                    if (e instanceof java.net.UnknownHostException || 
-                        e instanceof java.net.SocketTimeoutException ||
-                        !isInternetAvailable()) {
-                        
-                        if (showNetworkErrorDialog("processing shader pack")) {
-                            // User wants to retry - restart download
-                            installButtonMouseClicked(null);
-                        }
-                        return;
+                    if (isNetworkError(e) && showNetworkErrorDialog("processing shader pack")) {
+                        // User wants to retry - restart download
+                        installButtonMouseClicked(null);
                     }
+                    return;
                 }
 
-                File configDir = new File(installDir, "config");
-                if (!configDir.exists() || !configDir.isDirectory()) {
-                    configDir.mkdir();
-                }
-                File ipDir = new File(configDir, "iris.properties");
-                Properties irisProp = new Properties();
-
-                // Check if the file already exists and was created by our installer
-                boolean fileCreatedByInstaller = false;
-                if (ipDir.exists()) {
-                    try {
-                        // First read the file as text to check for our installer comment
-                        List<String> lines = Files.readAllLines(ipDir.toPath());
-                        if (!lines.isEmpty() && lines.get(0).contains("File written by Euphoria Patches Installer")) {
-                            fileCreatedByInstaller = true;
-                            System.out.println("Found existing installer-created iris.properties");
-                        }
-                        
-                        // Load the properties
-                        try (InputStream is = Files.newInputStream(ipDir.toPath())) {
-                            irisProp.load(is);
-                        }
-                    } catch (IOException e) {
-                        System.out.println("Failed to read iris.properties: " + e.getMessage());
-                    }
+                // For full installation mode, update configuration
+                if (!isShaderOnlyMode) {
+                    updateIrisConfiguration(installDir, finalShaderName);
                 }
 
-                // Update the properties
-                irisProp.setProperty("shaderPack", finalShaderName);
-                irisProp.setProperty("enableShaders", "true");
-
-                // Generate the correct folder path comment
-                String folderPath = installAsMod ? "mods" : "iris-reserved/" + selectedVersion.name;
-                String comment = "Iris Properties";
-
-                // Write the properties back to the file
-                try (OutputStream os = Files.newOutputStream(ipDir.toPath())) {
-                    irisProp.store(os, comment);
-                    System.out.println("Successfully wrote iris.properties");
-                } catch (IOException e) {
-                    System.out.println("Failed to write iris.properties: " + e.getMessage());
-                }
-
-                // Create a separate file with the installation information
-                File installInfoFile = new File(configDir, "installedByEPInstaller.txt");
-                try {
-                    String installInfo = "File written by Euphoria Patches Installer - in the " + folderPath + " folder";
-                    Files.write(installInfoFile.toPath(), Collections.singletonList(installInfo));
-                    System.out.println("Successfully wrote installation info file");
-                } catch (IOException e) {
-                    System.out.println("Failed to write installation info file: " + e.getMessage());
-                }
-
-                installButton.setText("Completed!");
-                progressBar.setForeground(new Color(39, 195, 75));
-                installButton.setEnabled(false);
-                finishedSuccessfulInstall = true;
-                System.out.println("Finished Successful Install");
-                
-                // Delete confirmation file if installation was successful
-                File confirmationFile = new File(shaderDir, "aaaConfirmEPDownload.txt");
-                if (confirmationFile.exists()) {
-                    boolean deleted = confirmationFile.delete();
-                    if (deleted) {
-                        System.out.println("Confirmation file deleted successfully");
-                    } else {
-                        System.out.println("Failed to delete confirmation file");
-                    }
-                }
-                
-                // Copy the installer jar to the mods folder
-                try {
-                    File modsFolder = installAsMod ? getInstallDir().resolve("mods").toFile() : 
-                                    getInstallDir().resolve("iris-reserved").resolve(selectedVersion.name).toFile();
-                    
-                    // Get the path to the current jar file (the installer)
-                    String jarPath = NewInstaller.class.getProtectionDomain()
-                                    .getCodeSource()
-                                    .getLocation()
-                                    .toURI()
-                                    .getPath();
-                                    
-                    // On Windows, remove leading slash if present
-                    if (jarPath.startsWith("/") && System.getProperty("os.name").toLowerCase().contains("win")) {
-                        jarPath = jarPath.substring(1);
-                    }
-                    
-                    File installerJar = new File(jarPath);
-                    File targetJar = new File(modsFolder, installerJar.getName());
-                    
-                    // Only copy if this is actually a jar file and not running from an IDE
-                    if (installerJar.exists() && jarPath.toLowerCase().endsWith(".jar")) {
-                        System.out.println("Copying EuphoriaPatcher jar to mods folder: " + targetJar.getAbsolutePath());
-                        
-                        // First delete the existing file if it exists
-                        if (targetJar.exists()) {
-                            boolean deleted = targetJar.delete();
-                            if (deleted) {
-                                System.out.println("Deleted existing EuphoriaPatcher jar from mods folder");
-                            } else {
-                                System.out.println("Failed to delete existing EuphoriaPatcher jar - attempting copy anyway");
-                            }
-                        }
-                        
-                        Files.copy(installerJar.toPath(), targetJar.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
-                                                
-                        System.out.println("Successfully copied EuphoriaPatcher to mods folder");
-                    } else {
-                        System.out.println("Not copying installer - not running from jar file");
-                    }
-                } catch (Exception e) {
-                    System.out.println("Failed to copy EuphoriaPatcher jar to mods folder: " + e.getMessage());
-                    e.printStackTrace();
-                    // Non-critical error, continue with installation
-                }
-
-                String loaderSt = installAsMod ? "fabric-loader" : "iris-fabric-loader";
-                String msg = "Successfully installed Iris, Sodium, EuphoriaPatcher and "
-                             + finalShaderName +"." +
-                             "\nYou can run the game by selecting "+loaderSt+" in your Minecraft launcher.";
-                JOptionPane.showMessageDialog(this,
-                        msg, "Installation Complete!", JOptionPane.PLAIN_MESSAGE, new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("green_tick.png"))));
-                System.exit(0);
+                // Complete the installation
+                finalizeInstallation(shaderDir, finalShaderName, isShaderOnlyMode);
             }
         });
         
         try {
+            // Set timeouts via reflection
             java.lang.reflect.Field field = downloaderC.getClass().getDeclaredField("connection");
             field.setAccessible(true);
             HttpURLConnection connection = (HttpURLConnection) field.get(downloaderC);
@@ -993,6 +956,167 @@ public class NewInstaller extends JFrame {
         }
         
         return downloaderC;
+    }
+    
+    private boolean isNetworkError(Exception e) {
+        return e instanceof java.net.UnknownHostException || 
+               e instanceof java.net.SocketTimeoutException ||
+               !isInternetAvailable();
+    }
+    
+    private void handleDownloadError(Exception e, String downloadType) {
+        System.out.println("Failed to download Euphoria Patches!");
+        e.printStackTrace();
+
+        String msg;
+        if (e.getCause() instanceof java.net.UnknownHostException || 
+            e.getCause() instanceof java.net.SocketTimeoutException) {
+            msg = "Internet connection lost while downloading " + downloadType + ". Please check your connection and try again.";
+        } else {
+            msg = String.format("An error occurred while attempting to download Euphoria Patches files, please check your internet connection and try again! \nError: %s",
+                    e.getCause().toString());
+        }
+        installButton.setEnabled(true);
+        installButton.setText("Download Failed!");
+        progressBar.setForeground(new Color(204, 0, 0));
+        progressBar.setValue(100);
+        JOptionPane.showMessageDialog(this,
+                msg, "Download Failed!", JOptionPane.ERROR_MESSAGE, null);
+    }
+    
+    private void updateIrisConfiguration(File installDir, String finalShaderName) {
+        File configDir = new File(installDir, "config");
+        if (!configDir.exists() || !configDir.isDirectory()) {
+            configDir.mkdir();
+        }
+        
+        File ipDir = new File(configDir, "iris.properties");
+        Properties irisProp = new Properties();
+
+        // Read existing properties if available
+        if (ipDir.exists()) {
+            try {
+                List<String> lines = Files.readAllLines(ipDir.toPath());
+                boolean fileCreatedByInstaller = !lines.isEmpty() && 
+                    lines.get(0).contains("File written by Euphoria Patches Installer");
+                
+                if (fileCreatedByInstaller) {
+                    System.out.println("Found existing installer-created iris.properties");
+                }
+                
+                try (InputStream is = Files.newInputStream(ipDir.toPath())) {
+                    irisProp.load(is);
+                }
+            } catch (IOException e) {
+                System.out.println("Failed to read iris.properties: " + e.getMessage());
+            }
+        }
+
+        // Update properties
+        irisProp.setProperty("shaderPack", finalShaderName);
+        irisProp.setProperty("enableShaders", "true");
+        
+        // Write properties file
+        try (OutputStream os = Files.newOutputStream(ipDir.toPath())) {
+            irisProp.store(os, "Iris Properties");
+            System.out.println("Successfully wrote iris.properties");
+        } catch (IOException e) {
+            System.out.println("Failed to write iris.properties: " + e.getMessage());
+        }
+
+        // Create installation info file
+        String folderPath = installAsMod ? "mods" : "iris-reserved/" + selectedVersion.name;
+        File installInfoFile = new File(configDir, "installedByEPInstaller.txt");
+        try {
+            String installInfo = "File written by Euphoria Patches Installer - in the " + folderPath + " folder";
+            Files.write(installInfoFile.toPath(), Collections.singletonList(installInfo));
+            System.out.println("Successfully wrote installation info file");
+        } catch (IOException e) {
+            System.out.println("Failed to write installation info file: " + e.getMessage());
+        }
+    }
+    
+    private void finalizeInstallation(File shaderDir, String finalShaderName, boolean isShaderOnlyMode) {
+        // Update UI
+        installButton.setText("Completed!");
+        progressBar.setForeground(new Color(39, 195, 75));
+        installButton.setEnabled(false);
+        finishedSuccessfulInstall = true;
+        System.out.println("Finished Successful Install");
+        
+        // Remove confirmation file
+        File confirmationFile = new File(shaderDir, "aaaConfirmEPDownload.txt");
+        if (confirmationFile.exists()) {
+            if (confirmationFile.delete()) {
+                System.out.println("Confirmation file deleted successfully");
+            } else {
+                System.out.println("Failed to delete confirmation file");
+            }
+        }
+        
+        // Copy the installer jar to mods folder (if not shader-only mode)
+        if (!isShaderOnlyMode && !installShaderOnly) {
+            copyInstallerJar();
+        }
+
+        // Show appropriate completion message
+        String msg;
+        if (isShaderOnlyMode || installShaderOnly) {
+            msg = "Successfully installed: " + finalShaderName + ".\n" +
+                 "You will need to enable it in your shader selection menu in-game.";
+        } else {
+            String loaderSt = installAsMod ? "fabric-loader" : "iris-fabric-loader";
+            msg = "Successfully installed Iris, Sodium and " + finalShaderName + ".\n" +
+                 "You can run the game by selecting " + loaderSt + " in your Minecraft launcher.";
+        }
+        
+        JOptionPane.showMessageDialog(this,
+                msg, "Installation Complete!", JOptionPane.PLAIN_MESSAGE, 
+                new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("green_tick.png"))));
+        System.exit(0);
+    }
+    
+    private void copyInstallerJar() {
+        try {
+            File modsFolder = installAsMod ? getInstallDir().resolve("mods").toFile() : 
+                            getInstallDir().resolve("iris-reserved").resolve(selectedVersion.name).toFile();
+            
+            // Get the path to the current jar file
+            String jarPath = NewInstaller.class.getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI()
+                            .getPath();
+            
+            // On Windows, remove leading slash if present
+            if (jarPath.startsWith("/") && System.getProperty("os.name").toLowerCase().contains("win")) {
+                jarPath = jarPath.substring(1);
+            }
+            
+            File installerJar = new File(jarPath);
+            File targetJar = new File(modsFolder, installerJar.getName());
+            
+            // Only copy if this is actually a jar file
+            if (installerJar.exists() && jarPath.toLowerCase().endsWith(".jar")) {
+                System.out.println("Copying EuphoriaPatcher jar to mods folder: " + targetJar.getAbsolutePath());
+                
+                // First delete the existing file if it exists
+                if (targetJar.exists() && !targetJar.delete()) {
+                    System.out.println("Failed to delete existing EuphoriaPatcher jar - attempting copy anyway");
+                }
+                
+                Files.copy(installerJar.toPath(), targetJar.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
+                targetJar.setLastModified(System.currentTimeMillis()); // Update timestamp
+                
+                System.out.println("Successfully copied EuphoriaPatcher to mods folder");
+            } else {
+                System.out.println("Not copying installer - not running from jar file");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to copy EuphoriaPatcher jar to mods folder: " + e.getMessage());
+            e.printStackTrace();
+            // Non-critical error, continue with installation
+        }
     }
 
     public static void openURL(URI uri) {
@@ -1033,5 +1157,7 @@ public class NewInstaller extends JFrame {
     private javax.swing.JLabel outdatedText2;
     private javax.swing.JButton advancedSettingsButton;
     private javax.swing.JProgressBar progressBar;
+    private javax.swing.JRadioButton shaderOnlyType;
+    private javax.swing.JLabel installationExplanation;
     // End of variables declaration//GEN-END:variables
 }

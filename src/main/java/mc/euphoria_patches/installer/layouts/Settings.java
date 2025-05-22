@@ -13,9 +13,11 @@ public class Settings extends JFrame {
         super("Euphoria Patches Installer Settings");
 
         setIconImage(new ImageIcon(Objects.requireNonNull(Utils.class.getClassLoader().getResource("euphoriaPatchesIcon.png"))).getImage());
-        setMaximumSize(new Dimension(400, 360));
-        setMinimumSize(new Dimension(400, 360));
-        setPreferredSize(new Dimension(400, 360));
+        
+        // Increase height to accommodate vertical radio buttons
+        setMaximumSize(new Dimension(400, 460));
+        setMinimumSize(new Dimension(400, 460));
+        setPreferredSize(new Dimension(400, 460));
         setResizable(false);
         getContentPane().setLayout(new GridBagLayout());
 

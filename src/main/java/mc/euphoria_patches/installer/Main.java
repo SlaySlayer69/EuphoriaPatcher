@@ -31,7 +31,7 @@ public class Main {
                 UIManager.put("Panel.background", new Color(24, 24, 30));
                 UIManager.put("ComboBox.background", new Color(45, 45, 45));
                 UIManager.put("TextField.background", new Color(45, 45, 45));
-                UIManager.put("Button.background", new Color(60, 60, 60));
+                UIManager.put("Button.background", new Color(50, 50, 50));
                 // Set darker background for the entire window
                 UIManager.put("@background", new Color(30, 30, 30));
             }
