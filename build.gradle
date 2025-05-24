@@ -45,9 +45,6 @@ dependencies {
 	shade 'org.apache.commons:commons-compress:1.21'
 	shade 'commons-io:commons-io:2.11.0'
 	shade 'commons-codec:commons-codec:1.15'
-
-	shade "com.formdev:flatlaf:1.6.1"
-	shade "net.fabricmc:fabric-installer:1.0.1"
 }
 
 // Disable the default jar task
@@ -65,15 +62,10 @@ shadowJar {
 	relocate 'org.apache.commons', 'mc.euphoria_patches.shadow.org.apache.commons'
 	relocate 'io.sigpipe.jbsdiff', 'mc.euphoria_patches.shadow.io.sigpipe.jbsdiff'
 	relocate 'com.google.gson', 'mc.euphoria_patches.shadow.com.google.gson'
-	relocate 'net.fabricmc.fabric-installer', 'mc.euphoria_patches.shadow.net.fabricmc.fabric-installer'
 	
 	// Include license file
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}.txt"}
-	}
-	from("LICENSE_NOTICE.txt")
-	from("LICENSE_INSTALLER.txt") {
-		rename { "LICENSE_${project.base.archivesName.get()}_installer.txt"}
 	}
 
 	// Only include necessary files
@@ -82,9 +74,7 @@ shadowJar {
 	exclude 'META-INF/*.DSA'
 	exclude 'META-INF/*.RSA'
 
-	minimize {
-		exclude(dependency('com.formdev:flatlaf:.*'))
-	}
+	minimize()
 
 	// Force the task to always run and not be UP-TO-DATE
 	outputs.upToDateWhen { false }
