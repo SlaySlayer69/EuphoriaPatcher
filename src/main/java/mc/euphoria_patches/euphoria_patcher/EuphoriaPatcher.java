@@ -69,10 +69,9 @@ public class EuphoriaPatcher {
         loggerInstance = new EuphoriaLogger();
         
         loggerInstance.checkErrorLogFileAndAddSeparator();
-        
+        modDirectory = determineModsDirectory();
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
-        modDirectory = determineModsDirectory();
 
         if (doPopUpLogging) loggerInstance.checkAndSetupSodiumLogging();
 
@@ -187,7 +186,7 @@ public class EuphoriaPatcher {
         Path defaultModsDir = shaderpacks.getParent().resolve("mods");
 
         // Check if the installation info file exists
-        Path installInfoPath = configDirectory.resolve("installedByEPInstaller.txt");
+        Path installInfoPath = configDirectory.resolve("installedByCompInstaller.txt");
         if (!Files.exists(installInfoPath)) {
             debugLog("Installation info file not found, using default mods directory");
             return defaultModsDir;
