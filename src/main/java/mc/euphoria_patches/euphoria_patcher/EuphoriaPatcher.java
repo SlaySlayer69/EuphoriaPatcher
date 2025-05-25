@@ -67,10 +67,10 @@ public class EuphoriaPatcher {
         
         // Initialize the logger
         loggerInstance = new EuphoriaLogger();
+        loggerInstance.checkErrorLogFileAndAddSeparator();
 
         configStuff();
-        
-        loggerInstance.checkErrorLogFileAndAddSeparator();
+
         modDirectory = determineModsDirectory();
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
 
