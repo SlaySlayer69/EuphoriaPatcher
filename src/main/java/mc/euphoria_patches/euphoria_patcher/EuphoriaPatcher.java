@@ -38,7 +38,7 @@ public class EuphoriaPatcher {
     public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
     public static Path configDirectory = ModLoaderSpecifics.configDirectory;
     public static Path mainIntellijDir = shaderpacks.getParent().getParent();
-    public static Path modDirectory = shaderpacks.getParent().resolve("mods");;
+    public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
     // Config Options
     public static boolean doPopUpLogging = true;
