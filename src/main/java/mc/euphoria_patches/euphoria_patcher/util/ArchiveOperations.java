@@ -6,6 +6,8 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class ArchiveOperations {
 
@@ -44,27 +46,26 @@ public class ArchiveOperations {
         }
     }
 
-    public static boolean verifyBaseArchive(Path baseArchived) {
+    public static boolean verifyBaseArchive(Path baseArchived, String originalFileName) {
         try {
-            debugLog("Verifying archive: " + baseArchived.getFileName());
+            String fileName = baseArchived.getFileName().toString();
+            debugLog("Verifying archive: " + fileName);
+            
             if (EuphoriaPatcher.isDevFunc()) {
                 long fileSize = Files.size(baseArchived);
-                EuphoriaPatcher.log(0, "Archive Name: " +  baseArchived.getFileName() + " Archive size: " + fileSize + " bytes");
+                EuphoriaPatcher.log(0, "Archive Name: " + fileName + " Archive size: " + fileSize + " bytes");
+                String hash = calculateSHA256(baseArchived);
+                EuphoriaPatcher.log(0, "Archive SHA-256: " + hash);
             } else {
                 // Get the file size
                 long fileSize = Files.size(baseArchived);
                 debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes");
                 
-                // Define acceptable size range (±5 bytes as suggested)
-                // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
-                // boolean isValidSize = Math.abs(fileSize - expectedSize) <= 5;
-                
-                // Exact match for now
+                // First check: byte size (fast check)
                 boolean isValidSize = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
                 
                 if (!isValidSize) {
                     debugLog("Invalid archive size: verification failed");
-                    String fileName = baseArchived.getFileName().toString();
 
                     // First identify if it's a newer version
                     if (EuphoriaPatcher.isNewerShaderVersion(fileName)) {
@@ -72,7 +73,7 @@ public class ArchiveOperations {
                         String detectedVersion = EuphoriaPatcher.getVersionStringFromFileName(fileName);
                         
                         // Newer version detected - recommend mod update if available
-                        EuphoriaPatcher.log(3, 8, "Newer shader version in shaderpacks folder detected: " + fileName.replace(".tar", ""));
+                        EuphoriaPatcher.log(3, 8, "Newer shader version in shaderpacks folder detected: " + originalFileName);
                         EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + " only works with " + 
                             EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
                         
@@ -118,12 +119,9 @@ public class ArchiveOperations {
                 }
 
                 // If size matches, check if it's a test/fix version by filename
-                String fileName = baseArchived.getFileName().toString().toLowerCase();
-                if (fileName.contains("test") || fileName.contains("fix") || 
-                    fileName.contains("dev") || fileName.contains("pre")) {
-                    
-                    debugLog("Test/fix version detected: " + baseArchived.getFileName());
-                    EuphoriaPatcher.log(3, 8, "Test or development version detected: " + baseArchived.getFileName().toString().replace(".tar", ""));
+                if (isTestOrDevVersion(fileName)) {
+                    debugLog("Test/fix version detected: " + originalFileName);
+                    EuphoriaPatcher.log(3, 8, "Test or development version detected: " + originalFileName);
                     EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + " requires the official release of " + 
                         EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
                     EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL);
@@ -142,28 +140,92 @@ public class ArchiveOperations {
                     return false;
                 }
 
-                debugLog("Archive size verification passed");
+                // Second check: content hash verification (if size matches)
+                if (detectIncorrectHash(baseArchived)) {
+                    debugLog("Archive hash verification failed - file has been modified");
+                    EuphoriaPatcher.log(3, 8, "The shader file that was found in your shaderpacks folder appears to have been modified.");
+                    EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
+                    EuphoriaPatcher.log(3, 8, "Name of the potentially modified shader: " + originalFileName);
+                    EuphoriaPatcher.log(3, 8, "Please download the original " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
+                        " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
+
+                    // Start the watcher
+                    EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+                    if (instance != null) {
+                        instance.startWatcherAfterByteSizeFailure();
+                        // If we have a watcher, track this file as invalid
+                        ShaderpacksWatcher watcher = instance.getShaderpacksWatcher();
+                        if (watcher != null) {
+                            watcher.trackInvalidByteSizeFile(fileName);
+                        }
+                    }
+                    
+                    return false;
+                }
+
+                debugLog("Archive size and hash verification passed");
             }
         } catch (IOException e) {
-            debugLog("Error during archive size verification: " + e.getMessage());
-            EuphoriaPatcher.log(3, "Something went wrong during the file size verification: " + e.getMessage());
+            debugLog("Error during archive verification: " + e.getMessage());
+            EuphoriaPatcher.log(3, "Something went wrong during the file verification: " + e.getMessage());
             return false;
         }
         return true;
     }
 
+    private static String calculateSHA256(Path filePath) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] fileBytes = Files.readAllBytes(filePath);
+            byte[] hashBytes = digest.digest(fileBytes);
+            
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            
+            return hexString.toString();
+        } catch (IOException | NoSuchAlgorithmException e) {
+            debugLog("Error calculating SHA-256: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static boolean detectIncorrectHash(Path archivePath) {
+        String expectedHash = EuphoriaPatcher.BASE_TAR_SHA256;
+        
+        String actualHash = calculateSHA256(archivePath);
+        if (actualHash == null) {
+            return true;
+        }
+        
+        boolean hashMatches = expectedHash.equals(actualHash);
+        debugLog("Hash verification - Expected: " + expectedHash);
+        debugLog("Hash verification - Actual:   " + actualHash);
+        debugLog("Hash verification - Match: " + hashMatches);
+        
+        return !hashMatches;
+    }
+
+    private static boolean isTestOrDevVersion(String fileName) {
+        String fileNameLower = fileName.toLowerCase();
+        return fileNameLower.contains("test") || fileNameLower.contains("fix") || 
+            fileNameLower.contains("dev") || fileNameLower.contains("pre");
+    }
+
     public static boolean verifyBaseArchiveQuiet(Path baseArchived) {
         try {
-            debugLog("Quietly verifying archive: " + baseArchived.getFileName());
+            String fileName = baseArchived.getFileName().toString();
+            debugLog("Quietly verifying archive: " + fileName);
+            
             if (EuphoriaPatcher.isDevFunc()) {
-                debugLog("Dev mode: bypassing size verification (returning true)");
-                return true; // In dev mode, accept any file
+                debugLog("Dev mode: bypassing verification (returning true)");
             } else {
                 long fileSize = Files.size(baseArchived);
-                
-                // Define acceptable size range (±5 bytes)
-                // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
-                // return Math.abs(fileSize - expectedSize) <= 5;
                 
                 boolean isValidSize = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
                 debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes, valid: " + isValidSize);
@@ -172,15 +234,16 @@ public class ArchiveOperations {
                 }
 
                 // Check for test/fix version markers in filename
-                String fileName = baseArchived.getFileName().toString().toLowerCase();
-                if (fileName.contains("test") || fileName.contains("fix") || 
-                    fileName.contains("dev") || fileName.contains("pre")) {
-                    debugLog("Test/fix version detected in quiet check: " + baseArchived.getFileName());
+                if (isTestOrDevVersion(fileName)) {
+                    debugLog("Test/fix version detected in quiet check: " + fileName);
                     return false;
                 }
-
-                return true;
+                /*Skip hash verification in quiet mode since the byte check will rename matching files
+                These renamed files will undergo full verification through the regular process later
+                Hash verification here would incorrectly fail for renamed Unbound files since renaming appears to alter the hash
+                For quiet mode, we consider size-matched files potentially valid, pending full verification in the subsequent steps*/
             }
+            return true; // In dev mode, accept any file
         } catch (IOException e) {
             debugLog("Error during quiet archive verification: " + e.getMessage());
             return false;

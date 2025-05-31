@@ -26,6 +26,7 @@ public class EuphoriaPatcher {
     public static final String VERSION = "_r5.5.1";
     public static final String PATCH_VERSION = "_1.6.4";
 
+    public static final String BASE_TAR_SHA256 = "c1c128eb0b15657670e5b8e3884fd8a495aaec1fd4226682b18e1ade702217cf";
     public static final int BASE_TAR_SIZE = 1340416;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
@@ -893,7 +894,7 @@ public class EuphoriaPatcher {
 
         Path baseArchived = archiveBase(baseExtracted, temp, baseName);
 
-        if (!ArchiveOperations.verifyBaseArchive(baseArchived)) return false;
+        if (!ArchiveOperations.verifyBaseArchive(baseArchived, info.baseFile.getFileName().toString())) return false;
 
         boolean result = applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
 
