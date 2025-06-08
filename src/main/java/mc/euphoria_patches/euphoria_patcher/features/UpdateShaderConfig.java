@@ -149,6 +149,17 @@ public class UpdateShaderConfig {
                 }
                 
                 List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
+
+                // Apply settings conversions
+                List<String> convertedLines = ShaderSettingsConverter.convertLines(lines);
+                // Check if any settings were actually changed
+                boolean settingsChanged = !lines.equals(convertedLines);
+                lines = convertedLines;
+                
+                debugLog("Applied settings conversions to file: " + configFile.getFileName() + 
+                         (settingsChanged ? " (changes applied)" : " (no changes needed)"));
+
+                // Check for identifiers
                 List<String> newLines = new ArrayList<>();
                 boolean mainIdentifierExists = false;
                 String existingVersionIdentifier = null;
@@ -162,12 +173,13 @@ public class UpdateShaderConfig {
                     }
                 }
                 
-                // If we don't need to add the main identifier and either:
-                // 1. We don't need to add the version identifier, or
-                // 2. The version identifier already exists and matches the current version
-                if (mainIdentifierExists && 
+                // Only return early if both conditions are true:
+                // 1. No settings were changed 
+                // 2. Identifiers are already correct
+                if (!settingsChanged && mainIdentifierExists && 
                     (!addVersionIdentifier || 
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
+                    debugLog("No settings changes or identifier updates needed for: " + configFile.getFileName());
                     return; // Nothing to do
                 }
                 

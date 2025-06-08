@@ -1,0 +1,4 @@
+# Format: OriginalSetting -> NewSetting
+# Wildcards * can be used - Example: OLD_SETTING_NAME=* -> NEW_SETTING_NAME=*
+
+NETHER_NOISE=true -> NETHER_NOISE=1
