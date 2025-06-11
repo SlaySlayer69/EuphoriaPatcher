@@ -160,7 +160,6 @@ public class UpdateShaderConfig {
                          (settingsChanged ? " (changes applied)" : " (no changes needed)"));
 
                 // Check for identifiers
-                List<String> newLines = new ArrayList<>();
                 boolean mainIdentifierExists = false;
                 String existingVersionIdentifier = null;
                 
@@ -175,41 +174,47 @@ public class UpdateShaderConfig {
                 
                 // Only return early if both conditions are true:
                 // 1. No settings were changed 
-                // 2. Identifiers are already correct
+                // 2. Identifiers are already correct AND are at the top of the file after comments
                 if (!settingsChanged && mainIdentifierExists && 
                     (!addVersionIdentifier || 
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
-                    debugLog("No settings changes or identifier updates needed for: " + configFile.getFileName());
-                    return; // Nothing to do
+                    
+                    // Additional check: are identifiers at the top after comments?
+                    boolean identifiersAtTop = areIdentifiersAtTop(lines);
+                    
+                    if (identifiersAtTop) {
+                        debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
+                        return; // Nothing to do
+                    } else {
+                        debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
+                    }
                 }
                 
-                // We need to modify the file - create new content
-                if (lines.isEmpty()) {
-                    // Empty file - just add identifiers
-                    newLines.add(EUPHORIA_IDENTIFIER);
-                    if (addVersionIdentifier) {
-                        newLines.add(getVersionIdentifier());
+                // We need to modify the file - create new content with reorganized structure
+                List<String> newLines = new ArrayList<>();
+                
+                // Phase 1: Add all comment lines that start with #
+                // Usually the first line is a timestamp comment
+                for (String line : lines) {
+                    if (line.trim().startsWith("#")) {
+                        newLines.add(line);
                     }
-                } else {
-                    // Non-empty file
-                    // Add first line (timestamp/header)
-                    newLines.add(lines.get(0));
-                    
-                    // Add identifiers
-                    newLines.add(EUPHORIA_IDENTIFIER);
-                    if (addVersionIdentifier) {
-                        newLines.add(getVersionIdentifier());
-                    }
-                    
-                    // Add remaining lines, skipping any existing identifiers
-                    if (lines.size() > 1) {
-                        for (int i = 1; i < lines.size(); i++) {
-                            String line = lines.get(i);
-                            if (!line.equals(EUPHORIA_IDENTIFIER) && 
-                                !(line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
-                                newLines.add(line);
-                            }
-                        }
+                }
+                
+                // Phase 2: Add identifiers right after comments
+                newLines.add(EUPHORIA_IDENTIFIER);
+                if (addVersionIdentifier) {
+                    newLines.add(getVersionIdentifier());
+                }
+                
+                // Phase 3: Add all remaining lines except comments and identifiers
+                for (String line : lines) {
+                    String trimmed = line.trim();
+                    // Skip comments (already added), and identifiers (also already added)
+                    if (!trimmed.startsWith("#") && 
+                        !trimmed.equals(EUPHORIA_IDENTIFIER) && 
+                        !(trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
+                        newLines.add(line);
                     }
                 }
                 
@@ -242,6 +247,46 @@ public class UpdateShaderConfig {
                 break;
             }
         }
+    }
+    private static boolean areIdentifiersAtTop(List<String> lines) {
+        boolean foundMainIdentifier = false;
+        
+        for (String line : lines) {
+            String trimmed = line.trim();
+            
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            
+            if (trimmed.startsWith("#")) {
+                continue;
+            }
+            
+            // First non-comment line should be our main identifier
+            if (!foundMainIdentifier) {
+                if (trimmed.equals(EUPHORIA_IDENTIFIER)) {
+                    foundMainIdentifier = true;
+                    continue;
+                } else {
+                    // Found a non-comment, non-identifier line first
+                    return false;
+                }
+            }
+            
+            // Second line can be version identifier
+            if (foundMainIdentifier) {
+                if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                    // Found version identifier, it's correctly positioned
+                    return true;
+                } else {
+                    // After main identifier, next line should be version or settings
+                    // Either way, we've checked enough to know positioning is correct
+                    return true;
+                }
+            }
+        }
+        
+        return foundMainIdentifier; // True only if we found main identifier in the correct position
     }
 
     private static void doConfigFileCopy(Path configFilePath, boolean containsPatchName, boolean styleUnbound, boolean styleReimagined){
