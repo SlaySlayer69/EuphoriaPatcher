@@ -436,33 +436,28 @@ public class UpdateShaderConfig {
 
     private static String getEuphoriaPatchesVersionFromFile(Path file) {
         try {
-             // Read first few lines of the file to check for our flags
-            boolean foundMainIdentifier;
-            try (BufferedReader reader = Files.newBufferedReader(file)) {
-                String line;
-                foundMainIdentifier = false;
-                // Check first 10 lines, our flags should be at the top
-                for (int i = 0; i < 10 && (line = reader.readLine()) != null; i++) {
-                    if (line.trim().equals(EUPHORIA_IDENTIFIER)) {
-                        foundMainIdentifier = true;
-                        debugLog("Found main identifier in file: " + file.getFileName());
-                    } else if (foundMainIdentifier &&
-                            line.startsWith(VERSION_IDENTIFIER_PREFIX) &&
-                            line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                        // Extract version from the identifier line
-                        String version = extractVersionFromIdentifier(line);
-                        debugLog("Found version identifier in file: " + file.getFileName() + " - " + version);
-                        return version;
-                    }
+            List<String> lines = Files.readAllLines(file);
+            boolean foundMainIdentifier = false;
+
+            for (String line : lines) {
+                if (line.trim().equals(EUPHORIA_IDENTIFIER)) {
+                    foundMainIdentifier = true;
+                    debugLog("Found main identifier in file: " + file.getFileName());
+                } else if (foundMainIdentifier &&
+                        line.startsWith(VERSION_IDENTIFIER_PREFIX) &&
+                        line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                    String version = extractVersionFromIdentifier(line);
+                    debugLog("Found version identifier in file: " + file.getFileName() + " - " + version);
+                    return version;
                 }
             }
 
-            // If we found the main identifier but no version, return a default version
             if (foundMainIdentifier) {
                 debugLog("Found main identifier but no version in file: " + file.getFileName() + " - using default 1.0.0");
-                return "_1.0.0";  // Default version if no version identifier is found
+                return "_1.0.0";
+            } else {
+                debugLog("Main identifier not found in file: " + file.getFileName());
             }
-            debugLog("Main identifier not found in file: " + file.getFileName());
         } catch (IOException e) {
             EuphoriaPatcher.log(0, "Error reading file " + file.getFileName() + ": " + e.getMessage());
         }
