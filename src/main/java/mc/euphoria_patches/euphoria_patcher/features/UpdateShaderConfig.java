@@ -203,8 +203,12 @@ public class UpdateShaderConfig {
                 
                 // Phase 2: Add identifiers right after comments
                 newLines.add(EUPHORIA_IDENTIFIER);
+                
                 if (addVersionIdentifier) {
                     newLines.add(getVersionIdentifier());
+                } else if (existingVersionIdentifier != null) {
+                    newLines.add(existingVersionIdentifier);
+                    debugLog("Preserved existing version identifier: " + existingVersionIdentifier);
                 }
                 
                 // Phase 3: Add all remaining lines except comments and identifiers
