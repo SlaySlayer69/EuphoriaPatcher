@@ -5,7 +5,9 @@ import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 public class UpdateShaderLoaderConfig {
 
@@ -156,28 +158,59 @@ public class UpdateShaderLoaderConfig {
                         return null;
                     }
                     
-                    Path shaderpackPath;
-                    // If the name ends with .zip, it's a zip file
-                    if (shaderpackName.endsWith(".zip")) {
-                        shaderpackPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
-                    } else {
-                        // Otherwise it's a directory
-                        shaderpackPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
-                    }
-                    
-                    // Verify the path exists before returning
-                    if (Files.exists(shaderpackPath)) {
-                        return shaderpackPath;
-                    } else {
-                        EuphoriaPatcher.log(2,0, "Shaderpack specified in config doesn't exist: " + shaderpackPath);
+                    // Find the actual shader file by name without relying on direct path resolution
+                    try {
+                        return findShaderpackByName(shaderpackName);
+                    } catch (Exception e) {
+                        debugLog("Error finding shaderpack: " + e.getMessage());
+                        EuphoriaPatcher.log(2, 0, "Could not find shaderpack: " + shaderpackName + " - " + e.getMessage());
                         return null;
                     }
                 }
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(3,0, "Error reading shader loader config: " + e.getMessage());
+            EuphoriaPatcher.log(3, 0, "Error reading shader loader config: " + e.getMessage());
         }
         
         return null;
+    }
+
+    private static Path findShaderpackByName(String shaderpackName) throws IOException {
+        // First try direct resolution (will work for normal filenames)
+        try {
+            Path directPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
+            if (Files.exists(directPath)) {
+                return directPath;
+            }
+        } catch (InvalidPathException e) {
+            debugLog("Invalid path characters in shader name: " + e.getMessage());
+        }
+        
+        debugLog("Direct path resolution failed for: " + shaderpackName + ", trying directory scan");
+        
+        // If direct resolution fails (likely due to special characters), list files and find match
+        String normalizedName = normalizeShaderName(shaderpackName);
+        debugLog("Normalized shader name: " + normalizedName);
+
+        try (Stream<Path> fileStream = Files.list(EuphoriaPatcher.shaderpacks)) {
+            // Try to find a file that matches when normalized
+            return fileStream
+                    .filter(Files::exists)
+                    .filter(path -> {
+                        String fileName = path.getFileName().toString();
+                        String normalizedFileName = normalizeShaderName(fileName);
+                        boolean matches = normalizedFileName.equals(normalizedName);
+                        if (matches) {
+                            debugLog("Found matching shader: " + fileName);
+                        }
+                        return matches;
+                    })
+                    .findFirst().orElse(null);
+        }
+    }
+
+    private static String normalizeShaderName(String name) {
+        String safeChars = name.replaceAll("[^a-zA-Z0-9_ \\-.+()\\[\\]{}]", "");
+        return safeChars.trim();
     }
 }
