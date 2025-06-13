@@ -663,6 +663,8 @@ public class EuphoriaPatcher {
         try {
             String fileName = baseFile.getFileName().toString();
             String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
+            baseName = cleanBaseName(baseName);
+            
             return baseFile.resolveSibling(baseName + " + " + PATCH_NAME + PATCH_VERSION);
         } catch (Exception e) {
             log(3, "Error creating patched shader path: " + e.getMessage());
@@ -877,6 +879,15 @@ public class EuphoriaPatcher {
         }
     }
 
+    public static String cleanBaseName(String baseName) {
+        if (baseName == null) return null;
+        debugLog("Before Cleaning base name: " + baseName);
+        String cleaned = baseName.replaceAll(" \\([0-9]+\\)$", ""); // Remove copy suffixes like (1), (2), etc.
+        cleaned = cleaned.replaceAll("\\s+", " ").trim(); // Remove any duplicate spaces that might result from the cleaning
+        debugLog("Cleaned base name: " + cleaned);
+        return cleaned;
+    }
+
     // Process and patch shaders
     private boolean processAndPatchShaders(ShaderInfo info, Path temp) {
         if (info.baseFile == null && !isDevFunc()) {
@@ -884,7 +895,11 @@ public class EuphoriaPatcher {
             return false;
         }
         assert info.baseFile != null;
+        
+        // Get base name and remove .zip extension
         String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
+        baseName = cleanBaseName(baseName);
+        
         String patchedName = baseName + " + " + PATCH_NAME + PATCH_VERSION;
 
         Path baseExtracted = extractBase(info.baseFile, temp, baseName);
