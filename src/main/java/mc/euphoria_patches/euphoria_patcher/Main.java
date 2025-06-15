@@ -32,6 +32,7 @@ public class Main {
         JDialog dialog = new JDialog((Frame) null, "Euphoria Patcher", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setSize(350, 200);
+        dialog.setResizable(false);
         dialog.setLocationRelativeTo(null);
         
         ImageIcon icon = null;
