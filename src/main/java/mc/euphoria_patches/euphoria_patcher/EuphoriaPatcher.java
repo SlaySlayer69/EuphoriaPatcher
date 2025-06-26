@@ -711,27 +711,37 @@ public class EuphoriaPatcher {
         }
 
         // Only proceed with update checking if we found a valid shader path
-        if (shader != null && UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
-            String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
-            if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
-                newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
+        if (shader != null) {
+            if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
+                String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
+                if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
+                    newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
+                }
+                try {
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
+                } catch (IOException e) {
+                    log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
+                }
             }
+
             try {
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
+                String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", ".*\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
             } catch (IOException e) {
-                log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
+                log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
             }
-        }
-        if (isSpacEagle() && shader != null) {
-            try {
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "^$", "#define SPACEAGLE17");
-            } catch (IOException e) {
-                log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
+
+            if (isSpacEagle()) {
+                try {
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "\\/\\/ Developed by SpacEagle17", "#define SPACEAGLE17");
+                } catch (IOException e) {
+                    log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
+                }
+                log(1, "Have fun developing Euphoria Patches!\n");
+            } else {
+                log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
             }
-            log(1, "Have fun developing Euphoria Patches!\n");
-        } else {
-            log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
     }
 

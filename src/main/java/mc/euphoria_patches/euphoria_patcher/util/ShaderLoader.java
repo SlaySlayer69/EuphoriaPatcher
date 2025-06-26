@@ -21,6 +21,7 @@ public class ShaderLoader {
     private static boolean shaderFileSearched = false;
     private static String cachedShaderLoader = null;
     private static String cachedMCVersion = null;
+    private static Integer cachedShaderLoaderVersion = null;
     
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderLoader] " + message);
@@ -270,5 +271,114 @@ public class ShaderLoader {
     public static boolean isMinecraftVersionAtLeast(String minVersion) {
         String currentVersion = getShaderLoaderMCVersion();
         return isVersionGreaterOrEqual(currentVersion, minVersion);
+    }
+
+    /**
+     * Gets the shader loader version from the shader loader filename.
+     * Examples: 
+     * - iris-fabric-1.8.8+mc1.21.4.jar -> 10808
+     * - oculus-mc1.20.1-1.8.0.jar -> 10800
+     * - angelica-1.0.0-beta15.jar -> 10000
+     *
+     * @return The shader loader version as integer, or 0 if not detected or OptiFine
+     */
+    public static int getShaderLoaderVersion() {
+        // Return cached result if available
+        if (cachedShaderLoaderVersion != null) {
+            debugLog("Using cached shader loader version: " + cachedShaderLoaderVersion);
+            return cachedShaderLoaderVersion;
+        }
+        
+        debugLog("Extracting shader loader version from filename");
+        try {
+            File shaderFile = findShaderLoaderFile();
+            if (shaderFile == null) {
+                debugLog("No shader file found, returning 0");
+                cachedShaderLoaderVersion = 0;
+                return cachedShaderLoaderVersion;
+            }
+
+            String fileName = shaderFile.getName();
+            String lowerFileName = fileName.toLowerCase();
+            String extractedVersion = null;
+            debugLog("Parsing shader loader version from filename: " + fileName);
+
+            // Handle Iris format: iris-fabric-1.8.8+mc1.21.4.jar
+            if (lowerFileName.startsWith("iris")) {
+                debugLog("Detected Iris format");
+                // Find version between "iris-fabric-" and "+mc"
+                int fabricIndex = lowerFileName.indexOf("-fabric-");
+                int mcIndex = lowerFileName.indexOf("+mc");
+                if (fabricIndex != -1 && mcIndex != -1 && mcIndex > fabricIndex) {
+                    extractedVersion = fileName.substring(fabricIndex + 8, mcIndex);
+                    debugLog("Extracted Iris version: " + extractedVersion);
+                }
+            }
+            // Handle Oculus format: oculus-mc1.20.1-1.8.0.jar
+            else if (lowerFileName.startsWith("oculus")) {
+                debugLog("Detected Oculus format");
+                // Find the last dash before .jar to get the version
+                int lastDashIndex = fileName.lastIndexOf('-');
+                int jarIndex = lowerFileName.indexOf(".jar");
+                if (lastDashIndex != -1 && jarIndex != -1 && jarIndex > lastDashIndex) {
+                    extractedVersion = fileName.substring(lastDashIndex + 1, jarIndex);
+                    debugLog("Extracted Oculus version: " + extractedVersion);
+                }
+            }
+            // Handle Angelica format: angelica-1.0.0-betaXX.jar
+            else if (lowerFileName.startsWith("angelica")) {
+                debugLog("Detected Angelica format");
+                // Find version between "angelica-" and "-beta"
+                int angelicaIndex = lowerFileName.indexOf("angelica-");
+                int betaIndex = lowerFileName.indexOf("-beta");
+                if (angelicaIndex != -1 && betaIndex != -1 && betaIndex > angelicaIndex) {
+                    extractedVersion = fileName.substring(angelicaIndex + 9, betaIndex);
+                    debugLog("Extracted Angelica version: " + extractedVersion);
+                }
+            }
+            // Handle OptiFine - return 0 as requested
+            else if (lowerFileName.startsWith("optifine")) {
+                debugLog("Detected OptiFine - returning 0 as requested");
+                cachedShaderLoaderVersion = 0;
+                return cachedShaderLoaderVersion;
+            }
+
+            // Convert the extracted version to integer using existing method
+            if (extractedVersion != null) {
+                int versionInt = convertVersionToInt(extractedVersion);
+                debugLog("Converted shader loader version to integer: " + versionInt);
+                cachedShaderLoaderVersion = versionInt;
+                return cachedShaderLoaderVersion;
+            } else {
+                debugLog("Could not extract shader loader version from filename");
+            }
+
+            debugLog("Setting shader loader version to 0");
+            cachedShaderLoaderVersion = 0;
+            return cachedShaderLoaderVersion;
+        } catch (Exception e) {
+            EuphoriaPatcher.log(2, 0, "Error extracting shader loader version: " + e.getMessage());
+            debugLog("Exception extracting shader loader version: " + e.getMessage());
+            cachedShaderLoaderVersion = 0;
+            return cachedShaderLoaderVersion;
+        }
+    }
+
+    public static String getShaderLoaderVersionString() {
+        int version = getShaderLoaderVersion();
+        String shaderLoader = getShaderLoader();
+        String returnString = "// Shader Loader Version Placeholder";
+        switch (shaderLoader) {
+            case IRIS:
+                returnString = "#define EUPHORIA_PATCHES_IRIS_VERSION " + version;
+                break;
+            case OCULUS:
+                returnString = "#define EUPHORIA_PATCHES_OCULUS_VERSION " + version;
+                break;
+            case ANGELICA:
+                returnString = "#define EUPHORIA_PATCHES_ANGELICA_VERSION " + version;
+                break;
+        }
+        return returnString;
     }
 }
