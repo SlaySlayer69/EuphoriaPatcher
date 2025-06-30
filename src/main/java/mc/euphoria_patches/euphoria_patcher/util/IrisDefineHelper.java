@@ -27,8 +27,10 @@ public class IrisDefineHelper {
             injectCount++;
             debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
 
-            if (EuphoriaPatcher.isSpacEagle()) defineKey.accept(standardDefines, "SPACEAGLE17");
-            debugLog("Adding SPACEEAGLE17 define");
+            if (EuphoriaPatcher.isSpacEagle()) { 
+                defineKey.accept(standardDefines, "SPACEAGLE17");
+                debugLog("Adding SPACEEAGLE17 define");
+            }
 
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
             defineKeyValue.accept(standardDefines, new String[]{"CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion});
