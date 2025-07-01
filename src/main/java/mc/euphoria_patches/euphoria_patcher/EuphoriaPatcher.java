@@ -94,7 +94,7 @@ public class EuphoriaPatcher {
                 if (!isDevFunc()) return;
             }
         } else {
-            thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+            thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir);
             return;
         }
 
@@ -122,7 +122,7 @@ public class EuphoriaPatcher {
         if (doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
         if (doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
-        thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir);
         return true;
     }
 
@@ -290,19 +290,79 @@ public class EuphoriaPatcher {
      */
     private void checkForExistingPatchedShaders(ShaderInfo info) {
         try {
-            // First check for directories
-            // Common filter for finding patched shaders
+            // First check using the standard naming pattern
             DirectoryStream.Filter<Path> patchedFilter = path -> 
                 path.getFileName().toString().contains(BRAND_NAME) && 
                 path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION) &&
                 (Files.isDirectory(path) || 
-                 (Files.isRegularFile(path) && path.toString().endsWith(".zip")));
+                (Files.isRegularFile(path) && path.toString().endsWith(".zip")));
             
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, patchedFilter)) {
                 for (Path path : stream) {
                     checkIfAlreadyInstalled(path, info);
                     if (info.isAlreadyInstalled) {
                         return;
+                    }
+                }
+            }
+
+            debugLog("No existing patched shaders found by standard naming pattern, checking for Euphoria Patches files...");
+            
+            // If not found by name, check all directories for the myFile.glsl with version signature
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, Files::isDirectory)) {
+
+                if (isDevFunc() || info.isAlreadyInstalled) {
+                    return;
+                }
+
+                for (Path directory : stream) {
+                    Path myFilePath = directory.resolve(SHADER_MYFILE_LOCATION);
+
+                    debugLog("Checking directory: " + directory.getFileName() + " for myFile.glsl");
+                    
+                    // Skip if the myFile.glsl doesn't exist
+                    if (!Files.exists(myFilePath)) {
+                        continue;
+                    }
+
+                    debugLog("Found myFile.glsl in directory: " + directory.getFileName());
+                    
+                    // Read first line of the file
+                    String firstLine;
+                    try (BufferedReader reader = Files.newBufferedReader(myFilePath)) {
+                        firstLine = reader.readLine();
+                    }
+                    
+                    // Check if it's an Euphoria Patches file with the matching version
+                    if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
+                        String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
+                        String expectedVersion = PATCH_VERSION.replace("_", "");
+                        
+                        debugLog("Found potential correct Euphoria Patches version in: " + directory.getFileName());
+                        debugLog("File version: " + fileVersion + ", Expected: " + expectedVersion);
+                        
+                        if (fileVersion.equals(expectedVersion)) {
+                            debugLog("Version match found - this is a correct Euphoria Patches installation");
+                            
+                            info.isAlreadyInstalled = true;
+                            info.installedDir = directory;
+                            
+                            // Try to determine style from directory name or common.glsl
+                            String dirName = directory.getFileName().toString();
+                            if (dirName.contains("Reimagined")) {
+                                info.styleReimagined = true;
+                            } else if (dirName.contains("Unbound")) {
+                                info.styleUnbound = true;
+                            } else {
+                                // If not clear from directory name, check common.glsl
+                                String detectedStyle = detectStyleFromCommonFile(directory);
+                                info.styleReimagined = "Reimagined".equals(detectedStyle);
+                                info.styleUnbound = "Unbound".equals(detectedStyle);
+                            }
+                            
+                            log(0, PATCH_NAME + PATCH_VERSION + " is already installed as the renamed folder: " + directory.getFileName());
+                            return;
+                        }
                     }
                 }
             }
@@ -461,7 +521,7 @@ public class EuphoriaPatcher {
             } else {
                 // If not in filename, check the common.glsl file
                 style = detectStyleFromCommonFile(path);
-                log(0, "Detected " + style + " style from common.glsl file");
+                debugLog("Detected " + style + " style from common.glsl file");
             }
             
             // Create the correct name format
@@ -480,7 +540,7 @@ public class EuphoriaPatcher {
             
             // Skip if a file with the target name already exists
             if (Files.exists(targetPath)) {
-                log(0, "A file with the correct name already exists: " + targetPath.getFileName());
+                debugLog("A file with the correct name already exists: " + targetPath.getFileName());
                 return path;
             }
             
@@ -525,8 +585,10 @@ public class EuphoriaPatcher {
                 
                 // Look for SHADER_STYLE definition
                 if (content.contains("SHADER_STYLE 4")) {
+                    debugLog("Detected Unbound style from common.glsl");
                     return "Unbound";
                 } else if (content.contains("SHADER_STYLE 1") || content.contains("SHADER_STYLE")) {
+                    debugLog("Detected Reimagined style from common.glsl");
                     return "Reimagined";
                 }
             }
@@ -629,6 +691,7 @@ public class EuphoriaPatcher {
 
                 if (containsEuphoriaFile) {
                     info.isAlreadyInstalled = true;
+                    info.installedDir = potentialInstallPath;
                     log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
                 } else {
                     // No EuphoriaPatches file found, delete the directory
@@ -685,10 +748,17 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
-        // Create a safe way to get the shader path that handles null baseFile
+    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir) {
+        // Create a safe way to get the shader path
         Path shader = null;
-        if (baseFile != null) {
+        
+        // First try using the already detected installed directory
+        if (installedDir != null) {
+            debugLog("Using already detected installed directory: " + installedDir);
+            shader = installedDir;
+        } 
+        // Fall back to standard method if installedDir is null
+        else if (baseFile != null) {
             shader = getPatchedShaderPath(baseFile);
         } else {
             // If baseFile is null, try to find the patched shader directory directly
@@ -742,6 +812,9 @@ public class EuphoriaPatcher {
             } else {
                 log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
             }
+        } else {
+            debugLog("No valid shader path found for thank you message");
+            log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
     }
 
@@ -1147,6 +1220,7 @@ public class EuphoriaPatcher {
     // Helper class to store shader information
     private static class ShaderInfo {
         Path baseFile = null;
+        Path installedDir = null;
         boolean styleReimagined = false;
         boolean styleUnbound = false;
         boolean isAlreadyInstalled = false;
