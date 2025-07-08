@@ -798,6 +798,7 @@ public class EuphoriaPatcher {
             try {
                 String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
                 ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", ".*\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", ".*# Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
             }
