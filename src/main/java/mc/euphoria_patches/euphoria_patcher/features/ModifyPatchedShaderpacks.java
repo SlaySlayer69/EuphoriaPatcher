@@ -108,10 +108,71 @@ public class ModifyPatchedShaderpacks {
 
     private static void modifyFile(Path filePath, String... regexAndReplacements) throws IOException {
         debugLog("Modifying file: " + filePath.getFileName());
-        String content = new String(Files.readAllBytes(filePath));
-        String modifiedContent = applyReplacements(content, regexAndReplacements);
-        Files.write(filePath, modifiedContent.getBytes());
+        
+        // For larger files (>100KB), use line-by-line processing
+        if (Files.size(filePath) > 100_000) {
+            debugLog("File size is larger than 100KB, using line-by-line modification for: " + filePath.getFileName());
+            lineByLineModify(filePath, regexAndReplacements);
+        } else {
+            // Use existing approach for smaller files
+            String content = new String(Files.readAllBytes(filePath));
+            String modifiedContent = applyReplacements(content, regexAndReplacements);
+            Files.write(filePath, modifiedContent.getBytes());
+        }
+        
         debugLog("Successfully modified file: " + filePath.getFileName());
+    }
+
+    private static void lineByLineModify(Path filePath, String... regexAndReplacements) throws IOException {
+        List<String> lines = Files.readAllLines(filePath);
+        boolean modified = false;
+        
+        // Prepare all regex patterns
+        List<java.util.regex.Pattern> patterns = new ArrayList<>();
+        boolean[] patternMatched = new boolean[regexAndReplacements.length / 2]; // Track which patterns were matched
+        int totalPatterns = regexAndReplacements.length / 2;
+        int matchedPatterns = 0;
+        
+        for (int i = 0; i < regexAndReplacements.length; i += 2) {
+            patterns.add(java.util.regex.Pattern.compile(regexAndReplacements[i]));
+        }
+        
+        // Process each line
+        for (int lineNum = 0; lineNum < lines.size(); lineNum++) {
+            String line = lines.get(lineNum);
+
+            // Apply replacements for this line
+            for (int i = 0; i < patterns.size(); i++) {
+                // Skip patterns we've already matched
+                if (patternMatched[i]) continue;
+                
+                java.util.regex.Pattern pattern = patterns.get(i);
+                String replacement = regexAndReplacements[i * 2 + 1];
+                
+                if (pattern.matcher(line).find()) {
+                    // Only replace if pattern matches this line
+                    String newLine = line.replaceAll(pattern.pattern(), replacement);
+                    if (!newLine.equals(line)) {
+                        lines.set(lineNum, newLine);
+                        modified = true;
+                        patternMatched[i] = true;
+                        matchedPatterns++;
+                        debugLog("Match found and replaced on line " + (lineNum + 1) + " for pattern: " + pattern.pattern());
+                    }
+                }
+            }
+            
+            // Exit early if we've matched all patterns
+            if (matchedPatterns == totalPatterns) {
+                debugLog("All " + totalPatterns + " patterns matched - exiting file scan early at line " + (lineNum + 1));
+                break;
+            }
+        }
+        
+        // Only write the file if changes were made
+        if (modified) {
+            Files.write(filePath, lines);
+        }
     }
 
     private static void processShaderPacks(Path patchedFile, boolean styleUnbound, boolean styleReimagined, Consumer<Path> processor) {
