@@ -90,14 +90,14 @@ public class ArchiveOperations {
                     }
                     // Check if it's the correct version with incorrect size
                     else if (fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
-                        EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
+                        EuphoriaPatcher.log(3, 8, "The shader " + originalFileName + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
                         EuphoriaPatcher.log(3, 8, "The shader file appears to be incomplete or has been modified.");
                         EuphoriaPatcher.log(3, 8, "Please re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
                             " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
                     }
                     // Wrong version completely
                     else {
-                        EuphoriaPatcher.log(3, 8, "The shader " + EuphoriaPatcher.BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
+                        EuphoriaPatcher.log(3, 8, "The shader " + originalFileName + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
                         EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
                             " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
                     }

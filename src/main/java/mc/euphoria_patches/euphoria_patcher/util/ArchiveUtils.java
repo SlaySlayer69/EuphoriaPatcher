@@ -54,8 +54,15 @@ public class ArchiveUtils {
                 }
                 
                 try {
+                    // Get entry name and remove leading slash if present
+                    String entryName = entry.getName();
+                    if (entryName.startsWith("/")) {
+                        entryName = entryName.substring(1);
+                    }
+                    
                     // Resolve the target path for the current entry
-                    Path targetFilePath = out.resolve(entry.getName()).normalize();                    
+                    Path targetFilePath = out.resolve(entryName).normalize();
+                    
                     debugLog("Processing entry: " + entry.getName() + " -> " + targetFilePath);
 
                     if (entry.isDirectory()) {

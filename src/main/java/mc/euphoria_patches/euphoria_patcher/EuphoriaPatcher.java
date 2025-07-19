@@ -378,12 +378,14 @@ public class EuphoriaPatcher {
         boolean hasBrandName = name.startsWith(BRAND_NAME);
         boolean notPatched = !name.contains(PATCH_NAME);
         boolean hasExactVersion = name.contains(VERSION);
-        
+        boolean notModifiedByOthers = !name.contains(" + ");
+
         // Exclude development or pre-release versions
         boolean isNotDevVersion = !name.contains("_dev");
         boolean isNotPreVersion = !name.contains("_pre");
-        
-        boolean matchesPattern = hasBrandName && notPatched && hasExactVersion && 
+
+        boolean matchesPattern = hasBrandName && notPatched && hasExactVersion &&
+                                notModifiedByOthers &&
                                 isNotDevVersion && isNotPreVersion;
 
         if (isFile) {
@@ -392,7 +394,7 @@ public class EuphoriaPatcher {
             return matchesPattern && Files.isDirectory(path);
         }
     }
-    
+
     private void resetFilesScannedCounter() {
         filesScannedCounter = 0;
         totalFilesToScan = 0;
