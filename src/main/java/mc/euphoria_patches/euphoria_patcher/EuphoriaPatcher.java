@@ -968,7 +968,7 @@ public class EuphoriaPatcher {
     public static String cleanBaseName(String baseName) {
         if (baseName == null) return null;
         debugLog("Before Cleaning base name: " + baseName);
-        String cleaned = baseName.replaceAll(" \\([0-9]+\\)$", ""); // Remove copy suffixes like (1), (2), etc.
+        String cleaned = baseName.replaceAll("(?i)(?:[\\s_-]+(?:\\(copy\\)|copy|\\(\\d+\\)|\\d+))+$", ""); // Remove copy suffixes like (1), (2), Copy, etc.
         cleaned = cleaned.replaceAll("\\s+", " ").trim(); // Remove any duplicate spaces that might result from the cleaning
         debugLog("Cleaned base name: " + cleaned);
         return cleaned;
