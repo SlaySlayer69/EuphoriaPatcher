@@ -991,7 +991,7 @@ public class EuphoriaPatcher {
         Path baseExtracted = extractBase(info.baseFile, temp, baseName);
         if (baseExtracted == null) return false;
 
-        if (!updateCommonFile(baseExtracted)) return false;
+        normalizeShaderStyleInCommon(baseExtracted);
 
         Path baseArchived = archiveBase(baseExtracted, temp, baseName);
 
@@ -1021,15 +1021,13 @@ public class EuphoriaPatcher {
     }
 
     // Update common file
-    private boolean updateCommonFile(Path baseExtracted) {
+    private void normalizeShaderStyleInCommon(Path baseExtracted) {
         try {
             Path commons = baseExtracted.resolve(COMMON_LOCATION);
             String config = FileUtils.readFileToString(commons.toFile(), "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
             FileUtils.writeStringToFile(commons.toFile(), config, "UTF-8");
-            return true;
         } catch (IOException e) {
-            log(3, "Error extracting style information: " + e.getMessage());
-            return false;
+            log(3, "Error normalizing shader style in common file: " + e.getMessage());
         }
     }
 
