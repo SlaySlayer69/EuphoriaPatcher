@@ -1277,19 +1277,51 @@ public class EuphoriaPatcher {
             // Create the new path with the alternative name
             Path targetPath = shaderpacks.resolve(newName);
             
-            // Check if it already exists, skip if it does
+            // Check if it already exists
             if (Files.exists(targetPath)) {
-                log(0, "Skipping creation of alternative shader name \"" + newName + "\" as it already exists.");
-                return;
+                // Check if it's an outdated version by examining myFile.glsl
+                Path myFilePath = targetPath.resolve(SHADER_MYFILE_LOCATION);
+                
+                if (Files.exists(myFilePath)) {
+                    // Read first line of the file to extract version
+                    String firstLine;
+                    try (BufferedReader reader = Files.newBufferedReader(myFilePath)) {
+                        firstLine = reader.readLine();
+                    }
+                    
+                    // Check if it's an Euphoria Patches file with a different version
+                    if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
+                        String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
+                        String expectedVersion = PATCH_VERSION.replace("_", "");
+                        
+                        if (!fileVersion.equals(expectedVersion)) {
+                            debugLog("Found outdated alternative shader \"" + newName + "\" (version " + fileVersion + "), updating to " + expectedVersion);
+                            // Delete outdated version
+                            UsefulFunctions.deleteRecursively(targetPath);
+                        } else {
+                            // Version is current, skip creation
+                            debugLog("Skipping creation of alternative shader name \"" + newName + "\" as it already exists with current version.");
+                            return;
+                        }
+                    } else {
+                        // Not an Euphoria Patches file or can't determine version
+                        debugLog("Found existing shader with name \"" + newName + "\" but couldn't verify version, replacing it.");
+                        UsefulFunctions.deleteRecursively(targetPath);
+                    }
+                } else {
+                    // myFile.glsl doesn't exist, assume not an Euphoria shader or corrupted
+                    debugLog("Found existing shader with name \"" + newName + "\" but it doesn't appear to be a valid Euphoria shader, replacing it.");
+                    UsefulFunctions.deleteRecursively(targetPath);
+                }
             }
             
             // Copy the directory
             debugLog("Creating alternative shader with name: \"" + newName + "\"");
             FileUtils.copyDirectory(sourceShaderPath.toFile(), targetPath.toFile());
             
-            debugLog("Successfully created alternative shader: \"" + newName + "\"");
+            log(0, "Successfully created alternative shader: \"" + newName + "\"");
         } catch (IOException e) {
-            debugLog("Error creating alternative shader \"" + newName + "\": " + e.getMessage());
+            log(2, "Error creating alternative shader \"" + newName + "\": " + e.getMessage());
         }
     }
 
