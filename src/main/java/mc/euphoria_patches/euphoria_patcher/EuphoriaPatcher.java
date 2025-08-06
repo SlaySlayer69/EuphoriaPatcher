@@ -48,6 +48,7 @@ public class EuphoriaPatcher {
     public static boolean doDeleteOldShaderFiles = false;
     public static boolean doDisplayShaderInGameMessage = true;
     public static boolean doDebugLogging = false;
+    public static String alternativeShaderNames = "";
 
     // Global Variables and Objects
     private static boolean ALREADY_LAUNCHED = false;
@@ -144,7 +145,13 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
         doDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
                 "\nDefault = false"));
-        
+        alternativeShaderNames = Config.readWriteConfig("alternativeShaderNames", "", "Here one can set alternative Shader Names which will also be generated alongside the normal one." +
+                "\nThis is useful if you want multiple different settings you can quickly switch between" +
+                "\nDefault = Empty String, which means no alternative names will be generated." +
+                "\nIn case of multiple names, separate them with a comma" +
+                "\nYou can also use {baseVersion} or {patchVersion} in names to insert the base shader or Euphoria Patches version." +
+                "\nExample: Euphoria Saturated, Comp_{baseVersion} + EP_{patchVersion} Dark Settings, EP High Performance, etc...");
+
         Config.startConfigWatcher();
     }
 
@@ -811,8 +818,12 @@ public class EuphoriaPatcher {
                 } catch (IOException e) {
                     log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
                 }
+                // Create alternative shader names if specified in config
+                createAlternativeShaderNames(shader);
                 log(1, "Have fun developing Euphoria Patches!\n");
             } else {
+                // Create alternative shader names if specified in config
+                createAlternativeShaderNames(shader);
                 log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
             }
         } else {
@@ -1215,6 +1226,70 @@ public class EuphoriaPatcher {
         } catch (Exception e) {
             log(3, "Error processing newly detected shader pack: " + e.getMessage());
             return false;
+        }
+    }
+
+    private void createAlternativeShaderNames(Path patchedShaderPath) {
+        if (alternativeShaderNames.isEmpty()) {
+            debugLog("No alternative shader names configured, skipping creation.");
+            return; // No alternative names to create
+        }
+
+        log(0, "Creating alternative shader names from: " + patchedShaderPath.getFileName());
+
+        String baseVersion = VERSION.replace("_", "");
+        String patchVersion = PATCH_VERSION.replace("_", "");
+
+        // Define illegal characters for file/folder names on most OSes
+        String illegalChars = "[\\\\/:*?\"<>|]";
+
+        // Split the names by comma
+        String[] alternativeNames = alternativeShaderNames.split(",");
+
+        for (String name : alternativeNames) {
+            String trimmedName = name.trim();
+
+            if (trimmedName.isEmpty()) {
+                continue; // Skip empty names
+            }
+
+            // Replace placeholders with actual version values
+            String finalName = trimmedName
+                    .replace("{baseVersion}", baseVersion)
+                    .replace("{patchVersion}", patchVersion);
+
+            // Check for illegal characters
+            if (finalName.matches(".*" + illegalChars + ".*")) {
+                log(2, "Skipping alternative shader name with illegal characters: \"" + finalName + "\"");
+                continue;
+            }
+
+            // Create a copy with this alternative name
+            createShaderCopy(patchedShaderPath, finalName);
+        }
+    }
+
+    private void createShaderCopy(Path sourceShaderPath, String newName) {
+        try {
+            // Get the parent directory (shaderpacks folder)
+            Path shaderpacks = sourceShaderPath.getParent();
+            
+            // Create the new path with the alternative name
+            Path targetPath = shaderpacks.resolve(newName);
+            
+            // Check if it already exists, skip if it does
+            if (Files.exists(targetPath)) {
+                log(0, "Skipping creation of alternative shader name \"" + newName + "\" as it already exists.");
+                return;
+            }
+            
+            // Copy the directory
+            debugLog("Creating alternative shader with name: \"" + newName + "\"");
+            FileUtils.copyDirectory(sourceShaderPath.toFile(), targetPath.toFile());
+            
+            debugLog("Successfully created alternative shader: \"" + newName + "\"");
+        } catch (IOException e) {
+            debugLog("Error creating alternative shader \"" + newName + "\": " + e.getMessage());
         }
     }
 
