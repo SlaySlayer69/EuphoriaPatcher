@@ -175,19 +175,16 @@ public class UpdateShaderConfig {
                 // Only return early if both conditions are true:
                 // 1. No settings were changed 
                 // 2. Identifiers are already correct AND are at the top of the file after comments
+                boolean identifiersAtTop = areIdentifiersAtTop(lines);
                 if (!settingsChanged && mainIdentifierExists && 
                     (!addVersionIdentifier || 
-                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier())))) {
+                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier()))) &&
+                    identifiersAtTop) {
                     
-                    // Additional check: are identifiers at the top after comments?
-                    boolean identifiersAtTop = areIdentifiersAtTop(lines);
-                    
-                    if (identifiersAtTop) {
-                        debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
-                        return; // Nothing to do
-                    } else {
-                        debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
-                    }
+                    debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
+                    return; // Nothing to do
+                } else if (!identifiersAtTop) {
+                    debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
                 }
                 
                 // We need to modify the file - create new content with reorganized structure
