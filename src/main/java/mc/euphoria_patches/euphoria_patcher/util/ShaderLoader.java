@@ -47,6 +47,7 @@ public class ShaderLoader {
 
                     if (fileName.startsWith("iris") ||
                             fileName.startsWith("oculus") ||
+                            fileName.startsWith("mekalus") || // Add Mekalus detection
                             fileName.startsWith("optifine") ||
                             fileName.startsWith("angelica")) {
                         cachedShaderFile = modFile;
@@ -95,13 +96,13 @@ public class ShaderLoader {
         if (fileName.startsWith("iris")) {
             debugLog("Detected IRIS shader loader");
             cachedShaderLoader = IRIS;
-        } else if (fileName.startsWith("oculus")) {
-            debugLog("Detected OCULUS shader loader");
+        } else if (fileName.startsWith("oculus") || fileName.startsWith("mekalus")) { // Treat Mekalus as Oculus
+            debugLog("Detected OCULUS shader loader" + (fileName.startsWith("mekalus") ? " (Mekalus fork)" : ""));
             cachedShaderLoader = OCULUS;
         } else if (fileName.startsWith("optifine")) {
             debugLog("Detected OPTIFINE shader loader");
             cachedShaderLoader = OPTIFINE;
-        } else if (fileName.startsWith("angelica")) {  // Add Angelica detection
+        } else if (fileName.startsWith("angelica")) {
             debugLog("Detected ANGELICA shader loader");
             cachedShaderLoader = ANGELICA;
         } else {
@@ -170,9 +171,9 @@ public class ShaderLoader {
                     }
                 }
             }
-            // Handle Oculus format: oculus-mc1.20.1-1.8.0.jar
-            else if (lowerFileName.startsWith("oculus")) {
-                debugLog("Detected Oculus format");
+            // Handle Oculus/Mekalus format: oculus-mc1.20.1-1.8.0.jar or mekalus-mc1.20.1-1.7.0.3.jar
+            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus")) {
+                debugLog("Detected " + (lowerFileName.startsWith("mekalus") ? "Mekalus" : "Oculus") + " format");
                 int mcIndex = lowerFileName.indexOf("-mc");
                 if (mcIndex != -1) {
                     // Extract version after "-mc" until the next dash
@@ -278,6 +279,7 @@ public class ShaderLoader {
      * Examples: 
      * - iris-fabric-1.8.8+mc1.21.4.jar -> 10808
      * - oculus-mc1.20.1-1.8.0.jar -> 10800
+     * - mekalus-mc1.20.1-1.7.0.3.jar -> 10700 (simplifying to 1.7.0)
      * - angelica-1.0.0-beta15.jar -> 10000
      *
      * @return The shader loader version as integer, or 0 if not detected or OptiFine
@@ -314,15 +316,27 @@ public class ShaderLoader {
                     debugLog("Extracted Iris version: " + extractedVersion);
                 }
             }
-            // Handle Oculus format: oculus-mc1.20.1-1.8.0.jar
-            else if (lowerFileName.startsWith("oculus")) {
-                debugLog("Detected Oculus format");
+            // Handle Oculus/Mekalus format: oculus-mc1.20.1-1.8.0.jar or mekalus-mc1.20.1-1.7.0.3.jar
+            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus")) {
+                debugLog("Detected " + (lowerFileName.startsWith("mekalus") ? "Mekalus" : "Oculus") + " format");
                 // Find the last dash before .jar to get the version
                 int lastDashIndex = fileName.lastIndexOf('-');
                 int jarIndex = lowerFileName.indexOf(".jar");
                 if (lastDashIndex != -1 && jarIndex != -1 && jarIndex > lastDashIndex) {
-                    extractedVersion = fileName.substring(lastDashIndex + 1, jarIndex);
-                    debugLog("Extracted Oculus version: " + extractedVersion);
+                    String fullVersion = fileName.substring(lastDashIndex + 1, jarIndex);
+                    
+                    // Handle Mekalus versioning (e.g., 1.7.0.3 -> 1.7.0)
+                    if (lowerFileName.startsWith("mekalus") && fullVersion.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                        String[] parts = fullVersion.split("\\.");
+                        if (parts.length >= 3) {
+                            extractedVersion = parts[0] + "." + parts[1] + "." + parts[2];
+                            debugLog("Simplified Mekalus version from " + fullVersion + " to " + extractedVersion);
+                        }
+                    } else {
+                        extractedVersion = fullVersion;
+                    }
+                    
+                    debugLog("Extracted version: " + extractedVersion);
                 }
             }
             // Handle Angelica format: angelica-1.0.0-betaXX.jar
