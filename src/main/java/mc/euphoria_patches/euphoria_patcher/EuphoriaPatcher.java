@@ -24,7 +24,7 @@ public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = "_r5.5.1";
-    public static final String PATCH_VERSION = "_1.6.7";
+    public static final String PATCH_VERSION = "_1.6.8";
 
     public static final String BASE_TAR_SHA256 = "c1c128eb0b15657670e5b8e3884fd8a495aaec1fd4226682b18e1ade702217cf";
     public static final int BASE_TAR_SIZE = 1340416;

@@ -45,10 +45,19 @@ public class ShaderLoader {
                     String fileName = modFile.getName().toLowerCase();
                     debugLog("Checking file: " + fileName);
 
-                    if (fileName.startsWith("iris") ||
-                            fileName.startsWith("oculus") ||
-                            fileName.startsWith("mekalus") || // Add Mekalus detection
-                            fileName.startsWith("optifine") ||
+                    // Skip compatibility and addon mods
+                    if (fileName.contains("compat") || 
+                        fileName.contains("addon") || 
+                        fileName.contains("compatibility") ||
+                        fileName.contains("flywheel")) {
+                        debugLog("Skipping compatibility/addon mod: " + fileName);
+                        continue;
+                    }
+
+                    if (fileName.startsWith("iris") && (fileName.contains("fabric") || fileName.contains("neoforge")) ||
+                            fileName.startsWith("oculus-mc") ||
+                            fileName.startsWith("mekalus-mc") ||
+                            fileName.startsWith("optifine_") ||
                             fileName.startsWith("angelica")) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
