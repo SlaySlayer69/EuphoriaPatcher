@@ -811,6 +811,16 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
             }
 
+            boolean isMacOS = System.getProperty("os.name").toLowerCase().contains("mac");
+            if (isMacOS) {
+                try {
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+                    debugLog("Disabled COLORED_LIGHTING=192 - set to 0 in shaders.properties on the popular profile (macOS specific fix)");
+                } catch (IOException e) {
+                    log(3, 0, "Could not apply macOS-specific shader modification: " + e.getMessage());
+                }
+            }
+
             if (isSpacEagle()) {
                 try {
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "\\/\\/ Developed by SpacEagle17", "#define SPACEAGLE17");
