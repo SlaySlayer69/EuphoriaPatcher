@@ -819,7 +819,7 @@ public class EuphoriaPatcher {
                 try {
                     // Change COLORED_LIGHTING from 192 to 0
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10$2");
+                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
                     
                     // Change END_CRYSTAL_VORTEX from 3 to 0
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
