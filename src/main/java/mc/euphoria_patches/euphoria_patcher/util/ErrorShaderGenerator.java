@@ -21,8 +21,7 @@ import java.util.Map;
  */
 public class ErrorShaderGenerator {
     
-    private static final String ERROR_SHADER_FOLDER = "§c_0EuphoriaPatches Error Shader";
-    private static final String ERROR_SHADER_NORMALIZED = "c_0EuphoriaPatches Error Shader";
+    private static final String ERROR_SHADER_FOLDER = "_§c0EuphoriaPatches Error Shader";
     private static final String ERROR_TEXTS_FILE = "shaders/errorTexts.glsl";
     private static final int MAX_LINE_LENGTH = 90;
     
@@ -58,10 +57,10 @@ public class ErrorShaderGenerator {
     
     /**
      * Generates an error shader with the given error messages
+     *
      * @param errorMessages List of error messages to display
-     * @return True if successful, false otherwise
      */
-    public static boolean generateErrorShader(List<String> errorMessages) {
+    public static void generateErrorShader(List<String> errorMessages) {
         try {
             debugLog("Generating error shader with " + errorMessages.size() + " messages");
             
@@ -84,7 +83,7 @@ public class ErrorShaderGenerator {
                 boolean copySuccess = copyErrorShaderFolder(targetDir);
                 if (!copySuccess) {
                     EuphoriaPatcher.log(2, "Failed to copy error shader folder");
-                    return false;
+                    return;
                 }
             }
             
@@ -105,12 +104,10 @@ public class ErrorShaderGenerator {
                 debugLog("Scheduling shader reload since error shader is active");
                 scheduleShaderReload();
             }
-            
-            return true;
+
         } catch (IOException e) {
             debugLog("Exception generating error shader: " + e.getMessage());
             EuphoriaPatcher.log(3, "Error generating error shader: " + e.getMessage());
-            return false;
         }
     }
     

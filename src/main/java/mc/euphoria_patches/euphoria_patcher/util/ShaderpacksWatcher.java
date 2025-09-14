@@ -441,6 +441,12 @@ public class ShaderpacksWatcher {
     
     private boolean isPotentialShaderPack(Path path) {
         String fileName = path.getFileName().toString();
+        
+        if (fileName.contains("EuphoriaPatches Error Shader")) {
+            debugLog("Skipping error shader from processing: " + fileName);
+            return false;
+        }
+        
         try {
             debugLog("Evaluating potential shader pack: " + fileName);
 
@@ -497,11 +503,11 @@ public class ShaderpacksWatcher {
                     if (isValidByByteSize) {
                         EuphoriaPatcher.log(0, "File passed byte size verification: " + fileName);
                     } else {
-                        if (!fileName.contains("EuphoriaPatches Error Shader")) {
-                            EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " + EuphoriaPatcher.BRAND_NAME + "Shaders" +
-                                    EuphoriaPatcher.VERSION + ". It may be an incorrect version or modified.");
-                            EuphoriaPatcher.log(3, "Please download the correct and official version from " + EuphoriaPatcher.DOWNLOAD_URL);
-                        }
+                        EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " + 
+                                EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
+                                ". It may be an incorrect version or modified.");
+                        EuphoriaPatcher.log(3, "Please download the correct and official version from " + 
+                                EuphoriaPatcher.DOWNLOAD_URL);
                     }
 
                     // If valid by byte size, rename the file to the correct format
