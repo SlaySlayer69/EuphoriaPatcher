@@ -512,7 +512,6 @@ public class EuphoriaPatcher {
             return result;
         } catch (Exception e) {
             debugLog("Exception during byte size check: " + e.getMessage());
-            System.out.println("Exception during byte size check: " + e.getMessage());
             return false;
         }
     }
