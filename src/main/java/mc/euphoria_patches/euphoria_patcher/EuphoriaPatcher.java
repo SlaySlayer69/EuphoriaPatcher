@@ -790,9 +790,12 @@ public class EuphoriaPatcher {
 
         // Only proceed with update checking if we found a valid shader path
         if (shader != null) {
+            boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
+            boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
+            boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
             if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
                 String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
-                if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS) || ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE) && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
+                if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
                     newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
                 }
                 try {
@@ -812,11 +815,11 @@ public class EuphoriaPatcher {
             }
 
             boolean isMacOS = System.getProperty("os.name").toLowerCase().contains("mac");
-            if (isMacOS) {
+            if (isMacOS || !(isIris || isOculus)) {
                 try {
                     // Change COLORED_LIGHTING from 192 to 0
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10$2");
                     
                     // Change END_CRYSTAL_VORTEX from 3 to 0
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
@@ -830,9 +833,9 @@ public class EuphoriaPatcher {
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
                         "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
                     
-                    debugLog("Applied macOS-specific shader modifications: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
+                    debugLog("Applied compatibility modifications for macOS/non-iris loader: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
                 } catch (IOException e) {
-                    log(3, 0, "Could not apply macOS-specific shader modifications: " + e.getMessage());
+                    log(3, 0, "Could not apply compatibility shader modifications: " + e.getMessage());
                 }
             }
 
