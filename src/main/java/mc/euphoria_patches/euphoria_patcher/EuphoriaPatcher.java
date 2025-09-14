@@ -814,10 +814,25 @@ public class EuphoriaPatcher {
             boolean isMacOS = System.getProperty("os.name").toLowerCase().contains("mac");
             if (isMacOS) {
                 try {
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
-                    debugLog("Disabled COLORED_LIGHTING=192 - set to 0 in shaders.properties on the popular profile (macOS specific fix)");
+                    // Change COLORED_LIGHTING from 192 to 0
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+                    
+                    // Change END_CRYSTAL_VORTEX from 3 to 0
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                        "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
+                    
+                    // Change DRAGON_DEATH_EFFECT to !DRAGON_DEATH_EFFECT
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                        "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT(\\s+.*)", "$1 !DRAGON_DEATH_EFFECT$2");
+                    
+                    // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
+                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                        "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
+                    
+                    debugLog("Applied macOS-specific shader modifications: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
                 } catch (IOException e) {
-                    log(3, 0, "Could not apply macOS-specific shader modification: " + e.getMessage());
+                    log(3, 0, "Could not apply macOS-specific shader modifications: " + e.getMessage());
                 }
             }
 
