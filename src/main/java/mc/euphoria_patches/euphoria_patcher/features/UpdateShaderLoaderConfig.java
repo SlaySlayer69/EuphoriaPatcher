@@ -18,7 +18,7 @@ public class UpdateShaderLoaderConfig {
         EuphoriaLogger.debugLog("[UpdateShaderLoaderConfig] " + message);
     }
 
-    private static Path getShaderLoaderPath(){
+    public static Path getShaderLoaderPath(){
         Path shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("iris.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
@@ -128,6 +128,15 @@ public class UpdateShaderLoaderConfig {
         pendingReload = true;
     }
 
+    // Add this public method to allow scheduling reloads from other classes
+    public static void scheduleIrisReload(Class<?> irisClass) {
+        if (irisClass != null) {
+            debugLog("Scheduling shader reload via external request");
+            pendingIrisClass = irisClass;
+            pendingReload = true;
+        }
+    }
+
     private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
         String style = styleUnbound ? "Unbound" : "Reimagined";
         if (styleUnbound && styleReimagined) { // Both styles installed
@@ -175,11 +184,30 @@ public class UpdateShaderLoaderConfig {
         return null;
     }
 
+    /**
+     * Properly normalizes a shader name by removing special characters
+     * @param name The shader name to normalize
+     * @return The normalized shader name
+     */
+    private static String normalizeShaderName(String name) {
+        // First handle the § character specifically
+        String withoutSection = name.replace("§", "").replace("\\u00A7", "");
+        
+        // Then handle other special characters
+        String safeChars = withoutSection.replaceAll("[^a-zA-Z0-9_ \\-.+()\\[\\]{}]", "");
+        
+        if (!name.equals(safeChars)) {
+            debugLog("Normalized '" + name + "' to '" + safeChars + "'");
+        }
+        return safeChars.trim();
+    }
+
     private static Path findShaderpackByName(String shaderpackName) throws IOException {
         // First try direct resolution (will work for normal filenames)
         try {
             Path directPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
             if (Files.exists(directPath)) {
+                debugLog("Found shader directly: " + directPath);
                 return directPath;
             }
         } catch (InvalidPathException e) {
@@ -191,26 +219,46 @@ public class UpdateShaderLoaderConfig {
         // If direct resolution fails (likely due to special characters), list files and find match
         String normalizedName = normalizeShaderName(shaderpackName);
         debugLog("Normalized shader name: " + normalizedName);
-
+        
+        // Also try the special case for our error shader
+        final boolean isErrorShader = shaderpackName.contains("EuphoriaPatches") && 
+                                     shaderpackName.contains("Error") && 
+                                     shaderpackName.contains("Shader");
+        
         try (Stream<Path> fileStream = Files.list(EuphoriaPatcher.shaderpacks)) {
             // Try to find a file that matches when normalized
-            return fileStream
+            Path result = fileStream
                     .filter(Files::exists)
                     .filter(path -> {
                         String fileName = path.getFileName().toString();
+                        
+                        // Check exact match first
+                        if (fileName.equals(shaderpackName)) {
+                            debugLog("Found exact shader match: " + fileName);
+                            return true;
+                        }
+                        
+                        // Special handling for error shader
+                        if (isErrorShader && fileName.contains("EuphoriaPatches") && 
+                            fileName.contains("Error") && fileName.contains("Shader")) {
+                            debugLog("Found error shader: " + fileName);
+                            return true;
+                        }
+                        
+                        // Try normalized match
                         String normalizedFileName = normalizeShaderName(fileName);
                         boolean matches = normalizedFileName.equals(normalizedName);
                         if (matches) {
-                            debugLog("Found matching shader: " + fileName);
+                            debugLog("Found matching shader via normalization: " + fileName);
                         }
                         return matches;
                     })
                     .findFirst().orElse(null);
-        }
-    }
 
-    private static String normalizeShaderName(String name) {
-        String safeChars = name.replaceAll("[^a-zA-Z0-9_ \\-.+()\\[\\]{}]", "");
-        return safeChars.trim();
+            if (result == null) {
+                debugLog("No matching shader found in directory scan");
+            }
+            return result;
+        }
     }
 }

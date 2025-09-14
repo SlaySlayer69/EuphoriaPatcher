@@ -36,11 +36,19 @@ public class ShaderpacksWatcher {
         EuphoriaLogger.debugLog("[ShaderpacksWatcher] " + message);
     }
 
+    // Add this flag to control initial scanning
+    private boolean skipInitialScan = false;
+
     public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
-        debugLog("Initializing ShaderpacksWatcher");
+        this(patcher, false);
+    }
+    
+    public ShaderpacksWatcher(EuphoriaPatcher patcher, boolean skipInitialScan) throws IOException {
+        debugLog("Initializing ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
         this.patcher = patcher;
         this.shaderpacks = EuphoriaPatcher.shaderpacks;
         this.watchService = FileSystems.getDefault().newWatchService();
+        this.skipInitialScan = skipInitialScan;
         this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "EuphoriaPatches-FileWatcher");
             thread.setDaemon(true);
@@ -58,8 +66,12 @@ public class ShaderpacksWatcher {
         );
 
         // Also do an initial scan of existing files just in case
-        debugLog("Performing initial directory scan");
-        initialScan();
+        if (!skipInitialScan) {
+            debugLog("Performing initial directory scan");
+            initialScan();
+        } else {
+            debugLog("Skipping initial scan as requested");
+        }
     }
 
     // Helper class to track file metadata for change detection
@@ -410,9 +422,13 @@ public class ShaderpacksWatcher {
 
     // Create a static factory method that handles exceptions internally
     public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher) {
-        debugLog("Creating and starting new ShaderpacksWatcher");
+        return createAndStart(patcher, false);
+    }
+    
+    public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher, boolean skipInitialScan) {
+        debugLog("Creating and starting new ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
         try {
-            ShaderpacksWatcher watcher = new ShaderpacksWatcher(patcher);
+            ShaderpacksWatcher watcher = new ShaderpacksWatcher(patcher, skipInitialScan);
             watcher.startWatching();
             debugLog("ShaderpacksWatcher successfully created and started");
             return watcher;
@@ -422,7 +438,7 @@ public class ShaderpacksWatcher {
             return null;
         }
     }
-
+    
     private boolean isPotentialShaderPack(Path path) {
         String fileName = path.getFileName().toString();
         try {
@@ -476,6 +492,17 @@ public class ShaderpacksWatcher {
                 if (patcher != null) {
                     isValidByByteSize = patcher.isValidShaderByByteSize(path);
                     debugLog("Byte size verification result: " + (isValidByByteSize ? "valid" : "invalid") + " - " + fileName);
+                    
+                    // Add result logging
+                    if (isValidByByteSize) {
+                        EuphoriaPatcher.log(0, "File passed byte size verification: " + fileName);
+                    } else {
+                        if (!fileName.contains("EuphoriaPatches Error Shader")) {
+                            EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " + EuphoriaPatcher.BRAND_NAME + "Shaders" +
+                                    EuphoriaPatcher.VERSION + ". It may be an incorrect version or modified.");
+                            EuphoriaPatcher.log(3, "Please download the correct and official version from " + EuphoriaPatcher.DOWNLOAD_URL);
+                        }
+                    }
 
                     // If valid by byte size, rename the file to the correct format
                     if (isValidByByteSize) {
