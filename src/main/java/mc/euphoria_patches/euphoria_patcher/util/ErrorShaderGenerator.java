@@ -128,29 +128,8 @@ public class ErrorShaderGenerator {
      * Schedules a shader reload on the main thread
      */
     private static void scheduleShaderReload() {
-        try {
-            Class<?> irisClass = null;
-            
-            // Try both possible Iris class locations
-            try {
-                irisClass = Class.forName("net.irisshaders.iris.Iris");
-                debugLog("Found Iris class at net.irisshaders.iris.Iris");
-            } catch (ClassNotFoundException e1) {
-                try {
-                    irisClass = Class.forName("net.coderbot.iris.Iris");
-                    debugLog("Found Iris class at net.coderbot.iris.Iris");
-                } catch (ClassNotFoundException e2) {
-                    debugLog("Iris not found - cannot reload shaders automatically");
-                    return;
-                }
-            }
-            
-            debugLog("Scheduling shader reload for error shader updates");
-            UpdateShaderLoaderConfig.scheduleIrisReload(irisClass);
-            
-        } catch (Exception e) {
-            debugLog("Error scheduling shader reload: " + e.getMessage());
-        }
+        debugLog("Scheduling shader reload for error shader updates");
+        IrisReloadManager.findAndScheduleReload();
     }
     
     /**

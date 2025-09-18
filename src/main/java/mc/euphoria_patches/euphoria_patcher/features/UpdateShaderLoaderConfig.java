@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.util.IrisReloadManager;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -10,9 +11,6 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class UpdateShaderLoaderConfig {
-
-    private static volatile boolean pendingReload = false;
-    private static volatile Class<?> pendingIrisClass = null;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UpdateShaderLoaderConfig] " + message);
@@ -24,21 +22,6 @@ public class UpdateShaderLoaderConfig {
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
         if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
         return shaderLoaderConfig;
-    }
-
-    public static void checkPendingReload() {
-        if (pendingReload && pendingIrisClass != null) {
-            try {
-                debugLog("Processing pending shader reload on main thread");
-                pendingIrisClass.getMethod("reload").invoke(null);
-                debugLog("Successfully reloaded shaders");
-            } catch (Exception e) {
-                EuphoriaPatcher.log(2, 0, "Error reloading Iris shaders:" + e.getMessage());
-            } finally {
-                pendingReload = false;
-                pendingIrisClass = null;
-            }
-        }
     }
 
     public static void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
@@ -104,37 +87,8 @@ public class UpdateShaderLoaderConfig {
             return;
         }
 
-        Class<?> irisClass = null;
-        debugLog("Attempting to find Iris class for shader reload");
-
-        // Try both possible Iris class locations
-        try {
-            irisClass = Class.forName("net.irisshaders.iris.Iris");
-            debugLog("Found Iris class at net.irisshaders.iris.Iris");
-        } catch (ClassNotFoundException e1) {
-            debugLog("Iris class not found at net.irisshaders.iris.Iris, trying alternative location");
-            try {
-                irisClass = Class.forName("net.coderbot.iris.Iris");
-                debugLog("Found Iris class at net.coderbot.iris.Iris");
-            } catch (ClassNotFoundException e2) {
-                // Iris isn't installed, this is fine - just log to debug
-                debugLog("Iris not found - this is normal if Iris isn't installed");
-                return;
-            }
-        }
-        
-        debugLog("Scheduling shader reload on next game tick");
-        pendingIrisClass = irisClass;
-        pendingReload = true;
-    }
-
-    // Add this public method to allow scheduling reloads from other classes
-    public static void scheduleIrisReload(Class<?> irisClass) {
-        if (irisClass != null) {
-            debugLog("Scheduling shader reload via external request");
-            pendingIrisClass = irisClass;
-            pendingReload = true;
-        }
+        debugLog("Attempting to schedule shader reload");
+        IrisReloadManager.findAndScheduleReload();
     }
 
     private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
