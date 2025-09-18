@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.util.IrisReloadManager;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import net.minecraft.client.MinecraftClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +16,6 @@ public class ReloadShadersOnDimensionChangeMixin {
     @Unique
     private static String lastDimension = null;
 
-
     @Unique
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ReloadShadersOnDimensionChangeMixin] " + message);
@@ -27,23 +27,6 @@ public class ReloadShadersOnDimensionChangeMixin {
     @Inject(method = "setWorld", at = @At("RETURN"))
     private void onDimensionChange(CallbackInfo ci) {
         debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
-
-        Class<?> irisClass = null;
-
-        // Try both possible Iris class locations
-        try {
-            irisClass = Class.forName("net.irisshaders.iris.Iris");
-            debugLog("Found Iris class at net.irisshaders.iris.Iris");
-        } catch (ClassNotFoundException e1) {
-            try {
-                irisClass = Class.forName("net.coderbot.iris.Iris");
-                debugLog("Found Iris class at net.coderbot.iris.Iris");
-            } catch (ClassNotFoundException e2) {
-                // Iris isn't installed, this is fine - just log to debug
-                debugLog("Iris not found - this is normal if Iris isn't installed");
-                return;
-            }
-        }
         
         // Get current dimension
         String currentDimension = ModLoaderSpecifics.getCurrentDimension();
@@ -60,22 +43,14 @@ public class ReloadShadersOnDimensionChangeMixin {
             debugLog("!!! DIMENSION CHANGED: " + lastDimension + " -> " + currentDimension + " !!!");
             lastDimension = currentDimension;
             
-            // Schedule shader reload for next game tick
+            // Use IrisReloadManager to handle the reload
             try {
-                Class<?> finalIrisClass = irisClass;
                 MinecraftClient.getInstance().execute(() -> {
-                    // Only attempt to reload if we found a valid Iris class
-                    try {
-                        finalIrisClass.getMethod("reload").invoke(null);
-                        debugLog("Successfully reloaded shaders after dimension change");
-                    } catch (Exception e) {
-                        // This is an actual error since we found Iris but couldn't reload
-                        EuphoriaPatcher.log(2, 0, "Error reloading Iris shaders: " + e.getMessage());
-                        debugLog("Error details: " + e.getClass().getName() + ": " + e.getMessage());
-                    }
+                    IrisReloadManager.findAndScheduleReload();
+                    debugLog("Scheduled shader reload after dimension change");
                 });
             } catch (Exception e) {
-                EuphoriaPatcher.log(2,0, "Error scheduling shader reload: " + e.getMessage());
+                EuphoriaPatcher.log(2, 0, "Error scheduling shader reload: " + e.getMessage());
             }
         }
     }
