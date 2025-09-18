@@ -54,11 +54,11 @@ public class ShaderLoader {
                         continue;
                     }
 
-                    if (fileName.startsWith("iris") && (fileName.contains("fabric") || fileName.contains("neoforge")) ||
-                            fileName.startsWith("oculus-mc") ||
-                            fileName.startsWith("mekalus-mc") ||
-                            fileName.startsWith("optifine_") ||
-                            fileName.startsWith("angelica")) {
+                    if ((fileName.startsWith("iris") && (fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc"))) ||
+                        fileName.startsWith("oculus-mc") ||
+                        fileName.startsWith("mekalus-mc") ||
+                        fileName.startsWith("optifine_") ||
+                        fileName.startsWith("angelica")) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
                         debugLog("Found shader loader file: " + modFile.getName());
