@@ -100,7 +100,11 @@ public class ModifyPatchedShaderpacks {
         } else if (Files.exists(resolvedPath)) {
             // Process single file
             debugLog("Processing single file: " + resolvedPath);
-            modifyFile(resolvedPath, regexAndReplacements);
+            try {
+                modifyFile(resolvedPath, regexAndReplacements);
+            } catch (IOException e) {
+                debugLog("Error processing file: " + e.getMessage());
+            }
         } else {
             debugLog("Target path not found: " + resolvedPath);
         }
@@ -112,7 +116,11 @@ public class ModifyPatchedShaderpacks {
         // For larger files (>100KB), use line-by-line processing
         if (Files.size(filePath) > 100_000) {
             debugLog("File size is larger than 100KB, using line-by-line modification for: " + filePath.getFileName());
-            lineByLineModify(filePath, regexAndReplacements);
+            try {
+                lineByLineModify(filePath, regexAndReplacements);
+            } catch (IOException e) {
+                debugLog("Error during line-by-line modification: " + e.getMessage());
+            }
         } else {
             // Use existing approach for smaller files
             String content = new String(Files.readAllBytes(filePath));

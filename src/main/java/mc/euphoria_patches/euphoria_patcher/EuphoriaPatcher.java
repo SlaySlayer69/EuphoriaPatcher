@@ -23,11 +23,11 @@ public class EuphoriaPatcher {
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
-    public static final String VERSION = "_r5.5.1";
-    public static final String PATCH_VERSION = "_1.6.8";
+    public static final String VERSION = "_r5.6";
+    public static final String PATCH_VERSION = "_1.7.0";
 
-    public static final String BASE_TAR_SHA256 = "c1c128eb0b15657670e5b8e3884fd8a495aaec1fd4226682b18e1ade702217cf";
-    public static final int BASE_TAR_SIZE = 1340416;
+    public static final String BASE_TAR_SHA256 = "cf511749d880609cde1066165ea0d713ff1180b7336a05490cbd103abd424ed4";
+    public static final int BASE_TAR_SIZE = 1439232;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -349,6 +349,10 @@ public class EuphoriaPatcher {
                         debugLog("File version: " + fileVersion + ", Expected: " + expectedVersion);
                         
                         if (fileVersion.equals(expectedVersion)) {
+                            if (directory.getFileName().toString().equals(("Euphoria-Patches"))) {
+                                debugLog("Skipping dev Euphoria-Patches folder");
+                                continue;
+                            }
                             debugLog("Version match found - this is a correct Euphoria Patches installation");
                             
                             info.isAlreadyInstalled = true;
