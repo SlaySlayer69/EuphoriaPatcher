@@ -27,7 +27,7 @@ public class ModifyOutdatedPatches {
                 debugLog("Found outdated pack to rename: " + name);
                 
                 String newName = name
-                        .replaceFirst("(.*) \\+", "§cOutdated§r $1 +")
+                        .replaceFirst("(.*) \\+", "Outdated $1 +")
                         .replace("EuphoriaPatches_", "EP_");
                 
                 debugLog("Renaming to: " + newName);
