@@ -349,8 +349,9 @@ public class EuphoriaPatcher {
                         debugLog("File version: " + fileVersion + ", Expected: " + expectedVersion);
                         
                         if (fileVersion.equals(expectedVersion)) {
-                            if (directory.getFileName().toString().equals(("Euphoria-Patches"))) {
-                                debugLog("Skipping dev Euphoria-Patches folder");
+                            String dirName = directory.getFileName().toString();
+                            if (dirName.equals(("Euphoria-Patches")) || dirName.matches("dev\\d+") || dirName.contains("earlyDev")) {
+                                debugLog("Skipping dev Euphoria-Patches versions");
                                 continue;
                             }
                             debugLog("Version match found - this is a correct Euphoria Patches installation");
@@ -359,7 +360,6 @@ public class EuphoriaPatcher {
                             info.installedDir = directory;
                             
                             // Try to determine style from directory name or common.glsl
-                            String dirName = directory.getFileName().toString();
                             if (dirName.contains("Reimagined")) {
                                 info.styleReimagined = true;
                             } else if (dirName.contains("Unbound")) {
