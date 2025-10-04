@@ -185,6 +185,7 @@ public class ErrorShaderGenerator {
                 "shaders/gbuffers_textured.vsh",
                 "shaders/gbuffers_weather.fsh",
                 "shaders/gbuffers_weather.vsh",
+                "shaders/pack.json",
                 "shaders/shaders.properties",
                 "shaders/textRenderer.glsl",
                 "shaders/warning.png"
