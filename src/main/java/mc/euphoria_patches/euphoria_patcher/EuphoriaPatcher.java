@@ -95,7 +95,7 @@ public class EuphoriaPatcher {
                 if (!isDevFunc()) return;
             }
         } else {
-            thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir);
+            thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, true);
             return;
         }
 
@@ -123,7 +123,7 @@ public class EuphoriaPatcher {
         if (doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
         if (doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
-        thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir);
+        thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, shaderInfo.isAlreadyInstalled);
         return true;
     }
 
@@ -760,7 +760,7 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir) {
+    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir, boolean isAlreadyInstalled) {
         // Create a safe way to get the shader path
         Path shader = null;
         
@@ -850,11 +850,11 @@ public class EuphoriaPatcher {
                     log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
                 }
                 // Create alternative shader names if specified in config
-                createAlternativeShaderNames(shader);
+                createAlternativeShaderNames(shader, isAlreadyInstalled);
                 log(1, "Have fun developing Euphoria Patches!\n");
             } else {
                 // Create alternative shader names if specified in config
-                createAlternativeShaderNames(shader);
+                createAlternativeShaderNames(shader, isAlreadyInstalled);
                 log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
             }
         } else {
@@ -1260,13 +1260,15 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void createAlternativeShaderNames(Path patchedShaderPath) {
-        if (alternativeShaderNames.isEmpty()) {
-            debugLog("No alternative shader names configured, skipping creation.");
+    private void createAlternativeShaderNames(Path patchedShaderPath, boolean isAlreadyInstalled) {
+        if (alternativeShaderNames.isEmpty() || isAlreadyInstalled) {
+            if (alternativeShaderNames.isEmpty()) {
+                debugLog("No alternative shader names configured.");
+            } else {
+                debugLog("Skipping alternative shader names creation as Euphoria Patches is already installed.");
+            }
             return; // No alternative names to create
         }
-
-        log(0, "Creating alternative shader names from: " + patchedShaderPath.getFileName());
 
         String baseVersion = VERSION.replace("_", "");
         String patchVersion = PATCH_VERSION.replace("_", "");
@@ -1345,6 +1347,8 @@ public class EuphoriaPatcher {
                     UsefulFunctions.deleteRecursively(targetPath);
                 }
             }
+
+            log(0, "Creating alternative shader names from: " + sourceShaderPath.getFileName());
             
             // Copy the directory
             debugLog("Creating alternative shader with name: \"" + newName + "\"");
