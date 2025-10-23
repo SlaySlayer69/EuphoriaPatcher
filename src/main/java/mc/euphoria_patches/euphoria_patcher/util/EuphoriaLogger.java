@@ -250,7 +250,7 @@ public class EuphoriaLogger {
                 }
                 
                 // Also delete error shader if it exists
-                Path errorShaderPath = EuphoriaPatcher.shaderpacks.resolve("_0EuphoriaPatches Error Shader");
+                Path errorShaderPath = EuphoriaPatcher.shaderpacks.resolve("_0EuphoriaPatches_ErrorShader");
                 if (Files.exists(errorShaderPath)) {
                     FileUtils.deleteDirectory(errorShaderPath.toFile());
                     log(0, "Deleted error shader as installation was successful");

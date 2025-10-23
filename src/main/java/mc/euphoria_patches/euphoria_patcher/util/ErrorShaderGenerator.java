@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class ErrorShaderGenerator {
     
-    private static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches Error Shader";
+    private static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches_ErrorShader";
     private static final String ERROR_TEXTS_FILE = "shaders/errorTexts.glsl";
     private static final int MAX_LINE_LENGTH = 90;
     
