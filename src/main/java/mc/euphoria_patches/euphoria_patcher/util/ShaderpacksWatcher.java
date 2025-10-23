@@ -442,7 +442,7 @@ public class ShaderpacksWatcher {
     private boolean isPotentialShaderPack(Path path) {
         String fileName = path.getFileName().toString();
         
-        if (fileName.contains("EuphoriaPatches Error Shader")) {
+        if (fileName.contains("_0EuphoriaPatches_ErrorShader")) {
             debugLog("Skipping error shader from processing: " + fileName);
             return false;
         }
