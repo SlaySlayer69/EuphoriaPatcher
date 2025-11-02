@@ -128,7 +128,7 @@ publishMods {
     def changelogFile = file("CHANGELOG.md")
 
     if (!changelogFile.exists()) {
-        changelogFile.text = "## Changes:\n"
+        changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n-"
         throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
     }
 
@@ -145,7 +145,7 @@ publishMods {
     modLoaders.add("fabric")
     modLoaders.add("quilt")
 
-    dryRun = true
+    dryRun = false
 
     curseforge {
         projectId = "915902"
