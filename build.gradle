@@ -123,16 +123,32 @@ task cleanupJars {
 
 publishMods {
     file = remapJar.archiveFile
-    changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : "No changelog available"
+	
+    // Validate changelog exists and contains version
+    def changelogFile = file("CHANGELOG.md")
+
+    if (!changelogFile.exists()) {
+        changelogFile.text = "## Changes:\n"
+        throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
+    }
+
+    def baseVersion = project.version.toString().split("-")[0]
+    def changelogContent = changelogFile.text
+
+    if (!changelogContent.contains(baseVersion)) {
+        throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
+    }
+    
+    changelog = changelogFile.text
 
     type = STABLE
     modLoaders.add("fabric")
     modLoaders.add("quilt")
 
-    dryRun = false
+    dryRun = true
 
     curseforge {
-        projectId = "1377120"
+        projectId = "915902"
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
             start = "1.14"
@@ -140,7 +156,7 @@ publishMods {
         }
     }
     modrinth {
-        projectId = "xVCyYMHU"
+        projectId = "4H6sumDB"
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
             start = "1.14"
