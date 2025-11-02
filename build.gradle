@@ -110,14 +110,15 @@ java {
 }
 
 // Clean up the build directory after build
-build.doLast {
-	// Keep only the final remapped jar
-	def buildLibs = file("${buildDir}/libs")
-	buildLibs.listFiles().each { file ->
-		if (file.name == "${archivesBaseName}-${version}-shadow.jar") {
-			file.delete()
-		}
-	}
+task cleanupJars {
+    doLast {
+        def buildLibs = file("${buildDir}/libs")
+        buildLibs.listFiles().each { file ->
+            if (file.name.contains("-shadow.jar")) {
+                file.delete()
+            }
+        }
+    }
 }
 
 publishMods {
@@ -127,6 +128,8 @@ publishMods {
     type = STABLE
     modLoaders.add("fabric")
     modLoaders.add("quilt")
+
+    dryRun = false
 
     curseforge {
         projectId = "1377120"
@@ -144,4 +147,9 @@ publishMods {
             end = "latest"
         }
     }
+}
+
+build.finalizedBy cleanupJars
+tasks.named('publishMods').configure {
+    finalizedBy cleanupJars
 }
