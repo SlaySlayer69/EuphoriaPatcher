@@ -40,3 +40,4 @@ replay_*.log
 *.jfr
 *.patch
 /layout.json
+CHANGELOG.md

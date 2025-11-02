@@ -2,6 +2,7 @@ plugins {
 	id 'fabric-loom' version '1.6-SNAPSHOT'
 	id 'maven-publish'
 	id 'com.github.johnrengelman.shadow' version '7.1.2'
+	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
 }
 
 version = project.mod_version
@@ -119,9 +120,28 @@ build.doLast {
 	}
 }
 
-// Disable the maven publication to avoid generating additional artifacts
-publishing {
-	publications {
-		// Empty to disable publications
-	}
+publishMods {
+    file = remapJar.archiveFile
+    changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : "No changelog available"
+
+    type = STABLE
+    modLoaders.add("fabric")
+    modLoaders.add("quilt")
+
+    curseforge {
+        projectId = "1377120"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersionRange {
+            start = "1.14"
+            end = "latest"
+        }
+    }
+    modrinth {
+        projectId = "xVCyYMHU"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersionRange {
+            start = "1.14"
+            end = "latest"
+        }
+    }
 }
