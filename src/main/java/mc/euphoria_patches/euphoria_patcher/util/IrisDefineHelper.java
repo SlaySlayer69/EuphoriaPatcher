@@ -51,9 +51,7 @@ public class IrisDefineHelper {
             // Check for potato.png file and add the define if it doesn't exist
             Path currentShaderpack = UpdateShaderLoaderConfig.getCurrentShaderpackPath();
             if (currentShaderpack != null) {
-                boolean potatoExists = checkPotatoExists(currentShaderpack);
-                
-                if (!potatoExists) {
+                if (PotatoFileMonitor.shouldAddPotatoRemovedDefine(currentShaderpack)) {
                     defineKey.accept(standardDefines, "EUPHORIA_PATCHES_POTATO_REMOVED");
                     debugLog("Adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png not found");
                 } else {
