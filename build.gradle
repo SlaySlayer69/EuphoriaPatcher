@@ -168,26 +168,5 @@ publishMods {
 build.finalizedBy cleanupJars
 
 tasks.named('publishMods').configure {
-    doFirst {
-        println "\n${"="*60}"
-        println "PUBLISH CONFIRMATION"
-        println "${"="*60}"
-        println "Version: ${project.version}"
-        println "Targets: CurseForge and Modrinth"
-        println "${"="*60}"
-        
-        // Flush the output before reading input
-        System.out.print("Type 'yes' to confirm publishing: ")
-        System.out.flush()
-        
-        def reader = new BufferedReader(new InputStreamReader(System.in))
-        def response = reader.readLine()
-        
-        if (response?.toLowerCase()?.trim() != 'yes') {
-            println "\n✖ Publishing cancelled by user."
-            throw new GradleException("✖ Publishing cancelled by user.")
-        }
-        
-        println "\n✓ Publishing confirmed. Proceeding...\n"
-    }
+	finalizedBy cleanupJars
 }
