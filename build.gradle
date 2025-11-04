@@ -121,6 +121,65 @@ task cleanupJars {
     }
 }
 
+ext.publishConfirmed = false
+ext.skipCurseforge = false
+ext.skipModrinth = false
+
+// Create a confirmation task that runs before any publishing
+task confirmPublish {
+    doLast {
+        if (!project.ext.publishConfirmed) {
+            println "\n${"="*60}"
+            println "PUBLISH CONFIRMATION"
+            println "${"="*60}"
+            println "Version: ${project.version}"
+            println "Dry Run: ${publishMods.dryRun.get()}"
+            println "${"="*60}"
+
+            System.out.print("Type 'yes' to confirm: ")
+            System.out.flush()
+
+            def reader = new BufferedReader(new InputStreamReader(System.in))
+            def response = reader.readLine()
+
+            if (response?.toLowerCase()?.trim() != 'yes') {
+                throw new GradleException("Publishing cancelled.")
+            }
+
+            System.out.print("\nPublish to (1=Both, 2=CurseForge only, 3=Modrinth only): ")
+            System.out.flush()
+
+            def platformChoice = reader.readLine()?.trim()
+
+            if (platformChoice == '2') {
+                project.ext.skipModrinth = true
+                println "Selected: CurseForge only"
+            } else if (platformChoice == '3') {
+                project.ext.skipCurseforge = true
+                println "Selected: Modrinth only"
+            } else if (platformChoice == '1') {
+                println "Selected: Both platforms"
+            } else {
+                throw new GradleException("Invalid selection. Publishing cancelled.")
+            }
+
+            project.ext.publishConfirmed = true
+        }
+    }
+}
+
+// Make publish tasks depend on confirmation and check skip flags
+tasks.whenTaskAdded { task ->
+    if (task.name == 'publishCurseforge') {
+        task.dependsOn confirmPublish
+        task.onlyIf { !project.ext.skipCurseforge }
+    }
+    if (task.name == 'publishModrinth') {
+        task.dependsOn confirmPublish
+        task.onlyIf { !project.ext.skipModrinth }
+    }
+}
+
 publishMods {
     file = remapJar.archiveFile
 	
@@ -145,7 +204,7 @@ publishMods {
     modLoaders.add("fabric")
     modLoaders.add("quilt")
 
-    dryRun = true
+    dryRun = false
 
     curseforge {
         projectId = "915902"
