@@ -73,33 +73,43 @@ public class ArchiveOperations {
                         String detectedVersion = EuphoriaPatcher.getVersionStringFromFileName(fileName);
                         
                         // Newer version detected - recommend mod update if available
-                        EuphoriaPatcher.log(3, 8, "Newer shader version in shaderpacks folder detected: " + originalFileName);
-                        EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + " only works with " + 
-                            EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
+                        EuphoriaPatcher.log(3, 8, "=== VERSION MISMATCH ===");
+                        EuphoriaPatcher.log(3, 8, "Found shader: " + originalFileName + " (version " + detectedVersion + ")");
+                        EuphoriaPatcher.log(3, 8, "Required shader: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+                        EuphoriaPatcher.log(3, 8, "");
+                        EuphoriaPatcher.log(3, 8, "You have a NEWER shader version than what this mod version supports.");
                         
                         if (UpdateChecker.isUpdateAvailable() && EuphoriaPatcher.doUpdateChecking) {
                             // Update available - recommend updating the mod
-                            EuphoriaPatcher.log(3, 8, "Please update " + EuphoriaPatcher.PATCH_NAME + " to the latest version to support this shader version: " + detectedVersion);
-                            EuphoriaPatcher.log(3, 8, "Download it from Modrinth: https://euphoriapatches.com/download");
+                            EuphoriaPatcher.log(3, 8, "");
+                            EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version");
+                            EuphoriaPatcher.log(3, 8, "Download from: https://euphoriapatches.com/download");
                         } else {
                             // No update available - need the specific version
-                            EuphoriaPatcher.log(3, 8, "This version of " + EuphoriaPatcher.PATCH_NAME + " requires " + 
-                                EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
-                            EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL + " or check for an " + EuphoriaPatcher.PATCH_NAME + " update manually at https://euphoriapatches.com/download");
+                            EuphoriaPatcher.log(3, 8, "");
+                            EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports version " + detectedVersion);
+                            EuphoriaPatcher.log(3, 8, "SOLUTION 2: Download the compatible shader version " + EuphoriaPatcher.VERSION);
+                            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
                         }
                     }
                     // Check if it's the correct version with incorrect size
                     else if (fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
-                        EuphoriaPatcher.log(3, 8, "The shader " + originalFileName + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
-                        EuphoriaPatcher.log(3, 8, "The shader file appears to be incomplete or has been modified.");
-                        EuphoriaPatcher.log(3, 8, "Please re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
-                            " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
+                        EuphoriaPatcher.log(3, 8, "=== FILE VERIFICATION FAILED ===");
+                        EuphoriaPatcher.log(3, 8, "Shader file: " + originalFileName);
+                        EuphoriaPatcher.log(3, 8, "This file appears to be incomplete or has been modified.");
+                        EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
+                        EuphoriaPatcher.log(3, 8, "");
+                        EuphoriaPatcher.log(3, 8, "SOLUTION: Re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+                        EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
                     }
                     // Wrong version completely
                     else {
-                        EuphoriaPatcher.log(3, 8, "The shader " + originalFileName + " that was found in your shaderpacks folder can't be used as a base for " + EuphoriaPatcher.PATCH_NAME);
-                        EuphoriaPatcher.log(3, 8, "Please download " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
-                            " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
+                        EuphoriaPatcher.log(3, 8, "=== WRONG SHADER VERSION ===");
+                        EuphoriaPatcher.log(3, 8, "Found: " + originalFileName);
+                        EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+                        EuphoriaPatcher.log(3, 8, "");
+                        EuphoriaPatcher.log(3, 8, "SOLUTION: Download the correct shader version " + EuphoriaPatcher.VERSION);
+                        EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
                     }
 
                     EuphoriaPatcher.log(0, "Watching for the correct shader to be added...");
@@ -121,10 +131,12 @@ public class ArchiveOperations {
                 // If size matches, check if it's a test/fix version by filename
                 if (isTestOrDevVersion(fileName)) {
                     debugLog("Test/fix version detected: " + originalFileName);
-                    EuphoriaPatcher.log(3, 8, "Test or development version detected: " + originalFileName);
-                    EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + " requires the official release of " + 
-                        EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
-                    EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL);
+                    EuphoriaPatcher.log(3, 8, "=== DEV VERSION DETECTED ===");
+                    EuphoriaPatcher.log(3, 8, "Found: " + originalFileName);
+                    EuphoriaPatcher.log(3, 8, "This appears to be a test, dev, or pre-release version.");
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the official release version " + EuphoriaPatcher.VERSION);
+                    EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
 
                     // Start the watcher
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
@@ -143,11 +155,14 @@ public class ArchiveOperations {
                 // Second check: content hash verification (if size matches)
                 if (detectIncorrectHash(baseArchived)) {
                     debugLog("Archive hash verification failed - file has been modified");
-                    EuphoriaPatcher.log(3, 8, "The shader file that was found in your shaderpacks folder appears to have been modified.");
+                    EuphoriaPatcher.log(3, 8, "=== FILE VERIFICATION FAILED ===");
+                    EuphoriaPatcher.log(3, 8, "Shader file: " + originalFileName);
+                    EuphoriaPatcher.log(3, 8, "This file appears to have been modified.");
                     EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
-                    EuphoriaPatcher.log(3, 8, "Name of the potentially modified shader: " + originalFileName);
-                    EuphoriaPatcher.log(3, 8, "Please download the original " + EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
-                        " from " + EuphoriaPatcher.DOWNLOAD_URL + " and place it in the shaderpacks folder.");
+                    EuphoriaPatcher.log(3, 8, "File size matches but content hash does not.");
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the original unmodified shader");
+                    EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
 
                     // Start the watcher
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
