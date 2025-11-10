@@ -34,10 +34,12 @@ public class UpdateChecker {
     }
 
     public static String getNewModVersion() {
+        checkForUpdates();
         return NEW_MOD_VERSION;
     }
 
     public static String getLatestChangelog() {
+        checkForUpdates();
         return LATEST_CHANGELOG;
     }
 

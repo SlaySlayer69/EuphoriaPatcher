@@ -226,6 +226,15 @@ public class ErrorShaderGenerator {
             if (message.startsWith("EuphoriaPatcher: ")) {
                 message = message.substring("EuphoriaPatcher: ".length());
             }
+
+            // Handle empty lines specially
+            if (message.trim().isEmpty()) {
+                glsl.append("beginTextError(3, offset);\n");
+                glsl.append("    printLine();\n");
+                glsl.append("endText(textColor);\n");
+                glsl.append("offset.y += 1;\n\n");
+                continue;
+            }
             
             // Split message into lines
             List<String> lines = splitTextIntoLines(message);

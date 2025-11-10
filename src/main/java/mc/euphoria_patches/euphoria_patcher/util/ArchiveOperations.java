@@ -76,7 +76,6 @@ public class ArchiveOperations {
                         EuphoriaPatcher.log(3, 8, "=== VERSION MISMATCH ===");
                         EuphoriaPatcher.log(3, 8, "Found shader: " + originalFileName + " (version " + detectedVersion + ")");
                         EuphoriaPatcher.log(3, 8, "Required shader: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
-                        EuphoriaPatcher.log(3, 8, "");
                         EuphoriaPatcher.log(3, 8, "You have a NEWER shader version than what this mod version supports.");
                         
                         if (UpdateChecker.isUpdateAvailable()) {
@@ -135,7 +134,7 @@ public class ArchiveOperations {
                     EuphoriaPatcher.log(3, 8, "Found: " + originalFileName);
                     EuphoriaPatcher.log(3, 8, "This appears to be a test, dev, or pre-release version.");
                     EuphoriaPatcher.log(3, 8, "");
-                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the official release version " + EuphoriaPatcher.VERSION);
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the official " + EuphoriaPatcher.BRAND_NAME + " release version: " + EuphoriaPatcher.VERSION);
                     EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
 
                     // Start the watcher
@@ -161,7 +160,7 @@ public class ArchiveOperations {
                     EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
                     EuphoriaPatcher.log(3, 8, "File size matches but content hash does not.");
                     EuphoriaPatcher.log(3, 8, "");
-                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the original unmodified shader");
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download the original unmodified " + EuphoriaPatcher.BRAND_NAME + " shader");
                     EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.DOWNLOAD_URL);
 
                     // Start the watcher

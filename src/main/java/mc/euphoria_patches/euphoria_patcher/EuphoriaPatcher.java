@@ -24,7 +24,7 @@ public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = "_r5.6.1";
-    public static final String PATCH_VERSION = "_1.7.4";
+    public static final String PATCH_VERSION = "_1.7.5";
 
     public static final String BASE_TAR_SHA256 = "85bedae6a1fc8cac5f24cbcca18950f850dc7867c30e7db2bb0e15cb63729fe5";
     public static final int BASE_TAR_SIZE = 1440768;
@@ -870,19 +870,26 @@ public class EuphoriaPatcher {
         // Try to find the highest older version
         Path highestOlderVersion = findHighestOlderVersion();
         
-        log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
+        log(3, 8, "=== SHADER NOT FOUND ===");
+        log(3, 8, "Required: " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
         
         if (highestOlderVersion != null) {
-            log(3, 8, "Found older version: " + highestOlderVersion.getFileName().toString());
-            log(3, 8, "Please update to specifically " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+            log(3, 8, "Found: " + highestOlderVersion.getFileName().toString());
+            log(3, 8, "You have an older version installed.");
+            log(3, 8, "");
+            log(3, 8, "SOLUTION: Download and install " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
         } else {
-            log(3, 8, "Please download it from " + DOWNLOAD_URL + " and place it into your shaderpacks folder.");
+            log(3, 8, "");
+            log(3, 8, "No " + BRAND_NAME + " shader found in your shaderpacks folder.");
+            log(3, 8, "");
+            log(3, 8, "SOLUTION: Download " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
         }
+        
+        log(3, 8, "Download from: " + DOWNLOAD_URL);
 
         // Start watching for the shader to be added
         startShaderpacksWatcher();
     }
-
     /**
      * Finds the highest version of any older Complementary shader
      * @return Path to the highest version file/directory, or null if none found

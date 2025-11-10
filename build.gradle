@@ -125,8 +125,31 @@ ext.publishConfirmed = false
 ext.skipCurseforge = false
 ext.skipModrinth = false
 
+// Create a task to validate the changelog
+task validateChangelog {
+    doLast {
+        def changelogFile = file("CHANGELOG.md")
+        def baseVersion = project.version.toString().split("-")[0]
+        def compVersion = project.version.toString().split("-")[1]
+
+        if (!changelogFile.exists()) {
+            changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n- Updated to Complementary Shaders ${compVersion} + Euphoria Patches ${baseVersion} - This is a minor update"
+            throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
+        }
+
+        
+        def changelogContent = changelogFile.text
+
+        if (!changelogContent.contains(baseVersion)) {
+            throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
+        }
+    }
+}
+
 // Create a confirmation task that runs before any publishing
 task confirmPublish {
+    dependsOn validateChangelog
+
     doLast {
         if (!project.ext.publishConfirmed) {
             println "\n${"="*60}"
@@ -185,18 +208,6 @@ publishMods {
 	
     // Validate changelog exists and contains version
     def changelogFile = file("CHANGELOG.md")
-
-    if (!changelogFile.exists()) {
-        changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n-"
-        throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
-    }
-
-    def baseVersion = project.version.toString().split("-")[0]
-    def changelogContent = changelogFile.text
-
-    if (!changelogContent.contains(baseVersion)) {
-        throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
-    }
     
     changelog = changelogFile.text
 
