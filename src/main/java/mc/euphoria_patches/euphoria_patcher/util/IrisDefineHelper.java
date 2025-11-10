@@ -61,14 +61,12 @@ public class IrisDefineHelper {
                 debugLog("Cannot check for potato.png - currentShaderpack is null");
             }
 
-            if (UpdateChecker.NEW_VERSION_AVAILABLE && EuphoriaPatcher.doUpdateChecking
-                && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
-                    
+            if (UpdateChecker.isUpdateAvailable() && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
                 defineKey.accept(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 
-                if (UpdateChecker.NEW_MOD_VERSION != null) {
-                    String nextVersionFormatted = formatVersion(UpdateChecker.NEW_MOD_VERSION);
+                if (UpdateChecker.getNewModVersion() != null) {
+                    String nextVersionFormatted = formatVersion(UpdateChecker.getNewModVersion());
                     defineKeyValue.accept(standardDefines, new String[]{"NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted});
                     debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
                 }

@@ -14,20 +14,25 @@ import java.net.URL;
 public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases";
     private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
-    public static String NEW_MOD_VERSION = null;
-    public static boolean NEW_VERSION_AVAILABLE = false;
+    private static String NEW_MOD_VERSION = null;
+    private static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
 
     public static boolean isUpdateAvailable() {
         try {
+            checkForUpdates();
             return NEW_VERSION_AVAILABLE;
         } catch (Exception e) {
             return false;
         }
     }
 
+    public static String getNewModVersion() {
+        return NEW_MOD_VERSION;
+    }
+
     public static void checkForUpdates() {
-        if (UPDATE_CHECK_PERFORMED) {
+        if (UPDATE_CHECK_PERFORMED || !EuphoriaPatcher.doUpdateChecking) {
             return;
         }
         UPDATE_CHECK_PERFORMED = true;
@@ -40,11 +45,10 @@ public class UpdateChecker {
 
             if (isNewerVersion(NEW_MOD_VERSION)) {
                 NEW_VERSION_AVAILABLE = true;
-                boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
 
-                EuphoriaPatcher.log(isIris ? 0 : 2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
-                EuphoriaPatcher.log(isIris ? 0 : 2, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
-                EuphoriaPatcher.log(isIris ? 0 : 1, 0, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
+                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
+                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
+                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
             } else {
                 EuphoriaPatcher.log(0, "[UPDATE CHECKER] The EuphoriaPatcher Mod is up to date");
             }

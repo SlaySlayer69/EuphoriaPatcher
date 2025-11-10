@@ -79,10 +79,10 @@ public class ArchiveOperations {
                         EuphoriaPatcher.log(3, 8, "");
                         EuphoriaPatcher.log(3, 8, "You have a NEWER shader version than what this mod version supports.");
                         
-                        if (UpdateChecker.isUpdateAvailable() && EuphoriaPatcher.doUpdateChecking) {
+                        if (UpdateChecker.isUpdateAvailable()) {
                             // Update available - recommend updating the mod
                             EuphoriaPatcher.log(3, 8, "");
-                            EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version");
+                            EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
                             EuphoriaPatcher.log(3, 8, "Download from: https://euphoriapatches.com/download");
                         } else {
                             // No update available - need the specific version

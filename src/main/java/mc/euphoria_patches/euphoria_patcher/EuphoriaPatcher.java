@@ -78,7 +78,7 @@ public class EuphoriaPatcher {
 
         if (doPopUpLogging) loggerInstance.checkAndSetupSodiumLogging();
 
-        if (doUpdateChecking) UpdateChecker.checkForUpdates();
+        UpdateChecker.checkForUpdates();
 
         ShaderLoader.getShaderLoader();
 
@@ -797,10 +797,10 @@ public class EuphoriaPatcher {
             boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
             boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
             boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
-            if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
-                String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION;
+            if (UpdateChecker.isUpdateAvailable()) {
+                String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.getNewModVersion();
                 if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
-                    newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.NEW_MOD_VERSION;
+                    newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.getNewModVersion();
                 }
                 try {
                     ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
