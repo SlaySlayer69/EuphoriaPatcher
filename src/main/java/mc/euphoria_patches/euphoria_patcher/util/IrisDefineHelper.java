@@ -61,7 +61,7 @@ public class IrisDefineHelper {
                 debugLog("Cannot check for potato.png - currentShaderpack is null");
             }
 
-            if (UpdateChecker.isUpdateAvailable() && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
+            if (UpdateChecker.isUpdateAvailable() && UpdateChecker.isMajorUpdate() && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
                 defineKey.accept(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 

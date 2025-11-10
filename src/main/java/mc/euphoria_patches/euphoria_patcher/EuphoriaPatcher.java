@@ -797,7 +797,7 @@ public class EuphoriaPatcher {
             boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
             boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
             boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
-            if (UpdateChecker.isUpdateAvailable()) {
+            if (UpdateChecker.isUpdateAvailable() && UpdateChecker.isMajorUpdate()) {
                 String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.getNewModVersion();
                 if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
                     newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.getNewModVersion();
