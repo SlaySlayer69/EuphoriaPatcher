@@ -134,7 +134,7 @@ public class EuphoriaPatcher {
         doPopUpLogging = Boolean.parseBoolean(Config.readWriteConfig("doPopUpLogging", "true", "Option for the sodium message popup logging." +
                 "\nDefault = true"));
         doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true", "Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
-                "\nMore info here: https://github.com/EuphoriaPatches/PatcherUpdateChecker" +
+                "\nUses the Modrinth API to fetch update information." +
                 "\nDefault = true"));
         doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true", "Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +
