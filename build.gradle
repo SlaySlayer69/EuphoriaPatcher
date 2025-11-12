@@ -5,7 +5,10 @@ plugins {
 	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
 }
 
-version = project.mod_version
+def versionProps = new Properties()
+file("version.properties").withInputStream { versionProps.load(it) }
+
+version = "${versionProps.getProperty('mod_version')}-${versionProps.getProperty('mod_loader')}"
 group = project.maven_group
 
 base {
