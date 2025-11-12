@@ -416,52 +416,91 @@ public class EuphoriaPatcher {
         try {
             // Reset counter at the start of a new scan
             resetFilesScannedCounter();
-            
-            // Count total files first
-            int zipFileCount = 0;
-            int dirCount = 0;
-            
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, 
-                    path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
-                for (Path ignored : stream) {
-                    zipFileCount++;
-                }
-            }
-            
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, Files::isDirectory)) {
-                for (Path ignored : stream) {
-                    dirCount++;
-                }
-            }
-            
-            totalFilesToScan = zipFileCount + dirCount;
-            debugLog("Total files to scan: " + totalFilesToScan + " (" + zipFileCount + " ZIP files, " + dirCount + " directories)");
-            
-            // First check ZIP files
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
-                    path -> path.toString().endsWith(".zip") && Files.isRegularFile(path))) {
-                for (Path zipFile : stream) {
-                    if (isValidShaderByByteSize(zipFile)) {
-                        // Found a valid shader by byte size, rename it to the correct format
-                        return renameToCorrectShaderName(zipFile);
+
+            // Collect files and directories, filtering out well-known popular shader names to save time
+            List<Path> zipFiles = new ArrayList<>();
+            List<Path> dirs = new ArrayList<>();
+            int skippedCount = 0;
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path p : stream) {
+                    boolean isZip = Files.isRegularFile(p) && p.toString().endsWith(".zip");
+                    boolean isDir = Files.isDirectory(p);
+
+                    if (!isZip && !isDir) continue;
+
+                    if (isPopularShaderName(p)) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (isZip) {
+                        zipFiles.add(p);
+                    } else {
+                        dirs.add(p);
                     }
                 }
             }
 
-            // Then check directories
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks,
-                    Files::isDirectory)) {
-                for (Path dir : stream) {
-                    if (isValidShaderByByteSize(dir)) {
-                        // Found a valid shader by byte size, rename it to the correct format
-                        return renameToCorrectShaderName(dir);
-                    }
+            int zipFileCount = zipFiles.size();
+            int dirCount = dirs.size();
+            totalFilesToScan = zipFileCount + dirCount;
+            debugLog("Total files to scan: " + totalFilesToScan + " (" + zipFileCount + " ZIP files, " + dirCount + " directories) - skipped " + skippedCount + " popular shaders");
+
+            // First check ZIP files (using our filtered list)
+            for (Path zipFile : zipFiles) {
+                if (isValidShaderByByteSize(zipFile)) {
+                    // Found a valid shader by byte size, rename it to the correct format
+                    return renameToCorrectShaderName(zipFile);
+                }
+            }
+
+            // Then check directories (using our filtered list)
+            for (Path dir : dirs) {
+                if (isValidShaderByByteSize(dir)) {
+                    // Found a valid shader by byte size, rename it to the correct format
+                    return renameToCorrectShaderName(dir);
                 }
             }
         } catch (IOException e) {
             log(3, "Error searching for shaders by byte size: " + e.getMessage());
         }
         return null;
+    }
+
+    private boolean isPopularShaderName(Path path) {
+        try {
+            String nameLower = path.getFileName().toString().toLowerCase(Locale.ROOT);
+
+            List<String> popularPatterns = Arrays.asList(
+                    ".*bsl_v\\d\\..*",
+                    ".*sildur's.*",
+                    ".*spooklementary.*",
+                    ".*pixelcraftshaders_.*",
+                    "ep_earlyDev_\\d+.*",
+                    "outdated complementary.*_r\\d.*ep.*",
+                    "comp\\d.*ep_\\d+.*",
+                    ".*photon_v\\d.*",
+                    ".*hysteria-shaders.*",
+                    "rethinking-voxels_r\\d.*",
+                    "solas shader v\\d.*",
+                    "superdupervanilla.*",
+                    "insanity-shader.*",
+                    ".*(bliss_v\\d|bliss-shader).*",
+                    ".*\\b(continuum)\\b.*",
+                    ".*(chocapic|chocapic13).*",
+                    ".*astra.*lex.*"
+            );
+
+            for (String regex : popularPatterns) {
+                if (nameLower.matches(regex)) {
+                    debugLog("Skipping popular shader name during byte-size scan: " + path.getFileName() + " (matches " + regex + ")");
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     public boolean isValidShaderByByteSize(Path path) {
@@ -818,7 +857,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
             }
 
-            boolean isMacOS = System.getProperty("os.name").toLowerCase().contains("mac");
+            boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
             if (isMacOS || !(isIris || isOculus)) {
                 try {
                     // Change COLORED_LIGHTING from 192 to 0

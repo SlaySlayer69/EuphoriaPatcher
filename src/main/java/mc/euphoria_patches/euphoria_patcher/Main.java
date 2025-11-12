@@ -5,6 +5,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URI;
+import java.util.Locale;
 import java.util.Objects;
 
 public class Main {
@@ -17,7 +18,7 @@ public class Main {
     private static final Color BUTTON_HOVER_COLOR = new Color(90, 90, 90);
     
     public static void main(String[] args) {
-        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac")) {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
 

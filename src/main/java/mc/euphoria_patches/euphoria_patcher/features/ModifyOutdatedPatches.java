@@ -83,10 +83,10 @@ public class ModifyOutdatedPatches {
         
         boolean result;
         if (renameFile) {
-            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION);
+            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader");
         } else {
             result = (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*")) 
-                    && !name.contains(EuphoriaPatcher.PATCH_VERSION);
+                    && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader");
         }
         
         debugLog("Patch " + name + " is " + (result ? "outdated" : "current"));

@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import java.io.File;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,12 +38,12 @@ public class ShaderLoader {
         debugLog("Searching for shader loader file in mods directory");
         try {
             File modsFolder = new File(String.valueOf(EuphoriaPatcher.modDirectory));
-            File[] modFiles = modsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
+            File[] modFiles = modsFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".jar"));
 
             if (modFiles != null) {
                 debugLog("Found " + modFiles.length + " JAR files in mods directory");
                 for (File modFile : modFiles) {
-                    String fileName = modFile.getName().toLowerCase();
+                    String fileName = modFile.getName().toLowerCase(Locale.ROOT);
                     debugLog("Checking file: " + fileName);
 
                     // Skip compatibility and addon mods
@@ -99,7 +100,7 @@ public class ShaderLoader {
             return cachedShaderLoader;
         }
 
-        String fileName = shaderFile.getName().toLowerCase();
+        String fileName = shaderFile.getName().toLowerCase(Locale.ROOT);
         debugLog("Analyzing file name: " + fileName);
         
         if (fileName.startsWith("iris")) {
@@ -145,7 +146,7 @@ public class ShaderLoader {
             }
 
             String fileName = shaderFile.getName();
-            String lowerFileName = fileName.toLowerCase();
+            String lowerFileName = fileName.toLowerCase(Locale.ROOT);
             String extractedVersion = null;
             debugLog("Parsing version from filename: " + fileName);
 
@@ -310,7 +311,7 @@ public class ShaderLoader {
             }
 
             String fileName = shaderFile.getName();
-            String lowerFileName = fileName.toLowerCase();
+            String lowerFileName = fileName.toLowerCase(Locale.ROOT);
             String extractedVersion = null;
             debugLog("Parsing shader loader version from filename: " + fileName);
 

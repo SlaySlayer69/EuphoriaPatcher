@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 public class ArchiveOperations {
 
@@ -226,7 +227,7 @@ public class ArchiveOperations {
     }
 
     private static boolean isTestOrDevVersion(String fileName) {
-        String fileNameLower = fileName.toLowerCase();
+        String fileNameLower = fileName.toLowerCase(Locale.ROOT);
         return fileNameLower.contains("test") || fileNameLower.contains("fix") || 
             fileNameLower.contains("dev") || fileNameLower.contains("pre");
     }

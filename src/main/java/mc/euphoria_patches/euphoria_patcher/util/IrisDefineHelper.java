@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
@@ -103,7 +104,7 @@ public class IrisDefineHelper {
             
             // Check if it's a ZIP file
             if (Files.isRegularFile(shaderpackPath) && 
-                shaderpackPath.toString().toLowerCase().endsWith(".zip")) {
+                shaderpackPath.toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
                 
                 try (ZipFile zipFile = new ZipFile(shaderpackPath.toFile())) {
                     ZipEntry entry = zipFile.getEntry(potatoRelativePath);

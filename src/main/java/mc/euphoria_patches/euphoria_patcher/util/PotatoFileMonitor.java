@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -184,7 +185,7 @@ public class PotatoFileMonitor {
             
             // Check if it's a ZIP file
             if (Files.isRegularFile(shaderpackPath) && 
-                shaderpackPath.toString().toLowerCase().endsWith(".zip")) {
+                shaderpackPath.toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
                 
                 try (ZipFile zipFile = new ZipFile(shaderpackPath.toFile())) {
                     ZipEntry entry = zipFile.getEntry(potatoRelativePath);
