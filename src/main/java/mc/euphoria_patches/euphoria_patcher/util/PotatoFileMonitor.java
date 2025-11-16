@@ -1,13 +1,12 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
-import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -19,7 +18,7 @@ public class PotatoFileMonitor {
     private static volatile String currentShaderpackPath = null;
     private static volatile Boolean lastKnownState = null;
     private static volatile Boolean initialState = null; // Track the initial state
-    private static volatile int monitorLogCount = 0; // Counter for monitoring logs
+    private static final AtomicInteger monitorLogCount = new AtomicInteger(0); // Counter for monitoring logs
     private static Thread potatoMonitorThread = null;
     private static volatile boolean running = false;
     
@@ -64,7 +63,7 @@ public class PotatoFileMonitor {
             currentShaderpackPath = null;
             lastKnownState = null;
             initialState = null;
-            monitorLogCount = 0;
+            monitorLogCount.set(0);
             return;
         }
         
@@ -77,7 +76,7 @@ public class PotatoFileMonitor {
             boolean potatoExists = checkPotatoExists(shaderpackPath);
             lastKnownState = potatoExists;
             initialState = potatoExists;
-            monitorLogCount = 0;
+            monitorLogCount.set(0);
             debugLog("Initial potato.png state for new shaderpack: " + initialState);
         }
     }
@@ -90,11 +89,11 @@ public class PotatoFileMonitor {
             debugLog("Monitoring already running");
             return;
         }
-        
+
         running = true;
         potatoMonitorThread = new Thread(() -> {
             debugLog("Started potato.png monitoring thread");
-            
+
             while (running) {
                 try {
                     // Only monitor if we have a shaderpack and it initially had potato.png
@@ -102,36 +101,36 @@ public class PotatoFileMonitor {
                     if (currentShaderpackPath != null && initialState != null && initialState) {
                         Path shaderpackPath = new java.io.File(currentShaderpackPath).toPath();
                         boolean currentState = performPotatoCheck(shaderpackPath);
-                        
+
                         // If state changed, update cache and trigger reload
                         if (currentState != lastKnownState) {
                             debugLog("Potato.png state changed from " + lastKnownState + " to " + currentState);
                             potatoCache.put(currentShaderpackPath, currentState);
                             lastKnownState = currentState;
-                            monitorLogCount = 0;
-                            
+                            monitorLogCount.set(0);
+
                             if (currentState) {
                                 debugLog("potato.png has returned - triggering shader reload");
                             } else {
                                 debugLog("potato.png has been removed - triggering shader reload");
                             }
-                            
+
                             IrisReloadManager.findAndScheduleReload();
-                        } else if (monitorLogCount < 6) {
-                            monitorLogCount++;
+                        } else if (monitorLogCount.get() < 6) {
+                            monitorLogCount.incrementAndGet();
                             if (currentState) {
-                                debugLog("Monitoring: potato.png is present (" + monitorLogCount + "/6)");
+                                debugLog("Monitoring: potato.png is present (" + monitorLogCount.get() + "/6)");
                             } else {
-                                debugLog("Monitoring: potato.png is absent (" + monitorLogCount + "/6)");
+                                debugLog("Monitoring: potato.png is absent (" + monitorLogCount.get() + "/6)");
                             }
-                        } else if (monitorLogCount == 6) {
-                            monitorLogCount++;
+                        } else if (monitorLogCount.get() == 6) {
+                            monitorLogCount.incrementAndGet();
                             debugLog("Monitoring: potato.png state stable, no changes detected, will continue monitoring silently.");
                         }
                     }
                     
-                    // Check every 1 second
-                    Thread.sleep(1000);
+                    // Check every 2.5 seconds
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     debugLog("Monitoring thread interrupted");
                     break;
@@ -139,10 +138,10 @@ public class PotatoFileMonitor {
                     debugLog("Error in monitoring thread: " + e.getMessage());
                 }
             }
-            
+
             debugLog("Stopped potato.png monitoring thread");
         }, "PotatoFileMonitor");
-        
+
         potatoMonitorThread.setDaemon(true);
         potatoMonitorThread.start();
     }
@@ -179,8 +178,7 @@ public class PotatoFileMonitor {
             // Check if it's a directory
             if (Files.isDirectory(shaderpackPath)) {
                 Path potatoPath = shaderpackPath.resolve(potatoRelativePath);
-                boolean exists = Files.exists(potatoPath);
-                return exists;
+                return Files.exists(potatoPath);
             }
             
             // Check if it's a ZIP file
@@ -223,7 +221,7 @@ public class PotatoFileMonitor {
         currentShaderpackPath = null;
         lastKnownState = null;
         initialState = null;
-        monitorLogCount = 0;
+        monitorLogCount.set(0);
         debugLog("Cleared all cache");
     }
     

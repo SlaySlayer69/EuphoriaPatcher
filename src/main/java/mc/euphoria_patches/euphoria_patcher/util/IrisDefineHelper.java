@@ -4,14 +4,9 @@ import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.BiConsumer;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipEntry;
 
 public class IrisDefineHelper {
     private static int injectCount = 0;
@@ -30,7 +25,7 @@ public class IrisDefineHelper {
 
             if (EuphoriaPatcher.isSpacEagle()) { 
                 defineKey.accept(standardDefines, "SPACEAGLE17");
-                debugLog("Adding SPACEEAGLE17 define");
+                debugLog("Adding SPACEAGLE17 define");
             }
 
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
@@ -82,46 +77,6 @@ public class IrisDefineHelper {
             injectedOnce = true;
         } catch (Exception e) {
             debugLog("Exception while adding defines: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Checks whether potato.png exists in the given shaderpack path.
-     * Handles both directory and ZIP file shaderpacks.
-     */
-    private static boolean checkPotatoExists(Path shaderpackPath) {
-        String potatoRelativePath = "shaders/lib/textures/potato.png";
-        debugLog("Checking for potato.png in shaderpack: " + shaderpackPath);
-        
-        try {
-            // Check if it's a directory
-            if (Files.isDirectory(shaderpackPath)) {
-                Path potatoPath = shaderpackPath.resolve(potatoRelativePath);
-                boolean exists = Files.exists(potatoPath);
-                debugLog("Directory shaderpack: potato.png " + (exists ? "exists" : "does not exist") + " at " + potatoPath);
-                return exists;
-            }
-            
-            // Check if it's a ZIP file
-            if (Files.isRegularFile(shaderpackPath) && 
-                shaderpackPath.toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
-                
-                try (ZipFile zipFile = new ZipFile(shaderpackPath.toFile())) {
-                    ZipEntry entry = zipFile.getEntry(potatoRelativePath);
-                    boolean exists = entry != null;
-                    debugLog("ZIP shaderpack: potato.png " + (exists ? "exists" : "does not exist") + " in " + shaderpackPath);
-                    return exists;
-                } catch (IOException e) {
-                    debugLog("Error reading ZIP file: " + e.getMessage());
-                    return false;
-                }
-            }
-            
-            debugLog("Shaderpack is neither a directory nor a ZIP file: " + shaderpackPath);
-            return false;
-        } catch (Exception e) {
-            debugLog("Exception checking for potato.png: " + e.getMessage());
-            return false;
         }
     }
 

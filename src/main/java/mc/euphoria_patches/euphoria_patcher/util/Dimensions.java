@@ -55,15 +55,16 @@ public class Dimensions {
 
         // Check if it's a vanilla dimension
         debugLog("Checking vanilla dimension IDs");
-        if (currentDimensionId.equals("minecraft:overworld")) {
-            debugLog("Identified as vanilla overworld");
-            return "overworld";
-        } else if (currentDimensionId.equals("minecraft:the_nether")) {
-            debugLog("Identified as vanilla nether");
-            return "nether";
-        } else if (currentDimensionId.equals("minecraft:the_end")) {
-            debugLog("Identified as vanilla end");
-            return "end";
+        switch (currentDimensionId) {
+            case "minecraft:overworld":
+                debugLog("Identified as vanilla overworld");
+                return "overworld";
+            case "minecraft:the_nether":
+                debugLog("Identified as vanilla nether");
+                return "nether";
+            case "minecraft:the_end":
+                debugLog("Identified as vanilla end");
+                return "end";
         }
 
         // If no specific mapping is found, return "other"

@@ -180,6 +180,7 @@ public class EuphoriaPatcher {
                 UpdateShaderConfig.shutdownFileWriter();
                 Config.stopConfigWatcher();
                 instance.shaderpacksWatcher.stopWatching();
+                PotatoFileMonitor.stopMonitoring();
             } catch (Exception ignored) {
             }
         }));
@@ -339,7 +340,7 @@ public class EuphoriaPatcher {
                         firstLine = reader.readLine();
                     }
                     
-                    // Check if it's an Euphoria Patches file with the matching version
+                    // Check if it's a Euphoria Patches file with the matching version
                     if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
                         String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
                         String expectedVersion = PATCH_VERSION.replace("_", "");
@@ -1367,7 +1368,7 @@ public class EuphoriaPatcher {
                         firstLine = reader.readLine();
                     }
                     
-                    // Check if it's an Euphoria Patches file with a different version
+                    // Check if it's a Euphoria Patches file with a different version
                     if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
                         String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
                         String expectedVersion = PATCH_VERSION.replace("_", "");
@@ -1382,12 +1383,12 @@ public class EuphoriaPatcher {
                             return;
                         }
                     } else {
-                        // Not an Euphoria Patches file or can't determine version
+                        // Not a Euphoria Patches file or can't determine version
                         debugLog("Found existing shader with name \"" + newName + "\" but couldn't verify version, replacing it.");
                         UsefulFunctions.deleteRecursively(targetPath);
                     }
                 } else {
-                    // myFile.glsl doesn't exist, assume not an Euphoria shader or corrupted
+                    // myFile.glsl doesn't exist, assume not a Euphoria shader or corrupted
                     debugLog("Found existing shader with name \"" + newName + "\" but it doesn't appear to be a valid Euphoria shader, replacing it.");
                     UsefulFunctions.deleteRecursively(targetPath);
                 }

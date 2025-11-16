@@ -51,15 +51,14 @@ public class ArchiveOperations {
         try {
             String fileName = baseArchived.getFileName().toString();
             debugLog("Verifying archive: " + fileName);
-            
+
+            long fileSize = Files.size(baseArchived);
             if (EuphoriaPatcher.isDevFunc()) {
-                long fileSize = Files.size(baseArchived);
                 EuphoriaPatcher.log(0, "Archive Name: " + fileName + " Archive size: " + fileSize + " bytes");
                 String hash = calculateSHA256(baseArchived);
                 EuphoriaPatcher.log(0, "Archive SHA-256: " + hash);
             } else {
                 // Get the file size
-                long fileSize = Files.size(baseArchived);
                 debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes");
                 
                 // First check: byte size (fast check)

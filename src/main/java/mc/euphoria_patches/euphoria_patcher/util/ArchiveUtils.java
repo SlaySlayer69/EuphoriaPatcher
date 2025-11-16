@@ -150,7 +150,7 @@ public class ArchiveUtils {
             tarEntry.setSize(Files.isRegularFile(filePath) ? Files.size(filePath) : 0); // Explicit file size
             tarEntry.setIds(0, 0); // Fixed user/group IDs
             tarEntry.setNames("", ""); // Fixed user/group names
-            tarEntry.setMode(0100644); // Standard file permissions for files
+            tarEntry.setMode(TarArchiveEntry.DEFAULT_FILE_MODE); // Standard file permissions for files
 
             // Exceptions if error
             tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_ERROR);

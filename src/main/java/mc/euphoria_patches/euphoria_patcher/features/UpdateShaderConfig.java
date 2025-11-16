@@ -3,7 +3,6 @@ package mc.euphoria_patches.euphoria_patcher.features;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -273,7 +272,7 @@ public class UpdateShaderConfig {
                     return false;
                 }
             }
-            
+
             // Second line can be version identifier
             if (foundMainIdentifier) {
                 if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
