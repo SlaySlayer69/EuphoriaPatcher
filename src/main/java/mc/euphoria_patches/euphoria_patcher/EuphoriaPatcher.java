@@ -732,33 +732,40 @@ public class EuphoriaPatcher {
 
         // If the patched directory exists, check if it contains EuphoriaPatches files
         if (Files.exists(potentialInstallPath)) {
-            try {
-                boolean containsEuphoriaFile;
-                try (Stream<Path> pathStream = Files.walk(potentialInstallPath)) {
-                    containsEuphoriaFile = pathStream
-                            .filter(Files::isRegularFile)
-                            .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
-                }
+            verifyEuphoriaInstallation(potentialInstallPath, info);
+        }
+    }
 
-                if (containsEuphoriaFile) {
-                    info.isAlreadyInstalled = true;
-                    info.installedDir = potentialInstallPath;
-                    log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
-                } else {
-                    // No EuphoriaPatches file found, delete the directory
-                    log(0, "Found incomplete installation. Cleaning up " + potentialInstallPath.getFileName());
-                    UsefulFunctions.deleteRecursively(potentialInstallPath);
-                    info.isAlreadyInstalled = false;
-                }
-            } catch (IOException e) {
-                log(3, "Error checking installation status. Cleaning up: " + e.getMessage());
-                try {
-                    UsefulFunctions.deleteRecursively(potentialInstallPath);
-                } catch (IOException ex) {
-                    log(3, "Error deleting directory: " + ex.getMessage());
-                }
+    private boolean hasEuphoriaFile(Path dir) throws IOException {
+        try (Stream<Path> paths = Files.walk(dir)) {
+            return paths
+                    .filter(Files::isRegularFile)
+                    .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
+        }
+    }
+
+    private void verifyEuphoriaInstallation(Path potentialInstallPath, ShaderInfo info) {
+        try {
+            boolean containsEuphoria = hasEuphoriaFile(potentialInstallPath);
+
+            if (containsEuphoria) {
+                info.isAlreadyInstalled = true;
+                info.installedDir = potentialInstallPath;
+                log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
+            } else {
+                log(0, "Found incomplete installation. Cleaning up " + potentialInstallPath.getFileName());
+                UsefulFunctions.deleteRecursively(potentialInstallPath);
                 info.isAlreadyInstalled = false;
             }
+
+        } catch (IOException e) {
+            log(3, "Error checking installation status. Cleaning up: " + e.getMessage());
+            try {
+                UsefulFunctions.deleteRecursively(potentialInstallPath);
+            } catch (IOException ex) {
+                log(3, "Error deleting directory: " + ex.getMessage());
+            }
+            info.isAlreadyInstalled = false;
         }
     }
 
@@ -1307,12 +1314,8 @@ public class EuphoriaPatcher {
     }
 
     private void createAlternativeShaderNames(Path patchedShaderPath, boolean isAlreadyInstalled) {
-        if (alternativeShaderNames.isEmpty() || isAlreadyInstalled) {
-            if (alternativeShaderNames.isEmpty()) {
-                debugLog("No alternative shader names configured.");
-            } else {
-                debugLog("Skipping alternative shader names creation as Euphoria Patches is already installed.");
-            }
+        if (alternativeShaderNames.isEmpty()) {
+            debugLog("No alternative shader names configured.");
             return; // No alternative names to create
         }
 
@@ -1322,7 +1325,6 @@ public class EuphoriaPatcher {
         // Define illegal characters for file/folder names on most OSes
         String illegalChars = "[\\\\/:*?\"<>|]";
 
-        // Split the names by comma
         String[] alternativeNames = alternativeShaderNames.split(",");
 
         for (String name : alternativeNames) {
@@ -1337,14 +1339,36 @@ public class EuphoriaPatcher {
                     .replace("{baseVersion}", baseVersion)
                     .replace("{patchVersion}", patchVersion);
 
-            // Check for illegal characters
             if (finalName.matches(".*" + illegalChars + ".*")) {
                 log(2, "Skipping alternative shader name with illegal characters: \"" + finalName + "\"");
                 continue;
             }
 
-            // Create a copy with this alternative name
-            createShaderCopy(patchedShaderPath, finalName);
+            // Get the target path
+            Path targetPath = shaderpacks.resolve(finalName);
+
+            // If EP is already installed, only regenerate if the alternative exists and is corrupted
+            if (isAlreadyInstalled) {
+                if (Files.exists(targetPath)) {
+                    try {
+                        boolean isCorrupted = !hasEuphoriaFile(targetPath);
+                        if (isCorrupted) {
+                            debugLog("Found corrupted alternative shader \"" + finalName + "\", regenerating...");
+                            UsefulFunctions.deleteRecursively(targetPath); // Delete the corrupted version
+                            createShaderCopy(patchedShaderPath, finalName); // Create a new copy - patchedShaderPath should be safe since EP is installed
+                        } else {
+                            debugLog("Alternative shader \"" + finalName + "\" exists and is valid, skipping.");
+                        }
+                    } catch (IOException e) {
+                        log(2, "Error verifying alternative shader \"" + finalName + "\": " + e.getMessage());
+                    }
+                } else {
+                    debugLog("Alternative shader \"" + finalName + "\" doesn't exist (user may have deleted it), skipping creation.");
+                }
+            } else {
+                // EP is not already installed, create alternative names normally
+                createShaderCopy(patchedShaderPath, finalName);
+            }
         }
     }
 
