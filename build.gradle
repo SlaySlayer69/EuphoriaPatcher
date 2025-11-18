@@ -8,7 +8,7 @@ plugins {
 def versionProps = new Properties()
 file("version.properties").withInputStream { versionProps.load(it) }
 
-version = "${versionProps.getProperty('mod_version')}-${versionProps.getProperty('mod_loader')}"
+version = "${versionProps.getProperty('mod_version')}-fabric"
 group = project.maven_group
 
 base {
