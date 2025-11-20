@@ -22,8 +22,7 @@ public abstract class ModLoaderSpecifics {
      */
     public static ModLoaderSpecifics getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("ModLoaderSpecifics instance has not been set! " +
-                    "Make sure your mod loader implementation calls setInstance() during initialization.");
+            throw new IllegalStateException("[EuphoriaPatcher] ModLoaderSpecifics instance not set! This indicates a serious initialization error. - ModLoaderSpecifics getInstance() called before setInstance()");
         }
         return instance;
     }
