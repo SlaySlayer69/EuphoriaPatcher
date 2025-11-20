@@ -13,7 +13,7 @@
 		"issues": "https://euphoriapatches.com/contact"
 	},
 	"license": "MPL-2.0",
-	"icon": "assets/euphoria_patcher/icon.png",
+	"icon": "icon.png",
 	"environment": "client",
 	"depends": {
 		"fabricloader": ">=0.10.7",
