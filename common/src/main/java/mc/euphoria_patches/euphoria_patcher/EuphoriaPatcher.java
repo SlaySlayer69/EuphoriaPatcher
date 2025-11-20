@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static mc.euphoria_patches.euphoria_patcher.Main.doSomethingRandomToPreventMinimization;
+
 public class EuphoriaPatcher {
 
     private static final boolean IS_DEV = false; // Manual Boolean. REMEMBER TO SET TO FALSE BEFORE COMPILING
@@ -69,6 +71,7 @@ public class EuphoriaPatcher {
         // Initialize the logger
         loggerInstance = new EuphoriaLogger();
         loggerInstance.checkErrorLogFileAndAddSeparator();
+        doSomethingRandomToPreventMinimization(3, 7);
 
         configStuff();
 
@@ -859,7 +862,7 @@ public class EuphoriaPatcher {
             try {
                 String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
                 ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", "\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", "# Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", "# Shader Loader Version Placeholder|\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
             }

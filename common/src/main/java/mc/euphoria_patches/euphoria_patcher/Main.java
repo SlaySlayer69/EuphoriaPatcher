@@ -152,4 +152,9 @@ public class Main {
         okButton.addActionListener(e -> dialog.dispose());
         return okButton;
     }
+
+    // Dummy method to prevent code minimization tools from removing this class
+    public static void doSomethingRandomToPreventMinimization(int x, int y) {
+        int z = x * y;
+    }
 }

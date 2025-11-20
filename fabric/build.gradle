@@ -87,7 +87,7 @@ shadowJar {
 	// Minimize dependencies but keep all classes from the common project
 	minimize {
 		// Exclude common project from minimization to keep Main.class and PatchInfo.class
-		exclude(project(':common'))
+//		exclude(project(':common'))
 	}
 
 	manifest {

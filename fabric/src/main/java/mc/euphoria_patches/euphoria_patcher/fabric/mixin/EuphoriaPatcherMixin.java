@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(targets = "net.minecraft.client.main.Main")
+@Mixin(net.minecraft.client.main.Main.class)
 public class EuphoriaPatcherMixin {
     @Inject(method = "main([Ljava/lang/String;)V", at = @At("HEAD"))
     private static void onGameStart(String[] args, CallbackInfo ci) {
