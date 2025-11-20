@@ -1,6 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.mixin;
+package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.fabric.FabricModLoaderSpecifics;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,7 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class EuphoriaPatcherMixin {
     @Inject(method = "main([Ljava/lang/String;)V", at = @At("HEAD"))
     private static void onGameStart(String[] args, CallbackInfo ci) {
-        if(ModLoaderSpecifics.serverCheck()) return;
+        FabricModLoaderSpecifics fabricSpecifics = new FabricModLoaderSpecifics();
+        ModLoaderSpecifics.setInstance(fabricSpecifics);
+
+        if(ModLoaderSpecifics.serverCheckStatic()) return;
         new EuphoriaPatcher();
     }
 }

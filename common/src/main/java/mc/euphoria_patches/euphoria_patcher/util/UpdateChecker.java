@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

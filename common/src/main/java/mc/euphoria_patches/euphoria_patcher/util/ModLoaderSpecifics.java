@@ -1,43 +1,81 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Identifier;
-
 import java.nio.file.Path;
 
-public class ModLoaderSpecifics {
-    public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-    public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
-    public static boolean isDevMode = FabricLoader.getInstance().isDevelopmentEnvironment();
+/**
+ * Abstract class for mod loader-specific functionality.
+ * Each mod loader (Fabric, Forge, NeoForge, etc.) should provide its own implementation.
+ */
+public abstract class ModLoaderSpecifics {
+    private static ModLoaderSpecifics instance;
 
-    public static boolean serverCheck() {
-        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER){
-            System.err.println("[EuphoriaPatcher] The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
-            return true;
-        }
-        return false;
+    /**
+     * Set the mod loader-specific instance.
+     * This should be called early in the mod initialization by the specific loader implementation.
+     */
+    public static void setInstance(ModLoaderSpecifics impl) {
+        instance = impl;
     }
 
-    private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[ModLoaderSpecifics] " + message);
+    /**
+     * Get the current mod loader-specific instance.
+     */
+    public static ModLoaderSpecifics getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("ModLoaderSpecifics instance has not been set! " +
+                    "Make sure your mod loader implementation calls setInstance() during initialization.");
+        }
+        return instance;
     }
 
-    public static String getCurrentDimension() {
-        debugLog("Getting current dimension");
-        MinecraftClient client = MinecraftClient.getInstance();
-        
-        if (client == null || client.world == null) {
-            debugLog("Client or world is null, defaulting to 'overworld'");
-            return "overworld"; // Default if world isn't loaded
-        }
-        
-        // Get current dimension ID
-        Identifier dimensionId = client.world.getRegistryKey().getValue();
-        String currentDimensionId = dimensionId.toString();
-        debugLog("Current dimension ID: " + currentDimensionId);
-        
-        return Dimensions.getCurrentDimension(currentDimensionId);
+    // Abstract methods that must be implemented by each mod loader
+
+    /**
+     * Get the path to the shaderpacks directory.
+     */
+    public abstract Path getShaderpacksPath();
+
+    /**
+     * Get the path to the config directory.
+     */
+    public abstract Path getConfigDirectory();
+
+    /**
+     * Check if the mod is running in a development environment.
+     */
+    public abstract boolean isDevMode();
+
+    /**
+     * Check if the mod is running on a server (and should be disabled).
+     * @return true if running on server, false otherwise
+     */
+    public abstract boolean serverCheck();
+
+    /**
+     * Get the current dimension the player is in.
+     * @return dimension string: "overworld", "nether", "end", or "other"
+     */
+    public abstract String getCurrentDimension();
+
+    // Convenience static methods that delegate to the instance
+
+    public static Path shaderpacks() {
+        return getInstance().getShaderpacksPath();
+    }
+
+    public static Path configDirectory() {
+        return getInstance().getConfigDirectory();
+    }
+
+    public static boolean isDevModeStatic() {
+        return getInstance().isDevMode();
+    }
+
+    public static boolean serverCheckStatic() {
+        return getInstance().serverCheck();
+    }
+
+    public static String getCurrentDimensionStatic() {
+        return getInstance().getCurrentDimension();
     }
 }

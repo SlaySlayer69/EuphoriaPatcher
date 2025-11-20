@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class EuphoriaPatcher {
 
     private static final boolean IS_DEV = false; // Manual Boolean. REMEMBER TO SET TO FALSE BEFORE COMPILING
-    private static final boolean isDevModLoader = ModLoaderSpecifics.isDevMode;
+    private static final boolean isDevModLoader = ModLoaderSpecifics.isDevModeStatic();
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
@@ -35,9 +35,9 @@ public class EuphoriaPatcher {
     public static final String SHADER_MYFILE_LOCATION = "shaders/lib/misc/myFile.glsl";
 
     // Get necessary paths
-    public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;
-    public static Path configDirectory = ModLoaderSpecifics.configDirectory;
-    public static Path mainIntellijDir = shaderpacks.getParent().getParent();
+    public static Path shaderpacks = ModLoaderSpecifics.shaderpacks();
+    public static Path configDirectory = ModLoaderSpecifics.configDirectory();
+    public static Path mainIntellijDir = shaderpacks.getParent().getParent().getParent();
     public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
     // Config Options
@@ -1139,7 +1139,7 @@ public class EuphoriaPatcher {
 
     private boolean applyDevPatch(Path baseArchived, Path patchedArchive, Path patchedFile) {
         Path[] directories = {
-                mainIntellijDir.resolve("src/main/resources"),
+                mainIntellijDir.resolve("common/src/main/resources"),
                 mainIntellijDir.resolve("EuphoriaPatchFiles")
         };
 

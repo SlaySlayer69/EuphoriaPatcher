@@ -1,4 +1,4 @@
-package mc.euphoria_patches.euphoria_patcher.mixin;
+package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.util.IrisDefineHelper;
 import org.spongepowered.asm.mixin.Mixin;

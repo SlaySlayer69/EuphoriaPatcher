@@ -1,4 +1,4 @@
-package mc.euphoria_patches.euphoria_patcher.mixin;
+package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;

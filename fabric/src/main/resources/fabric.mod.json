@@ -21,7 +21,7 @@
 	},
 	"entrypoints": {
 		"main": [
-			"mc.euphoria_patches.euphoria_patcher.ClientEuphoriaPatcher"
+			"mc.euphoria_patches.euphoria_patcher.fabric.ClientEuphoriaPatcher"
 		]
 	},
 	"mixins": [

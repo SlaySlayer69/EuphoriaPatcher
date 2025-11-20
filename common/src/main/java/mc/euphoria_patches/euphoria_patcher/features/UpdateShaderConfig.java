@@ -221,7 +221,7 @@ public class UpdateShaderConfig {
                 debugLog("About to write to file: " + configFile.getFileName());
                 
                 // Use try-with-resources to ensure streams are properly closed
-                try (java.io.BufferedWriter writer = java.nio.file.Files.newBufferedWriter(
+                try (java.io.BufferedWriter writer = Files.newBufferedWriter(
                         configFile, StandardCharsets.UTF_8)) {
                     
                     for (String line : newLines) {

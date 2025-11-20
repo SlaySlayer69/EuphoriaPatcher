@@ -1,0 +1,39 @@
+plugins {
+	id 'java-library'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Common dependencies that ALL mod loaders need
+	implementation 'io.sigpipe:jbsdiff:1.0'
+	implementation 'com.google.code.gson:gson:2.8.9'
+	implementation 'org.apache.commons:commons-compress:1.21'
+	implementation 'commons-io:commons-io:2.11.0'
+	implementation 'commons-codec:commons-codec:1.15'
+	
+	// Minecraft-related dependencies (provided by loader-specific modules)
+	// These are compileOnly because the actual implementation comes from Minecraft/loader
+	compileOnly 'org.apache.logging.log4j:log4j-api:2.17.1'
+	compileOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 8
+}
+
+// Ensure Main.java resources are included
+jar {
+	manifest {
+		attributes(
+			'Main-Class': 'mc.euphoria_patches.euphoria_patcher.Main'
+		)
+	}
+}

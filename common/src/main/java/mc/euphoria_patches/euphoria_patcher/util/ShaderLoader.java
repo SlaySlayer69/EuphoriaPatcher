@@ -1,6 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+
 import java.io.File;
 import java.util.Locale;
 import java.util.regex.Matcher;

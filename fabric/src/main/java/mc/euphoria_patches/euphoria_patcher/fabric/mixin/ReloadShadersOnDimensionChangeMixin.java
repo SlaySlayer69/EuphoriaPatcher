@@ -1,4 +1,4 @@
-package mc.euphoria_patches.euphoria_patcher.mixin;
+package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
@@ -29,7 +29,7 @@ public class ReloadShadersOnDimensionChangeMixin {
         debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
         
         // Get current dimension
-        String currentDimension = ModLoaderSpecifics.getCurrentDimension();
+        String currentDimension = ModLoaderSpecifics.getCurrentDimensionStatic();
         
         // First-time initialization
         if (lastDimension == null) {
