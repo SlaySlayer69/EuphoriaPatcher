@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "mc.euphoria_patches.euphoria_patcher.neoforge.mixin",
+  "plugin": "mc.euphoria_patches.euphoria_patcher.neoforge.mixin.EuphoriaMixinPlugin",
+  "mixins": [
+    "EuphoriaPatcherMixin",
+    "IrisModernStandardMacrosMixin",
+    "IrisLegacyStandardMacrosMixin"
+  ],
+  "client": [
+    "ReloadShadersOnDimensionChangeMixin",
+    "ClientTickMixin"
+  ]
+}

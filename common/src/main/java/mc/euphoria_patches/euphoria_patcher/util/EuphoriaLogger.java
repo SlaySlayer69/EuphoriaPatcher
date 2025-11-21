@@ -16,7 +16,19 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class EuphoriaLogger {
-    public static Logger logger = LogManager.getLogger("euphoriaPatches");
+    private static Logger logger;
+    private static boolean log4jAvailable = true;
+    
+    static {
+        try {
+            logger = LogManager.getLogger("euphoriaPatches");
+        } catch (NoClassDefFoundError | Exception e) {
+            // Log4j not available (e.g., running DevPatchGenerator)
+            log4jAvailable = false;
+            System.out.println("[EuphoriaLogger] Log4j not available, using System.out fallback");
+        }
+    }
+    
     private static final String ERROR_LOG_FILE_NAME = "_0EUPHORIA_PATCHES_ERROR_LOGS.txt";
     private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);
     private boolean isSodiumInstalled;
@@ -61,17 +73,29 @@ public class EuphoriaLogger {
             case -1:
             case 0:
             case 1:
-                logger.info(loggingMessage);
+                if (log4jAvailable && logger != null) {
+                    logger.info(loggingMessage);
+                } else {
+                    System.out.println("[INFO] " + loggingMessage);
+                }
                 break;
             case 2:
-                logger.warn(loggingMessage);
+                if (log4jAvailable && logger != null) {
+                    logger.warn(loggingMessage);
+                } else {
+                    System.out.println("[WARN] " + loggingMessage);
+                }
                 if(messageFadeTimer > 0) {
                     appendToErrorLogFile("[WARNING] " + loggingMessage);
                     collectErrorMessage(loggingMessage);
                 }
                 break;
             case 3:
-                logger.error(loggingMessage);
+                if (log4jAvailable && logger != null) {
+                    logger.error(loggingMessage);
+                } else {
+                    System.err.println("[ERROR] " + loggingMessage);
+                }
                 if(messageFadeTimer > 0) {
                     appendToErrorLogFile("[ERROR] " + loggingMessage);
                     collectErrorMessage(loggingMessage);

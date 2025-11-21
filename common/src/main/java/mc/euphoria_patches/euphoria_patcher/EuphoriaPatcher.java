@@ -19,10 +19,6 @@ import java.util.stream.Stream;
 import static mc.euphoria_patches.euphoria_patcher.Main.doSomethingRandomToPreventMinimization;
 
 public class EuphoriaPatcher {
-
-    private static final boolean IS_DEV = false; // Manual Boolean. REMEMBER TO SET TO FALSE BEFORE COMPILING
-    private static final boolean isDevModLoader = ModLoaderSpecifics.isDevModeStatic();
-
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = PatchInfo.VERSION;
@@ -94,7 +90,7 @@ public class EuphoriaPatcher {
         if (!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null) {
                 installBaseMessage();
-                if (!isDevFunc()) return;
+                return;
             }
         } else {
             thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, true);
@@ -103,7 +99,7 @@ public class EuphoriaPatcher {
 
         // Create temporary directory
         Path temp = createTempDirectory();
-        if (temp == null || shaderInfo.baseFile == null && !isDevFunc()) return;
+        if (temp == null || shaderInfo.baseFile == null) return;
 
         completeShaderPatching(shaderInfo, temp);
     }
@@ -189,10 +185,6 @@ public class EuphoriaPatcher {
         }));
     }
 
-    public static boolean isDevFunc() {
-        return IS_DEV && isDevModLoader;
-    }
-
     private static Path determineModsDirectory() {
         // Default mods directory
         Path defaultModsDir = shaderpacks.getParent().resolve("mods");
@@ -246,7 +238,7 @@ public class EuphoriaPatcher {
     private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
         try {
-            // First check if patched shaders already exist, even if base shader is missing
+            // Check if patched shaders already exist
             checkForExistingPatchedShaders(info);
             if (info.isAlreadyInstalled) {
                 return info;
@@ -321,7 +313,7 @@ public class EuphoriaPatcher {
             // If not found by name, check all directories for the myFile.glsl with version signature
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, Files::isDirectory)) {
 
-                if (isDevFunc() || info.isAlreadyInstalled) {
+                if (info.isAlreadyInstalled) {
                     return;
                 }
 
@@ -729,7 +721,7 @@ public class EuphoriaPatcher {
         }
 
         // Skip check in certain situations
-        if (isDevFunc() || info.isAlreadyInstalled || potentialInstallPath == null) {
+        if (info.isAlreadyInstalled || potentialInstallPath == null) {
             return;
         }
 
@@ -748,6 +740,10 @@ public class EuphoriaPatcher {
     }
 
     private void verifyEuphoriaInstallation(Path potentialInstallPath, ShaderInfo info) {
+        if (info.isAlreadyInstalled || potentialInstallPath == null) {
+            return;
+        }
+
         try {
             boolean containsEuphoria = hasEuphoriaFile(potentialInstallPath);
 
@@ -1074,7 +1070,7 @@ public class EuphoriaPatcher {
 
     // Process and patch shaders
     private boolean processAndPatchShaders(ShaderInfo info, Path temp) {
-        if (info.baseFile == null && !isDevFunc()) {
+        if (info.baseFile == null) {
             installBaseMessage();
             return false;
         }
@@ -1134,49 +1130,8 @@ public class EuphoriaPatcher {
         Path patchedArchive = temp.resolve(patchedName + ".tar");
         Path patchedFile = shaderpacks.resolve(patchedName);
 
-        return isDevFunc()
-                ? applyDevPatch(baseArchived, patchedArchive, patchedFile)
-                : applyProductionPatch(baseArchived, patchedArchive, temp.resolve(patchedName + ".patch"),
+        return applyProductionPatch(baseArchived, patchedArchive, temp.resolve(patchedName + ".patch"),
                 patchedFile, styleUnbound, styleReimagined);
-    }
-
-    private boolean applyDevPatch(Path baseArchived, Path patchedArchive, Path patchedFile) {
-        Path[] directories = {
-                mainIntellijDir.resolve("common/src/main/resources"),
-                mainIntellijDir.resolve("EuphoriaPatchFiles")
-        };
-
-        boolean success = true;
-        for (Path dir : directories) {
-            checkBuildPath(dir);
-            Path patchFile = dir.resolve(PATCH_NAME + PATCH_VERSION + ".patch");
-            success &= createDevPatch(baseArchived, patchedFile, patchedArchive, patchFile);
-        }
-        return success;
-    }
-
-    private void checkBuildPath(Path buildDir) {
-        if (!Files.exists(buildDir)) {
-            try {
-                Files.createDirectories(buildDir);
-                log(2, "Build directory created successfully: " + buildDir);
-            } catch (IOException e) {
-                log(3, "Failed to create directory: " + e.getMessage());
-            }
-        }
-    }
-
-    // Create dev patch
-    private boolean createDevPatch(Path baseArchived, Path patchedFile, Path patchedArchive, Path patchFile) {
-        try {
-            ArchiveUtils.archive(patchedFile, patchedArchive);
-            FileUI.diff(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-            log(0, ".patch file successfully created in " + patchFile + "!");
-            return true;
-        } catch (CompressorException | IOException | InvalidHeaderException e) {
-            log(3, "Error creating dev patch: " + e.getMessage());
-            return false;
-        }
     }
 
     // Apply production patch

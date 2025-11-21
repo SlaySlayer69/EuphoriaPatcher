@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
+import mc.euphoria_patches.euphoria_patcher.DevPatchGenerator;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -53,7 +54,7 @@ public class ArchiveOperations {
             debugLog("Verifying archive: " + fileName);
 
             long fileSize = Files.size(baseArchived);
-            if (EuphoriaPatcher.isDevFunc()) {
+            if (DevPatchGenerator.IS_DEV_MODE) {
                 EuphoriaPatcher.log(0, "Archive Name: " + fileName + " Archive size: " + fileSize + " bytes");
                 String hash = calculateSHA256(baseArchived);
                 EuphoriaPatcher.log(0, "Archive SHA-256: " + hash);
@@ -236,7 +237,7 @@ public class ArchiveOperations {
             String fileName = baseArchived.getFileName().toString();
             debugLog("Quietly verifying archive: " + fileName);
             
-            if (EuphoriaPatcher.isDevFunc()) {
+            if (DevPatchGenerator.IS_DEV_MODE) {
                 debugLog("Dev mode: bypassing verification (returning true)");
             } else {
                 long fileSize = Files.size(baseArchived);

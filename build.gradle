@@ -10,14 +10,16 @@ def versionProps = new Properties()
 file("version.properties").withInputStream { versionProps.load(it) }
 
 // Global publishing configuration
+
+ext.publishDryRun = true
+
 ext.changelogFile = file("CHANGELOG.md")
-ext.publishDryRun = false
 ext.publishConfirmed = false
 ext.skipCurseforge = false
 ext.skipModrinth = false
 
 allprojects {
-	group = 'mc.euphoria_patches'	
+	group = 'mc.euphoria_patches'
 	ext.versionProps = versionProps
 	ext.changelogFile = rootProject.ext.changelogFile
 	ext.publishDryRun = rootProject.ext.publishDryRun
@@ -30,7 +32,8 @@ task buildAll {
 	
 //	dependsOn ':forge1.7.10:build'
 //	dependsOn ':forgeLegacy:build'
-//	dependsOn ':neoforge:build'
+    println "Building Neoforge variant..."
+	dependsOn ':neoforge:build'
 //	dependsOn ':forge:
     println "Building Fabric variant..."
 	dependsOn ':fabric:build'
@@ -57,7 +60,7 @@ task publishAll {
 	
 //	dependsOn ':forge1.7.10:publishMods'
 //	dependsOn ':forgeLegacy:publishMods'
-//	dependsOn ':neoforge:publishMods'
+	dependsOn ':neoforge:publishMods'
 //	dependsOn ':forge:publishMods'
 	dependsOn ':fabric:publishMods'
 	

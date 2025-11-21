@@ -4,10 +4,10 @@ pluginManagement {
 			name = 'Fabric'
 			url = 'https://maven.fabricmc.net/'
 		}
-//		maven {
-//			name = 'NeoForged'
-//			url = 'https://maven.neoforged.net/releases'
-//		}
+		maven {
+			name = 'NeoForged'
+			url = 'https://maven.neoforged.net/releases'
+		}
 //		maven {
 //			name = 'MinecraftForge'
 //			url = 'https://maven.minecraftforge.net/'
@@ -17,12 +17,16 @@ pluginManagement {
 	}
 }
 
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
 rootProject.name = 'EuphoriaPatcher'
 
 // Include all subprojects
 include 'common'
 include 'fabric'
 //include 'forge'
-//include 'neoforge'
+include 'neoforge'
 //include 'forgeLegacy'
 //include 'forge1.7.10'
