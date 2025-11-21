@@ -121,79 +121,14 @@ java {
 	targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Create a task to validate the changelog
-task validateChangelog {
-    doLast {
-        def baseVersion = project.version.toString().split("-")[0]
-        def compVersion = project.version.toString().split("-")[1]
-
-        if (!rootProject.ext.changelogFile.exists()) {
-            rootProject.ext.changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n- Updated to Complementary Shaders ${compVersion} + Euphoria Patches ${baseVersion} - This is a minor update"
-            throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
-        }
-
-        
-        def changelogContent = rootProject.ext.changelogFile.text
-
-        if (!changelogContent.contains(baseVersion)) {
-            throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
-        }
-    }
-}
-
-// Create a confirmation task that runs before any publishing
-task confirmPublish {
-    dependsOn validateChangelog
-
-    doLast {
-        if (!rootProject.ext.publishConfirmed) {
-            println "\n${"="*60}"
-            println "PUBLISH CONFIRMATION"
-            println "${"="*60}"
-            println "Version: ${project.version}"
-            println "Dry Run: ${rootProject.ext.publishDryRun}"
-            println "${"="*60}"
-
-            System.out.print("Type 'yes' to confirm: ")
-            System.out.flush()
-
-            def reader = new BufferedReader(new InputStreamReader(System.in))
-            def response = reader.readLine()
-
-            if (response?.toLowerCase()?.trim() != 'yes') {
-                throw new GradleException("Publishing cancelled.")
-            }
-
-            System.out.print("\nPublish to (1=Both, 2=CurseForge only, 3=Modrinth only): ")
-            System.out.flush()
-
-            def platformChoice = reader.readLine()?.trim()
-
-            if (platformChoice == '2') {
-                rootProject.ext.skipModrinth = true
-                println "Selected: CurseForge only"
-            } else if (platformChoice == '3') {
-                rootProject.ext.skipCurseforge = true
-                println "Selected: Modrinth only"
-            } else if (platformChoice == '1') {
-                println "Selected: Both platforms"
-            } else {
-                throw new GradleException("Invalid selection. Publishing cancelled.")
-            }
-
-            rootProject.ext.publishConfirmed = true
-        }
-    }
-}
-
-// Make publish tasks depend on confirmation and check skip flags
+// Make publish tasks depend on root confirmation and check skip flags
 tasks.whenTaskAdded { task ->
     if (task.name == 'publishCurseforge') {
-        task.dependsOn confirmPublish
+        task.dependsOn rootProject.tasks.confirmPublish
         task.onlyIf { !rootProject.ext.skipCurseforge }
     }
     if (task.name == 'publishModrinth') {
-        task.dependsOn confirmPublish
+        task.dependsOn rootProject.tasks.confirmPublish
         task.onlyIf { !rootProject.ext.skipModrinth }
     }
 }
@@ -207,7 +142,7 @@ publishMods {
     modLoaders.add("fabric")
     modLoaders.add("quilt")
 
-    dryRun = rootProject.ext.publishDryRun
+    dryRun = rootProject.ext.publishTestRun
 
     curseforge {
         projectId = "915902"
@@ -228,5 +163,5 @@ publishMods {
 }
 
 tasks.named('publishMods').configure {
-	dependsOn confirmPublish
+	dependsOn rootProject.tasks.confirmPublish
 }

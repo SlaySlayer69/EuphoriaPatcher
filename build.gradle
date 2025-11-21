@@ -11,7 +11,8 @@ file("version.properties").withInputStream { versionProps.load(it) }
 
 // Global publishing configuration
 
-ext.publishDryRun = true
+// Only do a test run if enabled; set to false to do an actual publish
+ext.publishTestRun = true
 
 ext.changelogFile = file("CHANGELOG.md")
 ext.publishConfirmed = false
@@ -22,7 +23,73 @@ allprojects {
 	group = 'mc.euphoria_patches'
 	ext.versionProps = versionProps
 	ext.changelogFile = rootProject.ext.changelogFile
-	ext.publishDryRun = rootProject.ext.publishDryRun
+	ext.publishTestRun = rootProject.ext.publishTestRun
+}
+
+// Create a task to validate the changelog at root level
+task validateChangelog {
+    doLast {
+        def baseVersion = versionProps.getProperty('mod_version').split("-")[0]
+        def compVersion = versionProps.getProperty('mod_version').split("-")[1]
+
+        if (!changelogFile.exists()) {
+            changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n- Updated to Complementary Shaders ${compVersion} + Euphoria Patches ${baseVersion} - This is a minor update"
+            throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
+        }
+
+        def changelogContent = changelogFile.text
+
+        if (!changelogContent.contains(baseVersion)) {
+            throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
+        }
+    }
+}
+
+// Create a confirmation task at root level that runs once for all projects
+task confirmPublish {
+    dependsOn validateChangelog
+
+    doLast {
+        if (!publishConfirmed) {
+            println "\n${"="*60}"
+            println "PUBLISH CONFIRMATION"
+            println "${"="*60}"
+            println "Base Version: ${versionProps.getProperty('mod_version')}"
+            println "Dry Run: ${publishTestRun}"
+            println "Projects: fabric, neoforge"
+            println "${"="*60}"
+
+            System.out.print("Type 'yes' to confirm: ")
+            System.out.flush()
+
+            def reader = new BufferedReader(new InputStreamReader(System.in))
+            def response = reader.readLine()
+
+            if (response?.toLowerCase()?.trim() != 'yes') {
+                throw new GradleException("Publishing cancelled.")
+            }
+
+            System.out.print("\nPublish to (1=Both, 2=CurseForge only, 3=Modrinth only): ")
+            System.out.flush()
+
+            def platformChoice = reader.readLine()?.trim()
+
+            if (platformChoice == '2') {
+                skipModrinth = true
+                println "Selected: CurseForge only"
+            } else if (platformChoice == '3') {
+                skipCurseforge = true
+                println "Selected: Modrinth only"
+            } else if (platformChoice == '1') {
+                println "Selected: Both platforms"
+            } else {
+                throw new GradleException("Invalid selection. Publishing cancelled.")
+            }
+
+            publishConfirmed = true
+            println "\nConfirmation complete. Proceeding with publishing...\n"
+        }
+    }
 }
 
 // Define build order: 1.7.10 -> forgeLegacy -> neoforge -> forge -> fabric
@@ -38,12 +105,6 @@ task buildAll {
     println "Building Fabric variant..."
 	dependsOn ':fabric:build'
 	
-	// Enforce order
-//	tasks.findByPath(':forgeLegacy:build')?.mustRunAfter(':forge1.7.10:build')
-//	tasks.findByPath(':neoforge:build')?.mustRunAfter(':forgeLegacy:build')
-//	tasks.findByPath(':forge:build')?.mustRunAfter(':neoforge:build')
-//	tasks.findByPath(':fabric:build')?.mustRunAfter(':forge:build')
-	
 	doLast {
 		println "\n" + "="*60
 		println "All mod loader variants built successfully!"
@@ -58,22 +119,77 @@ task publishAll {
 	group = 'publishing'
 	description = 'Publishes all mod loader variants in the correct order'
 	
+	// Must confirm before publishing anything
+	dependsOn confirmPublish
+	
 //	dependsOn ':forge1.7.10:publishMods'
 //	dependsOn ':forgeLegacy:publishMods'
 	dependsOn ':neoforge:publishMods'
 //	dependsOn ':forge:publishMods'
 	dependsOn ':fabric:publishMods'
 	
-	// Enforce order
-//	tasks.findByPath(':forgeLegacy:publishMods')?.mustRunAfter(':forge1.7.10:publishMods')
-//	tasks.findByPath(':neoforge:publishMods')?.mustRunAfter(':forgeLegacy:publishMods')
-//	tasks.findByPath(':forge:publishMods')?.mustRunAfter(':neoforge:publishMods')
-//	tasks.findByPath(':fabric:publishMods')?.mustRunAfter(':forge:publishMods')
-	
 	doLast {
 		println "\n" + "="*60
 		println "All mod loader variants published successfully!"
 		println "="*60
+	}
+}
+
+// Enforce sequential publishing order after all projects are configured
+gradle.projectsEvaluated {
+	// Define all loaders in publishing order
+	def loaders = [
+		[name: 'forge1710',
+		 publishMods: tasks.findByPath(':forge1710:publishMods'),
+		 curseforge: tasks.findByPath(':forge1710:publishCurseforge'),
+		 modrinth: tasks.findByPath(':forge1710:publishModrinth')],
+		
+		[name: 'forgeLegacy',
+		 publishMods: tasks.findByPath(':forgeLegacy:publishMods'),
+		 curseforge: tasks.findByPath(':forgeLegacy:publishCurseforge'),
+		 modrinth: tasks.findByPath(':forgeLegacy:publishModrinth')],
+		
+		[name: 'neoforge',
+		 publishMods: tasks.findByPath(':neoforge:publishMods'),
+		 curseforge: tasks.findByPath(':neoforge:publishCurseforge'),
+		 modrinth: tasks.findByPath(':neoforge:publishModrinth')],
+		
+		[name: 'forge',
+		 publishMods: tasks.findByPath(':forge:publishMods'),
+		 curseforge: tasks.findByPath(':forge:publishCurseforge'),
+		 modrinth: tasks.findByPath(':forge:publishModrinth')],
+		
+		[name: 'fabric',
+		 publishMods: tasks.findByPath(':fabric:publishMods'),
+		 curseforge: tasks.findByPath(':fabric:publishCurseforge'),
+		 modrinth: tasks.findByPath(':fabric:publishModrinth')]
+	]
+	
+	// Create sequential chain: each loader waits for the previous ACTIVE loader
+	def previousActive = null
+	loaders.each { current ->
+		// Check if this loader is active (has publishMods task)
+		if (current.publishMods) {
+			// If there's a previous active loader, make current wait for it
+			if (previousActive) {
+				println "[Publish Order] ${current.name} will wait for ${previousActive.name}"
+				
+				// Main publishMods dependency
+				current.publishMods.dependsOn(previousActive.publishMods)
+				
+				// Platform task dependencies: current waits for ALL previous platform tasks
+				if (previousActive.curseforge) {
+					current.curseforge?.dependsOn(previousActive.curseforge)
+					current.modrinth?.dependsOn(previousActive.curseforge)
+				}
+				if (previousActive.modrinth) {
+					current.curseforge?.dependsOn(previousActive.modrinth)
+					current.modrinth?.dependsOn(previousActive.modrinth)
+				}
+			}
+			// This loader becomes the new "previous active" for the next iteration
+			previousActive = current
+		}
 	}
 }
 
