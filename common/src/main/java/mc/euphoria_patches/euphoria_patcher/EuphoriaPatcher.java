@@ -16,8 +16,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static mc.euphoria_patches.euphoria_patcher.Main.doSomethingRandomToPreventMinimization;
-
 public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
@@ -67,7 +65,7 @@ public class EuphoriaPatcher {
         // Initialize the logger
         loggerInstance = new EuphoriaLogger();
         loggerInstance.checkErrorLogFileAndAddSeparator();
-        doSomethingRandomToPreventMinimization(3, 7);
+        GUIScreen.doSomethingRandomToPreventMinimization(3, 7);
 
         configStuff();
 

@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 
-public class Main {
+public class GUIScreen {
     private static final String URL = "https://www.euphoriapatches.com/how-to-install/";
     
     private static final Color BACKGROUND_COLOR = new Color(43, 43, 43);
@@ -30,15 +30,15 @@ public class Main {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception ignored) {}
         
-        JDialog dialog = new JDialog((Frame) null, "Euphoria Patcher", true);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        JFrame dialog = new JFrame("Euphoria Patcher");
+        dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         dialog.setSize(350, 200);
         dialog.setResizable(false);
         dialog.setLocationRelativeTo(null);
         
         ImageIcon icon = null;
         try {
-            icon = new ImageIcon(Objects.requireNonNull(Main.class.getResource("/icon32x.png")));
+            icon = new ImageIcon(Objects.requireNonNull(GUIScreen.class.getResource("/icon32x.png")));
             dialog.setIconImage(icon.getImage());
         } catch (Exception ignored) {}
         
@@ -56,7 +56,7 @@ public class Main {
         }
         
         JLabel message = getJLabel(dialog);
-        message.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        message.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
         contentPanel.add(message, BorderLayout.CENTER);
 
         // Create a separate panel just for the button that spans the full width
@@ -65,7 +65,7 @@ public class Main {
         bottomPanel.setPreferredSize(new Dimension(0, 40));
         
         JButton okButton = getJButton(dialog);
-        okButton.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        okButton.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
         bottomPanel.add(okButton);
 
         // Add panels to main layout
@@ -76,7 +76,7 @@ public class Main {
         dialog.setVisible(true);
     }
 
-    private static  JLabel getJLabel(JDialog dialog) {
+    private static  JLabel getJLabel(JFrame dialog) {
         JLabel message = getMessage();
         message.addMouseListener(new MouseAdapter() {
             @Override
@@ -102,9 +102,9 @@ public class Main {
     private static JLabel getMessage() {
         JLabel message = new JLabel(
             "<html>" +
-            "<div style='color: rgb(220,220,220);'>" +
-            "This is a Minecraft mod!<br><br>" +
-            "Please put it in your mods folder.<br><br>" +
+            "<div style='color: rgb(220,220,220); line-height: 1.5;'>" +
+            "This is a Minecraft mod!<br>" +
+            "Please put it in your mods folder.<br>" +
             "<span style='color: " + String.format("rgb(%d,%d,%d)", ACCENT_COLOR.getRed(), ACCENT_COLOR.getGreen(), ACCENT_COLOR.getBlue()) + ";'><u>Click here for installation instructions</u></span>" +
             "</div>" +
             "</html>"
@@ -115,7 +115,7 @@ public class Main {
         return message;
     }
 
-    private static JButton getJButton(JDialog dialog) {
+    private static JButton getJButton(JFrame dialog) {
         JButton okButton = new JButton("OK") {
             @Override
             protected void paintComponent(Graphics g) {

@@ -37,7 +37,7 @@ tasks.withType(JavaCompile).configureEach {
 jar {
 	manifest {
 		attributes(
-			'Main-Class': 'mc.euphoria_patches.euphoria_patcher.Main'
+			'Main-Class': 'mc.euphoria_patches.euphoria_patcher.GUIScreen'
 		)
 	}
 }
