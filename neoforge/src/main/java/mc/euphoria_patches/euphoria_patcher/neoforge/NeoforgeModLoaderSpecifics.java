@@ -18,12 +18,10 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     
     private final Path shaderpacksPath;
     private final Path configDirectory;
-    private final boolean isDevMode;
 
     public NeoforgeModLoaderSpecifics() {
         this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
         this.configDirectory = FMLPaths.CONFIGDIR.get();
-        this.isDevMode = false; // Hardcoded for compatibility
     }
 
     @Override
@@ -34,11 +32,6 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public Path getConfigDirectory() {
         return configDirectory;
-    }
-
-    @Override
-    public boolean isDevMode() {
-        return isDevMode;
     }
 
     @Override

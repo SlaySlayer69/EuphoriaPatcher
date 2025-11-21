@@ -17,12 +17,10 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     
     private final Path shaderpacksPath;
     private final Path configDirectory;
-    private final boolean isDevMode;
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
         this.configDirectory = FabricLoader.getInstance().getConfigDir();
-        this.isDevMode = FabricLoader.getInstance().isDevelopmentEnvironment();
     }
 
     @Override
@@ -33,11 +31,6 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public Path getConfigDirectory() {
         return configDirectory;
-    }
-
-    @Override
-    public boolean isDevMode() {
-        return isDevMode;
     }
 
     @Override

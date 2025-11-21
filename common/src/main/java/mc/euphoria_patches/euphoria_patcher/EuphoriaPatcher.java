@@ -1074,8 +1074,7 @@ public class EuphoriaPatcher {
             installBaseMessage();
             return false;
         }
-        assert info.baseFile != null;
-        
+
         // Get base name and remove .zip extension
         String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
         baseName = cleanBaseName(baseName);

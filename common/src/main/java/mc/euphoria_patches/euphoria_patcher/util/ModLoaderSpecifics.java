@@ -40,11 +40,6 @@ public abstract class ModLoaderSpecifics {
     public abstract Path getConfigDirectory();
 
     /**
-     * Check if the mod is running in a development environment.
-     */
-    public abstract boolean isDevMode();
-
-    /**
      * Check if the mod is running on a server (and should be disabled).
      * @return true if running on server, false otherwise
      */
@@ -64,10 +59,6 @@ public abstract class ModLoaderSpecifics {
 
     public static Path configDirectory() {
         return getInstance().getConfigDirectory();
-    }
-
-    public static boolean isDevModeStatic() {
-        return getInstance().isDevMode();
     }
 
     public static boolean serverCheckStatic() {
