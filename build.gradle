@@ -56,17 +56,35 @@ task confirmPublish {
             println "${"="*60}"
             println "Base Version: ${versionProps.getProperty('mod_version')}"
             println "Dry Run: ${publishTestRun}"
-            println "Projects: fabric, neoforge"
             println "${"="*60}"
 
             System.out.print("Type 'yes' to confirm: ")
             System.out.flush()
 
             def reader = new BufferedReader(new InputStreamReader(System.in))
-            def response = reader.readLine()
+            def finalConfirmation = reader.readLine()?.toLowerCase()?.trim()
 
-            if (response?.toLowerCase()?.trim() != 'yes') {
+            if (finalConfirmation != 'yes' && finalConfirmation != 'y') {
                 throw new GradleException("Publishing cancelled.")
+            }
+
+            // Extra confirmation if this is NOT a dry run
+            if (!publishTestRun) {
+                println "\n${"!"*60}"
+                println "⚠️  LIVE PUBLISH WARNING ⚠️"
+                println "${"!"*60}"
+                println "publishTestRun is set to FALSE!"
+                println "This will perform a REAL UPLOAD to CurseForge and/or Modrinth!"
+                println "Files will be publicly available immediately!"
+                println "${"!"*60}"
+                System.out.print("\nAre you ABSOLUTELY SURE you want to proceed? (yes/no): ")
+                System.out.flush()
+
+                if (finalConfirmation != 'yes' && finalConfirmation != 'y') {
+                    throw new GradleException("Live publishing cancelled. No files were uploaded.")
+                }
+
+                println "\n✓ Live publish confirmed. Proceeding with REAL upload...\n"
             }
 
             System.out.print("\nPublish to (1=Both, 2=CurseForge only, 3=Modrinth only): ")
@@ -101,7 +119,8 @@ task buildAll {
 //	dependsOn ':forgeLegacy:build'
     println "Building Neoforge variant..."
 	dependsOn ':neoforge:build'
-//	dependsOn ':forge:
+    println "Building Forge variant..."
+	dependsOn ':forge:build'
     println "Building Fabric variant..."
 	dependsOn ':fabric:build'
 	
@@ -125,7 +144,7 @@ task publishAll {
 //	dependsOn ':forge1.7.10:publishMods'
 //	dependsOn ':forgeLegacy:publishMods'
 	dependsOn ':neoforge:publishMods'
-//	dependsOn ':forge:publishMods'
+	dependsOn ':forge:publishMods'
 	dependsOn ':fabric:publishMods'
 	
 	doLast {
@@ -170,22 +189,35 @@ gradle.projectsEvaluated {
 	loaders.each { current ->
 		// Check if this loader is active (has publishMods task)
 		if (current.publishMods) {
-			// If there's a previous active loader, make current wait for it
+			// If there's a previous active loader, make current wait for it (with delay)
 			if (previousActive) {
 				println "[Publish Order] ${current.name} will wait for ${previousActive.name}"
 				
-				// Main publishMods dependency
-				current.publishMods.dependsOn(previousActive.publishMods)
+				// Create a delay task for this loader
+				def delayTaskName = "delayBefore${current.name.capitalize()}Publish"
+				def delayTask = tasks.create(delayTaskName) {
+					dependsOn previousActive.publishMods
+					doLast {
+                        int delaySeconds = 6
+						println "\n${"="*60}"
+						println "Waiting ${delaySeconds} seconds before publishing ${current.name}..."
+						println "This prevents API race conditions from causing wrong upload order"
+						println "${"="*60}"
+						for (int i = delaySeconds; i > 0; i--) {
+							print "${i}... "
+							System.out.flush()
+							Thread.sleep(1000)
+						}
+						println "0\n"
+					}
+				}
 				
-				// Platform task dependencies: current waits for ALL previous platform tasks
-				if (previousActive.curseforge) {
-					current.curseforge?.dependsOn(previousActive.curseforge)
-					current.modrinth?.dependsOn(previousActive.curseforge)
-				}
-				if (previousActive.modrinth) {
-					current.curseforge?.dependsOn(previousActive.modrinth)
-					current.modrinth?.dependsOn(previousActive.modrinth)
-				}
+				// Main publishMods dependency: wait for delay task
+				current.publishMods.dependsOn(delayTask)
+				
+				// Platform task dependencies: also wait for delay task
+				current.curseforge?.dependsOn(delayTask)
+				current.modrinth?.dependsOn(delayTask)
 			}
 			// This loader becomes the new "previous active" for the next iteration
 			previousActive = current

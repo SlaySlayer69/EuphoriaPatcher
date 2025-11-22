@@ -1,0 +1,51 @@
+modLoader="javafml" #mandatory
+loaderVersion="${loader_version_range}"
+issueTrackerURL="https://euphoriapatches.com/discord"
+license="${mod_license}"
+# A list of mods - how many allowed here is determined by the individual mod loader
+[[mods]] #mandatory
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+# A URL to query for updates for this mod. See the JSON update specification <here>
+#updateJSONURL="http://myurl.me/" #optional
+displayURL="https://euphoriapatches.com" #optional
+logoFile="icon.png" #optional
+#credits="Thanks for this example mod goes to Java" #optional
+authors="${mod_authors}" #optional
+description='''${mod_description}'''
+side="CLIENT"
+clientSideOnly=true
+# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
+[[dependencies.${mod_id}]] #optional
+modId="forge"
+mandatory=true
+# The version range of the dependency
+versionRange="${forge_version_range}"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.${mod_id}]]
+modId="minecraft"
+mandatory=true
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="CLIENT"
+
+# Optional Dependencies
+[[dependencies.${mod_id}]]
+modId="oculus"
+optional=true
+type="optional"
+mandatory=false
+versionRange="*" # Accept any version of Oculus
+ordering="BEFORE" # Ensures that this mod loads before Oculus if both are present
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="iris"
+optional=true
+type="optional"
+mandatory=false
+versionRange="*" # Accept any version of Iris
+ordering="BEFORE" # Ensures that this mod loads before Iris if both are present
+side="CLIENT"
