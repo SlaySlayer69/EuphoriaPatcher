@@ -12,7 +12,7 @@ pluginManagement {
             name = 'MinecraftForge'
             url = 'https://maven.minecraftforge.net/'
         }
-        maven { url "https://maven.architectury.dev/" }
+        // maven { url "https://maven.architectury.dev/" }
 		mavenCentral()
 		gradlePluginPortal()
 	}
