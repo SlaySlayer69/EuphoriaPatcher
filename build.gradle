@@ -116,7 +116,7 @@ task buildAll {
 	description = 'Builds all mod loader variants in the correct order'
 
 //  println "Building Forge 1.7.10 variant..."
-//	dependsOn ':forge1.7.10:build'
+//	dependsOn ':forge1_7_10:build'
     println "Building ForgeLegacy variant..."
 	dependsOn ':forgeLegacy:build'
     println "Building Neoforge variant..."
@@ -143,7 +143,7 @@ task publishAll {
 	// Must confirm before publishing anything
 	dependsOn confirmPublish
 	
-//	dependsOn ':forge1.7.10:publishMods'
+//	dependsOn ':forge1_7_10:publishMods'
 	dependsOn ':forgeLegacy:publishMods'
 	dependsOn ':neoforge:publishMods'
 	dependsOn ':forge:publishMods'
@@ -160,10 +160,10 @@ task publishAll {
 gradle.projectsEvaluated {
 	// Define all loaders in publishing order
 	def loaders = [
-		[name: 'forge1710',
-		 publishMods: tasks.findByPath(':forge1710:publishMods'),
-		 curseforge: tasks.findByPath(':forge1710:publishCurseforge'),
-		 modrinth: tasks.findByPath(':forge1710:publishModrinth')],
+		[name: 'forge1_7_10',
+		 publishMods: tasks.findByPath(':forge1_7_10:publishMods'),
+		 curseforge: tasks.findByPath(':forge1_7_10:publishCurseforge'),
+		 modrinth: tasks.findByPath(':forge1_7_10:publishModrinth')],
 		
 		[name: 'forgeLegacy',
 		 publishMods: tasks.findByPath(':forgeLegacy:publishMods'),
