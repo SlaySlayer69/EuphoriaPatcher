@@ -1,0 +1,62 @@
+plugins {
+    id 'com.gtnewhorizons.gtnhconvention'
+	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
+}
+
+// Load forge-specific properties
+def forge1710Props = new Properties()
+file("gradle.properties").withInputStream { forge1710Props.load(it) }
+
+version = "${versionProps.getProperty('mod_version')}-forge1.7.10"
+
+jar {
+    manifest {
+        from(project(':common').tasks.jar.manifest)
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("mcmod.info") {
+        expand "version": project.version
+    }
+}
+
+// Make publish tasks depend on root confirmation and check skip flags
+tasks.whenTaskAdded { task ->
+    if (task.name == 'publishCurseforge') {
+        task.dependsOn rootProject.tasks.confirmPublish
+        task.onlyIf { !rootProject.ext.skipCurseforge }
+    }
+    if (task.name == 'publishModrinth') {
+        task.dependsOn rootProject.tasks.confirmPublish
+        task.onlyIf { !rootProject.ext.skipModrinth }
+    }
+}
+
+publishMods {
+    file = shadowJar.archiveFile
+    
+    changelog = rootProject.ext.changelogFile.text
+
+    type = STABLE
+    modLoaders.add("forge")
+
+    dryRun = rootProject.ext.publishTestRun
+
+    curseforge {
+        projectId = "915902"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersions.add("1.7.10")
+    }
+    modrinth {
+        projectId = "4H6sumDB"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add("1.7.10")
+    }
+}
+
+tasks.named('publishMods').configure {
+	dependsOn rootProject.tasks.confirmPublish
+}
