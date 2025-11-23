@@ -1,0 +1,202 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url = "https://maven.minecraftforge.net/" }
+    }
+
+    dependencies {
+        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "6.+"
+    }
+}
+
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
+}
+
+apply plugin: "net.minecraftforge.gradle"
+
+archivesBaseName = 'EuphoriaPatcher'
+
+// Load forge-specific properties
+def forgeLegacyProps = new Properties()
+file("gradle.properties").withInputStream { forgeLegacyProps.load(it) }
+
+version = "${versionProps.getProperty('mod_version')}-forgeLegacy"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+compileJava {
+    sourceCompatibility = "8"
+    targetCompatibility = "8"
+}
+
+repositories {
+    maven {
+        url = "https://maven.minecraftforge.net/"
+    }
+    mavenCentral()
+}
+
+configurations {
+    shade
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:1.12.2-14.23.5.2860"
+    implementation project(':common')
+
+    shade project(':common')
+    shade 'io.sigpipe:jbsdiff:1.0'
+    shade 'com.google.code.gson:gson:2.8.9'
+    shade 'org.apache.commons:commons-compress:1.21'
+    shade 'commons-io:commons-io:2.11.0'
+    shade 'commons-codec:commons-codec:1.15'
+}
+
+minecraft {
+    mappings channel: "stable", version: "39-1.12"
+
+    runs {
+        "client" {
+            workingDirectory file("./run")
+            mods { "${project.mod_id}" { source sourceSets.main } }
+        }
+
+        "server" {
+            workingDirectory file("./run/server")
+            mods { "${project.mod_id}" { source sourceSets.main } }
+        }
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("mcmod.info") {
+        expand "version": project.version
+    }
+}
+
+//When Forge 1.12 loads mods from a directory that's been put on the classpath, it expects to find resources in the same directory.
+//Default Gradle behavior puts resources in ./build/resources/main instead of ./build/classes/main/java. Let's change that.
+sourceSets.all { it.output.resourcesDir = it.output.classesDirs.getFiles().iterator().next() }
+
+jar {
+    archiveClassifier = 'slim'
+    manifest {
+        attributes([
+                'Specification-Title': project.name,
+                'Specification-Version': '1',
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        ])
+    }
+}
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.shade]
+
+	manifest {
+        from(project(':common').tasks.jar.manifest)
+    }
+
+    destinationDirectory.set(file("${rootProject.buildDir}/libs"))
+
+    // Relocate packages to avoid conflicts
+    relocate 'io.sigpipe.jbsdiff', 'mc.euphoria_patches.shadow.io.sigpipe.jbsdiff'
+    relocate 'com.google.gson', 'mc.euphoria_patches.shadow.com.google.gson'
+    relocate 'org.apache.commons', 'mc.euphoria_patches.shadow.org.apache.commons'
+
+    // Exclude unnecessary files
+    exclude 'META-INF/maven/**'
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}.txt"}
+	}
+
+    // Minimize the JAR by removing unused classes
+    minimize()
+
+    // Add reobfuscation
+    finalizedBy 'reobfShadowJar'
+}
+
+// Make assemble depend on shadowJar
+assemble.dependsOn shadowJar
+
+// Configure reobfuscation for the shadow jar
+reobf {
+    shadowJar {}
+}
+
+// Create a task to delete the slim jar
+task deleteSlimJar(type: Delete) {
+    delete fileTree("${buildDir}/libs").matching {
+        include "*-slim.jar"
+    }
+}
+
+// Make build depend on the delete task directly
+build.finalizedBy deleteSlimJar
+
+// Also make reobfShadowJar depend on it to ensure proper order
+reobfShadowJar.finalizedBy deleteSlimJar
+
+// Ensure it runs after the jar task completes
+jar.finalizedBy deleteSlimJar
+
+// Make shadowJar the default artifact
+artifacts {
+    archives shadowJar
+}
+
+
+// Make publish tasks depend on root confirmation and check skip flags
+tasks.whenTaskAdded { task ->
+    if (task.name == 'publishCurseforge') {
+        task.dependsOn rootProject.tasks.confirmPublish
+        task.onlyIf { !rootProject.ext.skipCurseforge }
+    }
+    if (task.name == 'publishModrinth') {
+        task.dependsOn rootProject.tasks.confirmPublish
+        task.onlyIf { !rootProject.ext.skipModrinth }
+    }
+}
+
+publishMods {
+    file = shadowJar.archiveFile
+    
+    changelog = rootProject.ext.changelogFile.text
+
+    type = STABLE
+    modLoaders.add("forge")
+
+    dryRun = rootProject.ext.publishTestRun
+
+    curseforge {
+        projectId = "915902"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersionRange {
+            start = "1.8.9"
+            end = "1.12.2"
+        }
+    }
+    modrinth {
+        projectId = "4H6sumDB"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersionRange {
+            start = "1.8.9"
+            end = "1.12.2"
+        }
+    }
+}
+
+tasks.named('publishMods').configure {
+	dependsOn rootProject.tasks.confirmPublish
+}

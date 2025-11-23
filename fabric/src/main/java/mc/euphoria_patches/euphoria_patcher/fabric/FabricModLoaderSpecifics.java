@@ -10,9 +10,6 @@ import net.minecraft.util.Identifier;
 
 import java.nio.file.Path;
 
-/**
- * Fabric-specific implementation of ModLoaderSpecifics.
- */
 public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     
     private final Path shaderpacksPath;

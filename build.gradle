@@ -114,9 +114,11 @@ task confirmPublish {
 task buildAll {
 	group = 'build'
 	description = 'Builds all mod loader variants in the correct order'
-	
+
+//  println "Building Forge 1.7.10 variant..."
 //	dependsOn ':forge1.7.10:build'
-//	dependsOn ':forgeLegacy:build'
+    println "Building ForgeLegacy variant..."
+	dependsOn ':forgeLegacy:build'
     println "Building Neoforge variant..."
 	dependsOn ':neoforge:build'
     println "Building Forge variant..."
@@ -142,7 +144,7 @@ task publishAll {
 	dependsOn confirmPublish
 	
 //	dependsOn ':forge1.7.10:publishMods'
-//	dependsOn ':forgeLegacy:publishMods'
+	dependsOn ':forgeLegacy:publishMods'
 	dependsOn ':neoforge:publishMods'
 	dependsOn ':forge:publishMods'
 	dependsOn ':fabric:publishMods'

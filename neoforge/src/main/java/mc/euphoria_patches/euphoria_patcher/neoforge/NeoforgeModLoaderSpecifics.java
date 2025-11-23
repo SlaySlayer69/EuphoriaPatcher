@@ -11,9 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.nio.file.Path;
 
-/**
- * Neoforge-specific implementation of ModLoaderSpecifics.
- */
 public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     
     private final Path shaderpacksPath;
@@ -75,6 +72,6 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     private void debugLog(String message) {
-        EuphoriaLogger.debugLog("[FabricModLoaderSpecifics] " + message);
+        EuphoriaLogger.debugLog("[NeoforgeModLoaderSpecifics] " + message);
     }
 }

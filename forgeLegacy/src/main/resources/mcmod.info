@@ -1,0 +1,15 @@
+[
+  {
+    "modid": "euphoria_patcher",
+    "name": "EuphoriaPatcher",
+    "description": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nReport issues on discord!",
+    "version": "${version}",
+    "mcversion": "1.8-1.12.2",
+    "url": "https://euphoriapatches.com",
+    "updateUrl": "",
+    "authorList": ["SpacEagle17"],
+    "logoFile": "icon.png",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

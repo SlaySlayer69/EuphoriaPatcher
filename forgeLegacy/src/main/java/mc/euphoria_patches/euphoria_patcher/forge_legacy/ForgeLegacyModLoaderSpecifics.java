@@ -1,22 +1,23 @@
-package mc.euphoria_patches.euphoria_patcher.forge;
+package mc.euphoria_patches.euphoria_patcher.forge_legacy;
 
 import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 
 import java.nio.file.Path;
 
-public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
+public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     
     private final Path shaderpacksPath;
     private final Path configDirectory;
 
-    public ForgeModLoaderSpecifics() {
-        this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
-        this.configDirectory = FMLPaths.CONFIGDIR.get();
+    public ForgeLegacyModLoaderSpecifics() {
+        this.shaderpacksPath = Minecraft.getMinecraft().gameDir.toPath().resolve("shaderpacks");
+        this.configDirectory = Minecraft.getMinecraft().gameDir.toPath().resolve("config");
     }
 
     @Override
@@ -31,8 +32,9 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public boolean serverCheck() {
-        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            System.err.println("[EuphoriaPatcher] The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        if (server != null && server.isDedicatedServer()) {
+            System.err.println("The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
             return true;
         }
         return false;
@@ -58,6 +60,6 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     private void debugLog(String message) {
-        EuphoriaLogger.debugLog("[ForgeModLoaderSpecifics] " + message);
+        EuphoriaLogger.debugLog("[ForgeLegacyModLoaderSpecifics] " + message);
     }
 }
