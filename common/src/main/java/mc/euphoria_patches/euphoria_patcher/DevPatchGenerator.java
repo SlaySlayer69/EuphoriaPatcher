@@ -1,14 +1,22 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.sigpipe.jbsdiff.ui.FileUI;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveUtils;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import org.apache.commons.io.FileUtils;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations.calculateSHA256;
 
@@ -33,6 +41,11 @@ public class DevPatchGenerator {
     private static final String PATCH_NAME = EuphoriaPatcher.PATCH_NAME;
     private static final String VERSION = PatchInfo.VERSION;
     private static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
+    
+    // Modrinth API constants
+    private static final String MODRINTH_PROJECT_ID = "HVnmMxH1";
+    private static final String MODRINTH_API_BASE = "https://api.modrinth.com/v2";
+    private static final String USER_AGENT = "EuphoriaPatcher-DevPatchGenerator/1.0";
     
     // Get the IntelliJ project base directory
     private static final Path INTELLIJ_BASE_DIR = Paths.get("").toAbsolutePath();
@@ -63,7 +76,18 @@ public class DevPatchGenerator {
         try {
             // Find base and patched shaders
             ShaderPair shaderPair = findShaders();
-            if (shaderPair == null) {
+            
+            // If base shader is missing, try to download it
+            if (shaderPair == null || shaderPair.baseShader == null) {
+                System.out.println(YELLOW + "Base shader not found locally. Attempting to download from Modrinth..." + RESET);
+                Path downloadedShader = downloadBaseShaderFromModrinth();
+                if (downloadedShader != null) {
+                    shaderPair = findShaders(); // Re-scan after download
+                }
+            }
+            
+            // Final check after potential download
+            if (shaderPair == null || shaderPair.baseShader == null || shaderPair.patchedShader == null) {
                 System.err.println(RED + "ERROR: Could not find both base and patched shaders!" + RESET);
                 throw new RuntimeException("Missing required shader files");
             }
@@ -112,6 +136,93 @@ public class DevPatchGenerator {
     }
     
     /**
+     * Downloads the base shader from Modrinth if not found locally
+     */
+    private static Path downloadBaseShaderFromModrinth() {
+        try {
+            System.out.println(YELLOW + "Fetching latest version from Modrinth API..." + RESET);
+            
+            // Fetch project versions from Modrinth API
+            String apiUrl = MODRINTH_API_BASE + "/project/" + MODRINTH_PROJECT_ID + "/version";
+            HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
+            conn.setRequestProperty("User-Agent", USER_AGENT);
+            conn.setRequestMethod("GET");
+            
+            if (conn.getResponseCode() != 200) {
+                System.err.println(RED + "ERROR: Modrinth API returned status " + conn.getResponseCode() + RESET);
+                return null;
+            }
+            
+            // Parse JSON response
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+            
+            JsonArray versions = JsonParser.parseString(response.toString()).getAsJsonArray();
+            
+            // Get the latest version (first in the array)
+            if (versions.size() == 0) {
+                System.err.println(RED + "ERROR: No versions found on Modrinth!" + RESET);
+                return null;
+            }
+            
+            JsonObject latestVersion = versions.get(0).getAsJsonObject();
+            String versionNumber = latestVersion.get("version_number").getAsString();
+            System.out.println(GREEN + "Found latest version: " + versionNumber + RESET);
+            
+            // Get the first file (there's only one)
+            JsonArray files = latestVersion.getAsJsonArray("files");
+            JsonObject file = files.get(0).getAsJsonObject();
+            
+            String downloadUrl = file.get("url").getAsString();
+            String fileName = file.get("filename").getAsString();
+            
+            System.out.println(YELLOW + "Downloading: " + BLUE + fileName + RESET);
+            System.out.println("From: " + downloadUrl);
+            
+            // Download the file
+            Path outputPath = SHADERPACKS_DIR.resolve(fileName);
+            HttpURLConnection downloadConn = (HttpURLConnection) new URL(downloadUrl).openConnection();
+            downloadConn.setRequestProperty("User-Agent", USER_AGENT);
+            
+            long fileSize = downloadConn.getContentLengthLong();
+            System.out.println("File size: " + BLUE + (fileSize / 1024 / 1024) + " MB" + RESET);
+            
+            try (InputStream in = downloadConn.getInputStream();
+                 FileOutputStream out = new FileOutputStream(outputPath.toFile())) {
+                
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                long totalBytesRead = 0;
+                int lastPercentage = 0;
+                
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                    totalBytesRead += bytesRead;
+                    
+                    int percentage = (int) ((totalBytesRead * 100) / fileSize);
+                    if (percentage > lastPercentage && percentage % 10 == 0) {
+                        System.out.println("  Progress: " + percentage + "%");
+                        lastPercentage = percentage;
+                    }
+                }
+            }
+            
+            System.out.println(GREEN + "✓ Successfully downloaded: " + fileName + RESET);
+            return outputPath;
+            
+        } catch (Exception e) {
+            System.err.println(RED + "ERROR: Failed to download from Modrinth: " + e.getMessage() + RESET);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
      * Finds the base and patched shader files
      */
     private static ShaderPair findShaders() throws IOException {
@@ -125,7 +236,7 @@ public class DevPatchGenerator {
         Path patchedShader = null;
 
         // Look for base shader (e.g., ComplementaryReimagined_r5.3.zip)
-        // and patched shader (e.g., ComplementaryReimagined_r5.3 + EuphoriaPatches_1.7.8)
+        // and patched shader (e.g., ComplementaryReimagined_r5.3 + EuphoriaPatches_1.7.8 OR Euphoria-Patches directory)
         try {
             for (Path path : Files.newDirectoryStream(SHADERPACKS_DIR)) {
                 String name = path.getFileName().toString();
@@ -137,10 +248,28 @@ public class DevPatchGenerator {
                     baseShader = path;
                 }
 
-                // Check if it's the patched shader
+                // Check if it's the standard patched shader format
                 if (name.contains(BRAND_NAME) &&
                     name.contains(" + " + PATCH_NAME + PATCH_VERSION)) {
                     patchedShader = path;
+                }
+                
+                // Check if it's the Euphoria-Patches directory
+                if (name.equals("Euphoria-Patches") && Files.isDirectory(path)) {
+                    Path gitDir = path.resolve(".git");
+                    if (Files.exists(gitDir) && Files.isDirectory(gitDir)) {
+                        // Verify version from pack.json
+                        String detectedVersion = readVersionFromPackJson(path);
+                        if (detectedVersion != null && detectedVersion.equals(PATCH_VERSION.replace("_", ""))) {
+                            System.out.println(GREEN + "Found Euphoria-Patches directory with version " + detectedVersion + RESET);
+                            patchedShader = path;
+                        } else {
+                            System.err.println(YELLOW + "Warning: Euphoria-Patches found but version mismatch. Expected: " + 
+                                PATCH_VERSION.replace("_", "") + ", Found: " + detectedVersion + RESET);
+                        }
+                    } else {
+                        System.err.println(YELLOW + "Warning: Euphoria-Patches directory found but missing .git folder" + RESET);
+                    }
                 }
 
                 if (baseShader != null && patchedShader != null) {
@@ -152,14 +281,47 @@ public class DevPatchGenerator {
             return null;
         }
 
-        if (baseShader == null || patchedShader == null) {
-            System.err.println(RED + "ERROR: Missing shaders in " + SHADERPACKS_DIR + RESET);
-            System.err.println("Need: " + BRAND_NAME + "Reimagined" + VERSION + ".zip");
-            System.err.println("And: " + BRAND_NAME + "Reimagined" + VERSION + " + " + PATCH_NAME + PATCH_VERSION);
-            return null;
+        // Return the ShaderPair even if some are null - let the caller handle it
+        if (baseShader == null && patchedShader == null) {
+            // Both missing - likely first time running, no need to log
+            return new ShaderPair(baseShader, patchedShader);
+        }
+        
+        if (patchedShader == null) {
+            System.err.println(YELLOW + "Patched shader not found in " + SHADERPACKS_DIR + RESET);
+            System.err.println("Need either:");
+            System.err.println("  - " + BRAND_NAME + "Reimagined" + VERSION + " + " + PATCH_NAME + PATCH_VERSION);
+            System.err.println("  - Euphoria-Patches directory with .git folder and correct version in pack.json");
         }
         
         return new ShaderPair(baseShader, patchedShader);
+    }
+    
+    /**
+     * Reads the version from pack.json in the Euphoria-Patches directory
+     */
+    private static String readVersionFromPackJson(Path euphoriaDir) {
+        Path packJsonPath = euphoriaDir.resolve("shaders/pack.json");
+        if (!Files.exists(packJsonPath)) {
+            System.err.println(YELLOW + "Warning: pack.json not found at " + packJsonPath + RESET);
+            return null;
+        }
+        
+        try (BufferedReader reader = Files.newBufferedReader(packJsonPath)) {
+            // Simple JSON parsing - look for "version": "x.x.x"
+            String line;
+            Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
+            while ((line = reader.readLine()) != null) {
+                Matcher matcher = versionPattern.matcher(line);
+                if (matcher.find()) {
+                    return matcher.group(1);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(RED + "ERROR: Failed to read pack.json: " + e.getMessage() + RESET);
+        }
+        
+        return null;
     }
     
     /**
@@ -252,13 +414,50 @@ public class DevPatchGenerator {
      */
     private static void extractOrCopyShader(Path shaderPath, Path outputDir) throws Exception {
         if (Files.isDirectory(shaderPath)) {
-            // It's already a directory, just copy it
-            System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is a directory, copying...");
-            FileUtils.copyDirectory(shaderPath.toFile(), outputDir.toFile());
+            // Check if it's the Euphoria-Patches directory
+            boolean isEuphoriaPatchesDir = shaderPath.getFileName().toString().equals("Euphoria-Patches");
+            
+            if (isEuphoriaPatchesDir) {
+                System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is the Euphoria-Patches directory, copying with exclusions...");
+                copyEuphoriaPatchesDirectory(shaderPath, outputDir);
+            } else {
+                // It's already a directory, just copy it
+                System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is a directory, copying...");
+                FileUtils.copyDirectory(shaderPath.toFile(), outputDir.toFile());
+            }
         } else {
             // It's a file (probably a zip), extract it
             System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is an archive, extracting...");
             ArchiveUtils.extract(shaderPath, outputDir);
+        }
+    }
+    
+    /**
+     * Copies the Euphoria-Patches directory while excluding unwanted files/folders
+     */
+    private static void copyEuphoriaPatchesDirectory(Path source, Path target) throws IOException {
+        Files.createDirectories(target);
+        
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
+            for (Path entry : stream) {
+                String fileName = entry.getFileName().toString();
+                
+                // Skip excluded files and directories
+                if (fileName.equals(".git") || fileName.equals(".github") || fileName.endsWith(".zip")) {
+                    System.out.println("    " + YELLOW + "Skipping: " + fileName + RESET);
+                    continue;
+                }
+                
+                Path targetPath = target.resolve(fileName);
+                
+                if (Files.isDirectory(entry)) {
+                    // Recursively copy directories
+                    FileUtils.copyDirectory(entry.toFile(), targetPath.toFile());
+                } else {
+                    // Copy files
+                    Files.copy(entry, targetPath);
+                }
+            }
         }
     }
     
