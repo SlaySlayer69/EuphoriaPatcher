@@ -7,11 +7,11 @@ plugins {
     id 'me.modmuss50.mod-publish-plugin' version '1.1.0'
 }
 
-group = 'mc.euphoria_patches'
+group = mod_group_id
 version = "${versionProps.getProperty('mod_version')}-forge1.7.10"
 
 base {
-    archivesName = 'EuphoriaPatcher'
+    archivesName = archives_base_name
 }
 
 // Set the toolchain version to Java 8
@@ -106,17 +106,6 @@ tasks.reobfJar.configure {
     inputJar.set(tasks.shadowJar.archiveFile)
 }
 
-// Clean up any leftover build artifacts that cause conflicts
-tasks.register('cleanBuildLibs', Delete) {
-    delete fileTree("${projectDir}/build/libs") {
-        include '**/*.jar'
-    }
-}
-
-tasks.named('build').configure {
-    dependsOn cleanBuildLibs
-}
-
 // Adjust artifact publishing to use shadowJar
 for (String outgoingConfig : ['runtimeElements', 'apiElements']) {
     configurations[outgoingConfig].outgoing.artifacts.clear()
@@ -127,12 +116,10 @@ for (String outgoingConfig : ['runtimeElements', 'apiElements']) {
 tasks.whenTaskAdded { task ->
     if (task.name == 'publishCurseforge') {
         task.dependsOn rootProject.tasks.confirmPublish
-        task.dependsOn copyToRootBuild
         task.onlyIf { !rootProject.ext.skipCurseforge }
     }
     if (task.name == 'publishModrinth') {
         task.dependsOn rootProject.tasks.confirmPublish
-        task.dependsOn copyToRootBuild
         task.onlyIf { !rootProject.ext.skipModrinth }
     }
 }
@@ -147,7 +134,7 @@ tasks.register('copyToRootBuild', Copy) {
 build.dependsOn copyToRootBuild
 
 publishMods {
-    file = rootProject.layout.buildDirectory.file("libs/EuphoriaPatcher-${project.version}.jar")
+    file = tasks.reobfJar.archiveFile
     
     changelog = rootProject.ext.changelogFile.text
 
@@ -159,12 +146,12 @@ publishMods {
     dryRun = rootProject.ext.publishTestRun
 
     curseforge {
-        projectId = '915902'
+        projectId = curseforge_project_id
         accessToken = providers.environmentVariable('CURSEFORGE_TOKEN')
         minecraftVersions.add('1.7.10')
     }
     modrinth {
-        projectId = '4H6sumDB'
+        projectId = modrinth_project_id
         accessToken = providers.environmentVariable('MODRINTH_TOKEN')
         minecraftVersions.add('1.7.10')
     }

@@ -128,7 +128,7 @@ task buildAll {
 	
 	doLast {
 		println "\n" + "="*60
-		println "All mod loader variants built successfully!"
+		println "\u001B[32mAll mod loader variants built successfully!\u001B[0m"
 		println "="*60
 		println "All JARs are available in: build/libs/"
 		println "="*60
@@ -151,7 +151,7 @@ task publishAll {
 	
 	doLast {
 		println "\n" + "="*60
-		println "All mod loader variants published successfully!"
+		println "\u001B[32mAll mod loader variants published successfully!\u001B[0m"
 		println "="*60
 	}
 }

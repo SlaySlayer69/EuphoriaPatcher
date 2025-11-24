@@ -9,7 +9,7 @@ plugins {
 }
 
 version = "${versionProps.getProperty('mod_version')}-neoforge"
-group = 'mc.euphoria_patches'
+group = mod_group_id
 
 repositories {
     mavenLocal()
@@ -17,7 +17,7 @@ repositories {
 }
 
 base {
-    archivesName = "EuphoriaPatcher"
+    archivesName = archives_base_name
 }
 
 def neoforgeProps = new Properties()
@@ -205,7 +205,7 @@ publishMods {
     dryRun = rootProject.ext.publishTestRun
 
     curseforge {
-        projectId = "915902"
+        projectId = curseforge_project_id
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
             start = "1.20.5"
@@ -213,7 +213,7 @@ publishMods {
         }
     }
     modrinth {
-        projectId = "4H6sumDB"
+        projectId = modrinth_project_id
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
             start = "1.20.5"

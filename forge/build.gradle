@@ -8,10 +8,10 @@ plugins {
 }
 
 version = "${versionProps.getProperty('mod_version')}-forge"
-group = 'mc.euphoria_patches'
+group = mod_group_id
 
 base {
-    archivesName = 'EuphoriaPatcher'
+    archivesName = archives_base_name
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
@@ -277,7 +277,7 @@ publishMods {
     dryRun = rootProject.ext.publishTestRun
 
     curseforge {
-        projectId = "915902"
+        projectId = curseforge_project_id
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
             start = "1.13"
@@ -285,7 +285,7 @@ publishMods {
         }
     }
     modrinth {
-        projectId = "4H6sumDB"
+        projectId = modrinth_project_id
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
             start = "1.13"
