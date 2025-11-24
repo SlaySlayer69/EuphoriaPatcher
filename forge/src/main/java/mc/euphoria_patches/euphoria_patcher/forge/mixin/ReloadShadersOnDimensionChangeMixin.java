@@ -1,17 +1,21 @@
-package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
+package mc.euphoria_patches.euphoria_patcher.forge.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.IrisReloadManager;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
+import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(MinecraftClient.class)
+@Debug(export = true)
+@Mixin(Minecraft.class)
+@Pseudo
 public class ReloadShadersOnDimensionChangeMixin {
     @Unique
     private static String euphoriaPatcher$lastDimension = null;
@@ -22,11 +26,23 @@ public class ReloadShadersOnDimensionChangeMixin {
     }
 
     /**
-     * This injects at the end of the setWorld method, which is called when changing dimensions
+     * This injects at the end of the setLevel method, which is called when changing dimensions
+     * Using simple name to let Mixin resolve all overloads
      */
-    @Inject(method = "setWorld", at = @At("RETURN"))
+    @Inject(
+        method = {
+                "setLevel",
+                "setLevel(Lnet/minecraft/client/multiplayer/ClientLevel;)V",
+                "setLevel(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/client/gui/screens/ReceivingLevelScreen$Reason;)V",
+                "m_91156_(Lnet/minecraft/client/multiplayer/ClientLevel;)V",
+                "func_71403_a(Lnet/minecraft/client/world/ClientWorld;)V"
+        },
+        at = @At("RETURN"),
+        require = 0,
+        remap = false
+    )
     private void onDimensionChange(CallbackInfo ci) {
-        euphoriaPatcher$debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
+        euphoriaPatcher$debugLog("### EUPHORIA DIMENSION DETECTION - setLevel called ###");
         
         // Get current dimension
         String currentDimension = ModLoaderSpecifics.getCurrentDimensionStatic();
@@ -45,7 +61,7 @@ public class ReloadShadersOnDimensionChangeMixin {
             
             // Use IrisReloadManager to handle the reload
             try {
-                MinecraftClient.getInstance().execute(() -> {
+                Minecraft.getInstance().execute(() -> {
                     IrisReloadManager.findAndScheduleReload();
                     euphoriaPatcher$debugLog("Scheduled shader reload after dimension change");
                 });

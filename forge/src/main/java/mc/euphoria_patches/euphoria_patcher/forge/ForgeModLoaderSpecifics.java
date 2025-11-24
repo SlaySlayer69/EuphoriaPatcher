@@ -3,6 +3,7 @@ package mc.euphoria_patches.euphoria_patcher.forge;
 import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
+import net.minecraft.world.dimension.Dimension;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -40,20 +41,6 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        // debugLog("Getting current dimension");
-        // Minecraft minecraft = Minecraft.getInstance();
-        
-        // if (minecraft == null || minecraft.level == null) {
-        //     debugLog("Minecraft or level is null, defaulting to 'overworld'");
-        //     return "overworld"; // Default if world isn't loaded
-        // }
-        
-        // // Get current dimension ID
-        // ResourceLocation dimensionId = minecraft.level.dimension().location();
-        // String currentDimensionId = dimensionId.toString();
-        // debugLog("Current dimension ID: " + currentDimensionId);
-        
-        // return Dimensions.getCurrentDimension(currentDimensionId);
         return "overworld";
     }
 

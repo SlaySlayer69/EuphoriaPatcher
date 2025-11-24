@@ -115,6 +115,10 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenCentral() // Add mavenCentral for dependencies
+    maven {
+        name = 'SpongePowered'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    }
 }
 
 // Define configurations for shadowing
@@ -141,6 +145,10 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
+
+    // Include Mixin annotation processor
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    implementation 'org.spongepowered:mixin:0.8.5'
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -201,7 +209,8 @@ shadowJar {
                 'Specification-Version'   : '1', // We are version 1 of ourselves
                 'Implementation-Title'    : project.name,
                 'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors
+                'Implementation-Vendor'   : mod_authors,
+                "MixinConfigs": "euphoria_patcher.mixins.json"
         ])
     }
 

@@ -1,0 +1,18 @@
+{
+  "required": false,
+  "package": "mc.euphoria_patches.euphoria_patcher.forge.mixin",
+  "plugin": "mc.euphoria_patches.euphoria_patcher.forge.mixin.EuphoriaMixinPlugin",
+  "mixins": [
+    "EuphoriaPatcherMixin",
+    "IrisLegacyStandardMacrosMixin",
+    "IrisModernStandardMacrosMixin"
+  ],
+  "client": [
+    "ClientTickMixin",
+    "ReloadShadersOnDimensionChangeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8.3"
+}
