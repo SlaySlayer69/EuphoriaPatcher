@@ -197,6 +197,8 @@ publishMods {
     
     changelog = rootProject.ext.changelogFile.text
 
+    displayName = "Euphoria Patcher ${project.version}"
+
     type = STABLE
     modLoaders.add("neoforge")
 

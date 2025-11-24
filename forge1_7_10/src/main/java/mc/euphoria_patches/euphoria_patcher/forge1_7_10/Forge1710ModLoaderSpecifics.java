@@ -1,13 +1,10 @@
 package mc.euphoria_patches.euphoria_patcher.forge1_7_10;
 
-import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
-import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.Loader;
-import net.minecraft.client.Minecraft;
-import net.minecraft.server.MinecraftServer;
 
+import java.io.File;
 import java.nio.file.Path;
 
 public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {

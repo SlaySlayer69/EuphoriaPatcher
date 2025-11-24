@@ -1133,21 +1133,50 @@ public class EuphoriaPatcher {
 
     // Apply production patch
     private boolean applyProductionPatch(Path baseArchived, Path patchedArchive, Path patchFile, Path patchedFile, boolean styleUnbound, boolean styleReimagined) {
-        try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(PATCH_NAME + PATCH_VERSION + ".patch")) {
+        String patchResourceName = PATCH_NAME + PATCH_VERSION + ".patch";
+        debugLog("Attempting to load patch resource: " + patchResourceName);
+        
+        try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchResourceName)) {
             if (patchStream != null) {
+                debugLog("Patch resource found, copying to: " + patchFile);
                 FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
+                
+                debugLog("Applying patch from " + baseArchived + " to " + patchedArchive);
                 FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
+                
+                debugLog("Extracting patched archive to: " + patchedFile);
                 try {
                     ArchiveUtils.extract(patchedArchive, patchedFile);
                 } catch (IOException | ArchiveException e) {
                     log(2, "Error extracting archive: " + e.getMessage());
+                    debugLog("Error extracting archive: " + e.getMessage());
+                    return false;
                 }
+                
+                debugLog("Applying style settings...");
                 applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
                 log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17");
                 return true;
+            } else {
+                // Patch resource not found - this is a critical error
+                debugLog("CRITICAL ERROR: Patch resource not found: " + patchResourceName);
+                log(3, 12, "========================");
+                log(3, 12, "CRITICAL BUILD ERROR");
+                log(3, 12, "========================");
+                log(3, 12, "Patch file not found in mod resources!");
+                log(3, 12, "Expected: " + patchResourceName);
+                log(3, 12, "");
+                log(3, 12, "This indicates the mod was built incorrectly.");
+                log(3, 12, "The patch file should be in the JAR resources.");
+                log(3, 12, "");
+                log(3, 12, "Please report this issue to the mod developer");
+                log(3, 12, "at: https://github.com/EuphoriaPatches/EuphoriaPatcher/issues");
+                log(3, 12, "========================");
             }
         } catch (IOException | CompressorException | InvalidHeaderException e) {
+            debugLog("Error applying patch file: " + e.getMessage());
             log(3, "Error applying patch file: " + e.getMessage());
+            e.printStackTrace();
         }
         return false;
     }

@@ -33,6 +33,47 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 8
 }
 
+// Task to verify patch file exists with correct version
+task verifyPatchFile {
+	doLast {
+		// Get version from root project's version.properties
+		def versionProps = rootProject.ext.versionProps
+		def patchVersion = versionProps.getProperty('mod_version').split("-")[0]
+		def expectedPatchFile = "EuphoriaPatches_${patchVersion}.patch"
+		def patchFilePath = file("src/main/resources/${expectedPatchFile}")
+		
+		// Find what patch file actually exists (if any)
+		def actualPatchFile = "NONE"
+		def resourcesDir = file("src/main/resources")
+		if (resourcesDir.exists()) {
+			resourcesDir.listFiles().each { f ->
+				if (f.name.endsWith(".patch") && f.name.startsWith("EuphoriaPatches_")) {
+					actualPatchFile = f.name
+				}
+			}
+		}
+
+		println "Verifying patch file: ${expectedPatchFile}"
+
+		if (!patchFilePath.exists()) {
+			throw new GradleException("""
+			❌ PATCH FILE NOT FOUND: ${expectedPatchFile}
+			Expected location: common/src/main/resources/${expectedPatchFile}
+			Expected Version:  EuphoriaPatches_${patchVersion}.patch
+			Current Version:   ${actualPatchFile}
+			Fix: Run DevPatchGenerator or copy from EuphoriaPatchFiles/
+			""".stripIndent().trim())
+		}
+
+		println "✓ Patch file verified: ${expectedPatchFile}"
+	}
+}
+
+// Only verify patch file during actual builds, not during processResources
+// This allows DevPatchGenerator to run without needing the patch file to exist yet
+jar.dependsOn verifyPatchFile
+assemble.dependsOn verifyPatchFile
+
 // Ensure Main.java resources are included
 jar {
 	manifest {
