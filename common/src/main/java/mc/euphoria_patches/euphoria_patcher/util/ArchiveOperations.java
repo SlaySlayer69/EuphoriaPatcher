@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.DevPatchGenerator;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.services.ShaderVersionComparator;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 import java.io.IOException;
@@ -10,11 +11,20 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 public class ArchiveOperations {
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ArchiveOperations] " + message);
+    }
+
+    /**
+     * Get version comparator instance from EuphoriaPatcher
+     */
+    private static ShaderVersionComparator getVersionComparator() {
+        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        return instance != null ? instance.getVersionComparator() : null;
     }
 
     public static Path extract(Path source, Path targetDir, String operationName) {
@@ -48,6 +58,36 @@ public class ArchiveOperations {
         }
     }
 
+    /**
+     * Create a temporary directory for shader operations
+     */
+    public static Path createTempDirectory() {
+        try {
+            Path temp = Files.createTempDirectory("euphoria-patcher-");
+            debugLog("Created temporary directory: " + temp);
+            return temp;
+        } catch (IOException e) {
+            debugLog("Error creating temporary directory: " + e.getMessage());
+            EuphoriaPatcher.log(3, "Error creating temporary directory: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static void deleteRecursively(Path path) throws IOException { // needed to delete folders
+        if (Files.isDirectory(path)) {
+            try (Stream<Path> entries = Files.list(path)) {
+                entries.forEach(entry -> {
+                    try {
+                        deleteRecursively(entry);
+                    } catch (IOException e) {
+                        EuphoriaPatcher.log(2, 0, "Error deleting entry: " + entry + " - " + e.getMessage());
+                    }
+                });
+            }
+        }
+        Files.delete(path);
+    }
+
     public static boolean verifyBaseArchive(Path baseArchived, String originalFileName) {
         try {
             String fileName = baseArchived.getFileName().toString();
@@ -63,9 +103,10 @@ public class ArchiveOperations {
                 debugLog("Invalid archive size: verification failed");
 
                 // First identify if it's a newer version
-                if (EuphoriaPatcher.isNewerShaderVersion(fileName)) {
+                ShaderVersionComparator versionComparator = getVersionComparator();
+                if (versionComparator != null && versionComparator.isNewerShaderVersion(fileName)) {
                     // Get version string from filename
-                    String detectedVersion = EuphoriaPatcher.getVersionStringFromFileName(fileName);
+                    String detectedVersion = versionComparator.getVersionStringFromFileName(fileName);
 
                     // Newer version detected - recommend mod update if available
                     EuphoriaPatcher.log(3, 8, "=== VERSION MISMATCH ===");

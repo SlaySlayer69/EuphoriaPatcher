@@ -27,7 +27,7 @@ allprojects {
 }
 
 // Create a task to validate the changelog at root level
-task validateChangelog {
+tasks.register('validateChangelog') {
     doLast {
         def baseVersion = versionProps.getProperty('mod_version').split("-")[0]
         def compVersion = versionProps.getProperty('mod_version').split("-")[1]
@@ -46,17 +46,17 @@ task validateChangelog {
 }
 
 // Create a confirmation task at root level that runs once for all projects
-task confirmPublish {
+tasks.register('confirmPublish') {
     dependsOn validateChangelog
 
     doLast {
         if (!publishConfirmed) {
-            println "\n${"="*60}"
+            println "\n${"=" * 60}"
             println "PUBLISH CONFIRMATION"
-            println "${"="*60}"
+            println "${"=" * 60}"
             println "Base Version: ${versionProps.getProperty('mod_version')}"
             println "Dry Run: ${publishTestRun}"
-            println "${"="*60}"
+            println "${"=" * 60}"
 
             System.out.print("Type 'yes' to confirm: ")
             System.out.flush()
@@ -70,13 +70,13 @@ task confirmPublish {
 
             // Extra confirmation if this is NOT a dry run
             if (!publishTestRun) {
-                println "\n${"!"*60}"
+                println "\n${"!" * 60}"
                 println "⚠️  LIVE PUBLISH WARNING ⚠️"
-                println "${"!"*60}"
+                println "${"!" * 60}"
                 println "publishTestRun is set to FALSE!"
                 println "This will perform a REAL UPLOAD to CurseForge and/or Modrinth!"
                 println "Files will be publicly available immediately!"
-                println "${"!"*60}"
+                println "${"!" * 60}"
                 System.out.print("\nAre you ABSOLUTELY SURE you want to proceed? (yes/no): ")
                 System.out.flush()
 
@@ -111,49 +111,50 @@ task confirmPublish {
 }
 
 // Define build order: 1.7.10 -> forgeLegacy -> neoforge -> forge -> fabric
-task buildAll {
-	group = 'build'
-	description = 'Builds all mod loader variants in the correct order'
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Builds all mod loader variants in the correct order'
 
     println "Building Forge 1.7.10 variant..."
-	dependsOn ':forge1_7_10:build'
+    dependsOn ':forge1_7_10:build'
     println "Building ForgeLegacy variant..."
-	dependsOn ':forgeLegacy:build'
+    dependsOn ':forgeLegacy:build'
     println "Building Neoforge variant..."
-	dependsOn ':neoforge:build'
+    dependsOn ':neoforge:build'
     println "Building Forge variant..."
-	dependsOn ':forge:build'
+    dependsOn ':forge:build'
     println "Building Fabric variant..."
-	dependsOn ':fabric:build'
-	
-	doLast {
-		println "\n" + "="*60
-		println "\u001B[32mAll mod loader variants built successfully!\u001B[0m"
-		println "="*60
-		println "All JARs are available in: build/libs/"
-		println "="*60
-	}
+    dependsOn ':fabric:build'
+
+    doLast {
+        Thread.sleep(2000)
+        println "\n" + "=" * 60
+        println "\u001B[32mAll mod loader variants built successfully!\u001B[0m"
+        println "=" * 60
+        println "All JARs are available in: build/libs/"
+        println "=" * 60
+    }
 }
 
 // Define publish order: same as build order
-task publishAll {
-	group = 'publishing'
-	description = 'Publishes all mod loader variants in the correct order'
-	
-	// Must confirm before publishing anything
-	dependsOn confirmPublish
-	
-	dependsOn ':forge1_7_10:publishMods'
-	dependsOn ':forgeLegacy:publishMods'
-	dependsOn ':neoforge:publishMods'
-	dependsOn ':forge:publishMods'
-	dependsOn ':fabric:publishMods'
-	
-	doLast {
-		println "\n" + "="*60
-		println "\u001B[32mAll mod loader variants published successfully!\u001B[0m"
-		println "="*60
-	}
+tasks.register('publishAll') {
+    group = 'publishing'
+    description = 'Publishes all mod loader variants in the correct order'
+
+    // Must confirm before publishing anything
+    dependsOn confirmPublish
+
+    dependsOn ':forge1_7_10:publishMods'
+    dependsOn ':forgeLegacy:publishMods'
+    dependsOn ':neoforge:publishMods'
+    dependsOn ':forge:publishMods'
+    dependsOn ':fabric:publishMods'
+
+    doLast {
+        println "\n" + "=" * 60
+        println "\u001B[32mAll mod loader variants published successfully!\u001B[0m"
+        println "=" * 60
+    }
 }
 
 // Enforce sequential publishing order after all projects are configured

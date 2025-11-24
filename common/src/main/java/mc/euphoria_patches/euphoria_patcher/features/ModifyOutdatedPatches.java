@@ -1,8 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
 import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
-import mc.euphoria_patches.euphoria_patcher.util.UsefulFunctions;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -56,7 +56,7 @@ public class ModifyOutdatedPatches {
                 try {
                     if (isOutdatedPatch(path, false)) {
                         debugLog("Found outdated pack to delete: " + path.getFileName());
-                        UsefulFunctions.deleteRecursively(path);
+                        ArchiveOperations.deleteRecursively(path);
                         EuphoriaPatcher.log(0, "Successfully deleted outdated " + path.getFileName() + " shaderpack file!");
                         deletedCount.getAndIncrement();
                     }

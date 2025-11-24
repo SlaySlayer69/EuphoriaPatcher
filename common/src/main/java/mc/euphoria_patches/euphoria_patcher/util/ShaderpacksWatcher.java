@@ -1,6 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector;
+import mc.euphoria_patches.euphoria_patcher.services.ShaderNamingService;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -38,6 +40,20 @@ public class ShaderpacksWatcher {
 
     // Add this flag to control initial scanning
     private boolean skipInitialScan = false;
+
+    /**
+     * Get the ShaderDetector service from the patcher instance
+     */
+    private ShaderDetector getShaderDetector() {
+        return patcher != null ? patcher.getShaderDetector() : null;
+    }
+
+    /**
+     * Get the ShaderNamingService from the patcher instance
+     */
+    private ShaderNamingService getNamingService() {
+        return patcher != null ? patcher.getNamingService() : null;
+    }
 
     public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
         this(patcher, false);
@@ -495,8 +511,9 @@ public class ShaderpacksWatcher {
                 EuphoriaPatcher.log(0, "Checking if file matches by byte size (watcher): " + fileName);
 
                 boolean isValidByByteSize = false;
-                if (patcher != null) {
-                    isValidByByteSize = patcher.isValidShaderByByteSize(path);
+                ShaderDetector detector = getShaderDetector();
+                if (detector != null) {
+                    isValidByByteSize = detector.isValidShaderByByteSize(path);
                     debugLog("Byte size verification result: " + (isValidByByteSize ? "valid" : "invalid") + " - " + fileName);
                     
                     // Add result logging
@@ -516,7 +533,8 @@ public class ShaderpacksWatcher {
                         EuphoriaPatcher.log(0, "Found valid shader by byte size in watcher: " + fileName);
 
                         // Rename the file
-                        Path renamedPath = patcher.renameToCorrectShaderName(path);
+                        ShaderNamingService namingService = getNamingService();
+                        Path renamedPath = namingService != null ? namingService.renameToCorrectShaderName(path) : path;
                         String newFileName = renamedPath.getFileName().toString();
                         debugLog("Renamed from " + fileName + " to " + newFileName);
 

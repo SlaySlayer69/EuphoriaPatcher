@@ -1,0 +1,254 @@
+package mc.euphoria_patches.euphoria_patcher.services;
+
+import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
+import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import org.apache.commons.io.FileUtils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Handles shader naming operations including renaming and creating alternative names
+ */
+public class ShaderNamingService {
+    private final String brandName;
+    private final String patchName;
+    private final String version;
+    private final String patchVersion;
+    private final String commonLocation;
+    private final String shaderMyFileLocation;
+    private final Path shaderpacks;
+    private final ShaderDetector shaderDetector;
+
+    public ShaderNamingService(String brandName, String patchName, String version, String patchVersion, 
+                               String commonLocation, String shaderMyFileLocation, Path shaderpacks,
+                               ShaderDetector shaderDetector) {
+        this.brandName = brandName;
+        this.patchName = patchName;
+        this.version = version;
+        this.patchVersion = patchVersion;
+        this.commonLocation = commonLocation;
+        this.shaderMyFileLocation = shaderMyFileLocation;
+        this.shaderpacks = shaderpacks;
+        this.shaderDetector = shaderDetector;
+    }
+
+    /**
+     * Clean base name from copy suffixes
+     */
+    public String cleanBaseName(String baseName) {
+        if (baseName == null) return null;
+        debugLog("Before Cleaning base name: " + baseName);
+        String cleaned = baseName.replaceAll("(?i)(?:[\\s_-]+(?:\\(copy\\)|copy|\\(\\d+\\)|\\d+))+$", ""); // Remove copy suffixes like (1), (2), Copy, etc.
+        cleaned = cleaned.replaceAll("\\s+", " ").trim(); // Remove any duplicate spaces that might result from the cleaning
+        debugLog("Cleaned base name: " + cleaned);
+        return cleaned;
+    }
+
+    /**
+     * Rename shader to correct naming format
+     */
+    public Path renameToCorrectShaderName(Path path) {
+        try {
+            String fileName = path.getFileName().toString();
+            String style;
+            
+            // First try to determine style from filename
+            if (fileName.contains("Unbound")) {
+                style = "Unbound";
+            } else if (fileName.contains("Reimagined")) {
+                style = "Reimagined";
+            } else {
+                // If not in filename, check the common.glsl file
+                style = shaderDetector.detectStyleFromCommonFile(path);
+                debugLog("Detected " + style + " style from common.glsl file");
+            }
+            
+            // Create the correct name format
+            String correctName = brandName + style + version;
+            if (fileName.endsWith(".zip")) {
+                correctName += ".zip";
+            }
+            
+            // If the name is already correct, return the original path
+            if (fileName.equals(correctName)) {
+                return path;
+            }
+            
+            // Create path for the renamed shader
+            Path targetPath = path.resolveSibling(correctName);
+            
+            // Skip if a file with the target name already exists
+            if (Files.exists(targetPath)) {
+                debugLog("A file with the correct name already exists: " + targetPath.getFileName());
+                return path;
+            }
+            
+            // Rename the file/directory
+            Path renamedPath = Files.move(path, targetPath);
+            log(0, "Renamed shader from \"" + fileName + "\" to \"" + correctName + "\"");
+            
+            return renamedPath;
+        } catch (IOException e) {
+            log(2, "Failed to rename shader: " + e.getMessage());
+            return path; // Return original path if renaming failed
+        }
+    }
+
+    /**
+     * Gets the path for a patched shader based on the base shader file
+     *
+     * @param baseFile Path to the base shader file or directory
+     * @return Path to the patched shader, or null if baseFile is null
+     */
+    public Path getPatchedShaderPath(Path baseFile) {
+        if (baseFile == null) {
+            log(3, "Cannot create patched shader path - base file is null");
+            return null;
+        }
+
+        try {
+            String fileName = baseFile.getFileName().toString();
+            String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
+            baseName = cleanBaseName(baseName);
+            
+            return baseFile.resolveSibling(baseName + " + " + patchName + patchVersion);
+        } catch (Exception e) {
+            log(3, "Error creating patched shader path: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create alternative shader names as configured
+     */
+    public void createAlternativeShaderNames(Path patchedShaderPath, boolean isAlreadyInstalled, String alternativeShaderNames) {
+        if (alternativeShaderNames.isEmpty()) {
+            debugLog("No alternative shader names configured.");
+            return; // No alternative names to create
+        }
+
+        String baseVersion = version.replace("_", "");
+        String patchVersionClean = patchVersion.replace("_", "");
+
+        // Define illegal characters for file/folder names on most OSes
+        String illegalChars = "[\\\\/:*?\"<>|]";
+
+        String[] alternativeNames = alternativeShaderNames.split(",");
+
+        for (String name : alternativeNames) {
+            String trimmedName = name.trim();
+
+            if (trimmedName.isEmpty()) {
+                continue; // Skip empty names
+            }
+
+            // Replace placeholders with actual version values
+            String finalName = trimmedName
+                    .replace("{baseVersion}", baseVersion)
+                    .replace("{patchVersion}", patchVersionClean);
+
+            if (finalName.matches(".*" + illegalChars + ".*")) {
+                log(2, "Skipping alternative shader name with illegal characters: \"" + finalName + "\"");
+                continue;
+            }
+
+            // Get the target path
+            Path targetPath = shaderpacks.resolve(finalName);
+
+            // If EP is already installed, only regenerate if the alternative exists and is corrupted
+            if (isAlreadyInstalled) {
+                if (Files.exists(targetPath)) {
+                    try {
+                        boolean isCorrupted = !shaderDetector.hasEuphoriaFile(targetPath);
+                        if (isCorrupted) {
+                            debugLog("Found corrupted alternative shader \"" + finalName + "\", regenerating...");
+                            ArchiveOperations.deleteRecursively(targetPath); // Delete the corrupted version
+                            createShaderCopy(patchedShaderPath, finalName); // Create a new copy - patchedShaderPath should be safe since EP is installed
+                        } else {
+                            debugLog("Alternative shader \"" + finalName + "\" exists and is valid, skipping.");
+                        }
+                    } catch (IOException e) {
+                        log(2, "Error verifying alternative shader \"" + finalName + "\": " + e.getMessage());
+                    }
+                } else {
+                    debugLog("Alternative shader \"" + finalName + "\" doesn't exist (user may have deleted it), skipping creation.");
+                }
+            } else {
+                // EP is not already installed, create alternative names normally
+                createShaderCopy(patchedShaderPath, finalName);
+            }
+        }
+    }
+
+    /**
+     * Create a copy of a shader with a new name
+     */
+    public void createShaderCopy(Path sourceShaderPath, String newName) {
+        try {
+            // Get the parent directory (shaderpacks folder)
+            Path shaderpacks = sourceShaderPath.getParent();
+            
+            // Create the new path with the alternative name
+            Path targetPath = shaderpacks.resolve(newName);
+            
+            // Check if it already exists
+            if (Files.exists(targetPath)) {
+                // Check if it's an outdated version by examining myFile.glsl
+                Path myFilePath = targetPath.resolve(shaderMyFileLocation);
+                
+                if (Files.exists(myFilePath)) {
+                    // Read first line of the file to extract version
+                    String firstLine;
+                    try (BufferedReader reader = Files.newBufferedReader(myFilePath)) {
+                        firstLine = reader.readLine();
+                    }
+                    
+                    // Check if it's a Euphoria Patches file with a different version
+                    if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
+                        String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
+                        String expectedVersion = patchVersion.replace("_", "");
+                        
+                        if (!fileVersion.equals(expectedVersion)) {
+                            debugLog("Found outdated alternative shader \"" + newName + "\" (version " + fileVersion + "), updating to " + expectedVersion);
+                            // Delete outdated version
+                            ArchiveOperations.deleteRecursively(targetPath);
+                        } else {
+                            // Version is current, skip creation
+                            debugLog("Skipping creation of alternative shader name \"" + newName + "\" as it already exists with current version.");
+                            return;
+                        }
+                    } else {
+                        // Not a Euphoria Patches file or can't determine version
+                        debugLog("Found existing shader with name \"" + newName + "\" but couldn't verify version, replacing it.");
+                        ArchiveOperations.deleteRecursively(targetPath);
+                    }
+                } else {
+                    // myFile.glsl doesn't exist, assume not a Euphoria shader or corrupted
+                    debugLog("Found existing shader with name \"" + newName + "\" but it doesn't appear to be a valid Euphoria shader, replacing it.");
+                    ArchiveOperations.deleteRecursively(targetPath);
+                }
+            }
+
+            log(0, "Creating alternative shader names from: " + sourceShaderPath.getFileName());
+            
+            // Copy the directory
+            debugLog("Creating alternative shader with name: \"" + newName + "\"");
+            FileUtils.copyDirectory(sourceShaderPath.toFile(), targetPath.toFile());
+            
+            log(0, "Successfully created alternative shader: \"" + newName + "\"");
+        } catch (IOException e) {
+            log(2, "Error creating alternative shader \"" + newName + "\": " + e.getMessage());
+        }
+    }
+
+    private void log(int level, String message) {
+        mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher.log(level, message);
+    }
+
+    private void debugLog(String message) {
+        EuphoriaLogger.debugLog("[ShaderNamingService] " + message);
+    }
+}
