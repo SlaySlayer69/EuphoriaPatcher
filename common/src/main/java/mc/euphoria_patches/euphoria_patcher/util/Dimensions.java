@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.BufferedReader;
 import java.io.IOException;

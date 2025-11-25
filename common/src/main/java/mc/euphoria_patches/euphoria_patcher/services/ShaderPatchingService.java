@@ -4,7 +4,7 @@ import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveUtils;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;

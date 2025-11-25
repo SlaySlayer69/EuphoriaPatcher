@@ -2,7 +2,7 @@ package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;

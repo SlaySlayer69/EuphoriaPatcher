@@ -1,6 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.monitoring;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderNamingService;
 

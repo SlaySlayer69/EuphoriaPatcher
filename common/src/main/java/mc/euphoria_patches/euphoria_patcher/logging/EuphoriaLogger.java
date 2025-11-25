@@ -1,6 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.logging;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.integration.SodiumConsole;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

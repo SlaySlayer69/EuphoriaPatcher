@@ -1,4 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.monitoring;
+
+import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisReloadManager;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.IOException;
 import java.nio.file.Files;

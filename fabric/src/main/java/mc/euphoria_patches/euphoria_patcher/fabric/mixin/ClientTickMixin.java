@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.fabric.mixin;
 
-import mc.euphoria_patches.euphoria_patcher.util.IrisReloadManager;
+import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisReloadManager;
 import net.minecraft.client.MinecraftClient;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

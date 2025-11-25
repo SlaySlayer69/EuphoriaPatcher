@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.services;
 
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

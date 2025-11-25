@@ -1,12 +1,10 @@
 package mc.euphoria_patches.euphoria_patcher.forge_legacy;
 
-import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 
 import java.nio.file.Path;
 

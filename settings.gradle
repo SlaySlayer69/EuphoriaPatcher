@@ -21,7 +21,6 @@ pluginManagement {
                 includeGroupByRegex("com\\.gtnewhorizons\\..+")
             }
         }
-        // maven { url "https://maven.architectury.dev/" }
 		mavenCentral()
 		gradlePluginPortal()
 	}

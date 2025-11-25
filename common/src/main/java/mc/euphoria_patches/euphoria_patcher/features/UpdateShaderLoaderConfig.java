@@ -1,8 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
-import mc.euphoria_patches.euphoria_patcher.util.IrisReloadManager;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisReloadManager;
 
 import java.io.*;
 import java.nio.file.Files;

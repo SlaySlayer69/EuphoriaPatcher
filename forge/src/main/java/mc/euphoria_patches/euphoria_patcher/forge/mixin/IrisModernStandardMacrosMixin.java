@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.forge.mixin;
 
-import mc.euphoria_patches.euphoria_patcher.util.IrisDefineHelper;
+import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisDefineHelper;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;

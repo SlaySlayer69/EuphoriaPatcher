@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.neoforge;
 
 import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;

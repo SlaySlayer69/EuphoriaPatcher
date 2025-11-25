@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.fabric;
 
 import mc.euphoria_patches.euphoria_patcher.util.Dimensions;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;

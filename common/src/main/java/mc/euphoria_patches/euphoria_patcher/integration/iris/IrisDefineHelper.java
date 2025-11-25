@@ -1,8 +1,13 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.integration.iris;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
+import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.monitoring.PotatoFileMonitor;
+import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
+import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 
 import java.nio.file.Path;
 import java.util.List;

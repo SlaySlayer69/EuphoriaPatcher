@@ -1,6 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.integration.iris;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 /**
  * Centralizes all functionality related to Iris shader reloading

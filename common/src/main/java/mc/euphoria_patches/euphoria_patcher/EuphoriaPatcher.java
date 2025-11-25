@@ -1,6 +1,11 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import mc.euphoria_patches.euphoria_patcher.config.Config;
 import mc.euphoria_patches.euphoria_patcher.features.*;
+import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.monitoring.PotatoFileMonitor;
+import mc.euphoria_patches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 import mc.euphoria_patches.euphoria_patcher.services.*;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import mc.euphoria_patches.euphoria_patcher.util.*;

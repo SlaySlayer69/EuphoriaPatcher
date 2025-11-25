@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.forge1_7_10;
 
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
 import cpw.mods.fml.common.Loader;
 

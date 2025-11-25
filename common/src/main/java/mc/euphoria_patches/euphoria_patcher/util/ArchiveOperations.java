@@ -1,7 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
-import mc.euphoria_patches.euphoria_patcher.DevPatchGenerator;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderVersionComparator;
 import org.apache.commons.compress.archivers.ArchiveException;
 

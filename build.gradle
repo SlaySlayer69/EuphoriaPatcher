@@ -51,7 +51,7 @@ tasks.register('confirmPublish') {
 
     doLast {
         if (!publishConfirmed) {
-            Thread.sleep(6000)
+            Thread.sleep(6500)
             println "\n${"=" * 60}"
             println "PUBLISH CONFIRMATION"
             println "${"=" * 60}"
@@ -116,17 +116,30 @@ tasks.register('buildAll') {
     group = 'build'
     description = 'Builds all mod loader variants in the correct order'
 
-    println "Building Forge 1.7.10 variant..."
-    dependsOn ':forge1_7_10:build'
-    println "Building ForgeLegacy variant..."
-    dependsOn ':forgeLegacy:build'
-    println "Building Neoforge variant..."
-    dependsOn ':neoforge:build'
-    println "Building Forge variant..."
-    dependsOn ':forge:build'
-    println "Building Fabric variant..."
-    dependsOn ':fabric:build'
+    if (project.findProject(":forge1_7_10") != null) {
+        println "Building Forge 1.7.10 variant..."
+        dependsOn ":forge1_7_10:build"
+    }
 
+    if (project.findProject(":forgeLegacy") != null) {
+        println "Building ForgeLegacy variant..."
+        dependsOn ":forgeLegacy:build"
+    }
+
+    if (project.findProject(":neoforge") != null) {
+        println "Building Neoforge variant..."
+        dependsOn ":neoforge:build"
+    }
+
+    if (project.findProject(":forge") != null) {
+        println "Building Forge variant..."
+        dependsOn ":forge:build"
+    }
+
+    if (project.findProject(":fabric") != null) {
+        println "Building Fabric variant..."
+        dependsOn ":fabric:build"
+    }
     doLast {
         Thread.sleep(2000)
         println "\n" + "=" * 60
@@ -142,11 +155,26 @@ tasks.register('publishAll') {
     group = 'publishing'
     description = 'Publishes all mod loader variants in the correct order'
 
-    dependsOn ':forge1_7_10:publishMods'
-    dependsOn ':forgeLegacy:publishMods'
-    dependsOn ':neoforge:publishMods'
-    dependsOn ':forge:publishMods'
-    dependsOn ':fabric:publishMods'
+    if (project.findProject(":forge1_7_10") != null) {
+        println "Publishing Forge 1.7.10 variant..."
+        dependsOn ':forge1_7_10:publishMods'
+    }
+    if (project.findProject(":forgeLegacy") != null) {
+        println "Publishing ForgeLegacy variant..."
+        dependsOn ':forgeLegacy:publishMods'
+    }
+    if (project.findProject(":neoforge") != null) {
+        println "Publishing Neoforge variant..."
+        dependsOn ':neoforge:publishMods'
+    }
+    if (project.findProject(":forge") != null) {
+        println "Publishing Forge variant..."
+        dependsOn ':forge:publishMods'
+    }
+    if (project.findProject(":fabric") != null) {
+        println "Publishing Fabric variant..."
+        dependsOn ':fabric:publishMods'
+    }
 
     // Must confirm before publishing anything
     dependsOn confirmPublish

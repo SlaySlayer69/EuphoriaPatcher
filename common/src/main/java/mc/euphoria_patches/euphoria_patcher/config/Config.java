@@ -1,7 +1,7 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.config;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import mc.euphoria_patches.euphoria_patcher.util.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

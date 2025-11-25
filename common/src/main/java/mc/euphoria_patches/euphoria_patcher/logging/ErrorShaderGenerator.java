@@ -1,7 +1,8 @@
-package mc.euphoria_patches.euphoria_patcher.util;
+package mc.euphoria_patches.euphoria_patcher.logging;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
+import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisReloadManager;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
