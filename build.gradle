@@ -51,6 +51,7 @@ tasks.register('confirmPublish') {
 
     doLast {
         if (!publishConfirmed) {
+            Thread.sleep(6000)
             println "\n${"=" * 60}"
             println "PUBLISH CONFIRMATION"
             println "${"=" * 60}"
@@ -141,14 +142,14 @@ tasks.register('publishAll') {
     group = 'publishing'
     description = 'Publishes all mod loader variants in the correct order'
 
-    // Must confirm before publishing anything
-    dependsOn confirmPublish
-
     dependsOn ':forge1_7_10:publishMods'
     dependsOn ':forgeLegacy:publishMods'
     dependsOn ':neoforge:publishMods'
     dependsOn ':forge:publishMods'
     dependsOn ':fabric:publishMods'
+
+    // Must confirm before publishing anything
+    dependsOn confirmPublish
 
     doLast {
         println "\n" + "=" * 60
