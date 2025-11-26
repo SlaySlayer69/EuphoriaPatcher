@@ -140,9 +140,25 @@ public class ArchiveUtils {
      * @param filePath        The path of the file to add to the archive.
      */
     private static void addFileToArchive(TarArchiveOutputStream tarOutputStream, Path sourceDir, Path filePath) {
+        String fileName = null;
         try {
-            String fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
+            fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
+            
+             // Skip version control directories and hidden system folders
+             if (fileName.startsWith(".git/") || fileName.equals(".git") ||
+                 fileName.startsWith(".svn/") || fileName.equals(".svn") ||
+                 fileName.startsWith(".hg/") || fileName.equals(".hg")) {
+                 debugLog("Skipping version control directory: " + fileName);
+                 return;
+             }
+            
             debugLog("Adding to archive: " + fileName);
+            
+            // Check if file still exists and is accessible
+            if (!Files.exists(filePath)) {
+                debugLog("File no longer exists, skipping: " + fileName);
+                return;
+            }
             
             TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName); // Create a TAR entry for the file or directory
 
@@ -168,9 +184,15 @@ public class ArchiveUtils {
 
             tarOutputStream.closeArchiveEntry(); // Close the current entry in the archive
             debugLog("Entry added to archive: " + fileName);
+        } catch (java.nio.channels.ClosedChannelException e) {
+            // Expected when parallel validation finds a match and cancels other threads
+            // This is normal behavior - one thread found a valid shader, so we stop processing the rest
+            debugLog("Archive operation cancelled by thread interruption (this is fine - valid shader found by another thread): " 
+                + fileName + " [Thread: " + Thread.currentThread().getName() + "]");
         } catch (IOException e) {
-            debugLog("Error adding file to archive: " + filePath + " - " + e.getMessage());
-            EuphoriaPatcher.log(3, "Could not add files to TAR Archive: " + e.getMessage());
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            debugLog("Error adding file to archive: " + filePath + " - " + errorMsg);
+            EuphoriaPatcher.log(3, "Error adding file to archive: " + filePath + " - " + errorMsg);
         }
     }
 }

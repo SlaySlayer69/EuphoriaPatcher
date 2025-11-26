@@ -56,6 +56,8 @@ public class ErrorShaderGenerator {
         EuphoriaLogger.debugLog("[ErrorShaderGenerator] " + message);
     }
     
+    private static final int MAX_ERROR_MESSAGES = 20;
+    
     /**
      * Generates an error shader with the given error messages
      *
@@ -63,6 +65,14 @@ public class ErrorShaderGenerator {
      */
     public static void generateErrorShader(List<String> errorMessages) {
         try {
+            // Limit error messages to prevent memory issues and infinite loops
+            if (errorMessages.size() > MAX_ERROR_MESSAGES) {
+                debugLog("Too many errors (" + errorMessages.size() + "), limiting to first " + MAX_ERROR_MESSAGES);
+                errorMessages = new ArrayList<>(errorMessages.subList(0, MAX_ERROR_MESSAGES));
+                errorMessages.add("");
+                errorMessages.add("... and " + (errorMessages.size() - MAX_ERROR_MESSAGES) + " more errors (truncated to prevent overflow)");
+            }
+            
             debugLog("Generating error shader with " + errorMessages.size() + " messages");
             
             // Create target directory in shaderpacks
@@ -93,7 +103,7 @@ public class ErrorShaderGenerator {
             
             // Update errorTexts.glsl
             Path errorTextsPath = targetDir.resolve(ERROR_TEXTS_FILE);
-            if (Files.exists(errorTextsPath.getParent())) {
+            if (!Files.exists(errorTextsPath.getParent())) {
                 Files.createDirectories(errorTextsPath.getParent());
             }
             
