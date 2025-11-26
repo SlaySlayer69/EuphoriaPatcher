@@ -92,7 +92,7 @@ public class UpdateChecker {
 
             debugLog("Latest version from Modrinth: " + NEW_MOD_VERSION);
 
-            if (isNewerVersion(NEW_MOD_VERSION)) {
+            if (VersionComparator.isNewerVersion(NEW_MOD_VERSION, MOD_VERSION)) {
                 NEW_VERSION_AVAILABLE = true;
                 debugLog("New version available!");
 
@@ -191,22 +191,5 @@ public class UpdateChecker {
             debugLog("Unexpected error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             throw new Exception("Unexpected error while fetching version: " + e.getMessage(), e);
         }
-    }
-
-    // Compare the latest version with the current version
-    private static boolean isNewerVersion(String latestVersion) {
-        String[] latest = latestVersion.split("\\.");
-        String[] current = MOD_VERSION.split("\\.");
-
-        for (int i = 0; i < Math.min(latest.length, current.length); i++) {
-            int latestPart = Integer.parseInt(latest[i]);
-            int currentPart = Integer.parseInt(current[i]);
-
-            if (latestPart != currentPart) {
-                return latestPart > currentPart; // return true when bigger otherwise false
-            }
-        }
-        // Consider a version newer if it has more parts (e.g. 1.2.3 vs 1.2)
-        return latest.length > current.length;
     }
 }

@@ -3,7 +3,6 @@ package mc.euphoria_patches.euphoria_patcher.util;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.PatchInfo;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
-import mc.euphoria_patches.euphoria_patcher.services.ShaderVersionComparator;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.FileUtils;
 

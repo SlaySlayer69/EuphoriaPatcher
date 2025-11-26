@@ -1,4 +1,4 @@
-package mc.euphoria_patches.euphoria_patcher.services;
+package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Handles version comparison and extraction for shader files
+ * Utility for shader version comparison and extraction
  */
 public class ShaderVersionComparator {
     private final String brandName;
@@ -48,8 +48,8 @@ public class ShaderVersionComparator {
         int[] fileVersion = extractVersionNumbers(fileName);
         int[] targetVersion = extractVersionNumbers(version);
         
-        // Compare versions - positive means fileVersion is newer than targetVersion
-        return compareVersions(fileVersion, targetVersion) > 0;
+        // Compare versions using generic comparator
+        return VersionComparator.compareVersionArrays(fileVersion, targetVersion) > 0;
     }
 
     /**
@@ -87,19 +87,6 @@ public class ShaderVersionComparator {
     }
 
     /**
-     * Compare two version arrays
-     * @return positive if v1 > v2, 0 if equal, negative if v1 < v2
-     */
-    public int compareVersions(int[] v1, int[] v2) {
-        for (int i = 0; i < 3; i++) {
-            if (v1[i] != v2[i]) {
-                return v1[i] - v2[i];
-            }
-        }
-        return 0;
-    }
-
-    /**
      * Finds the highest version of any older Complementary shader
      * @return Path to the highest version file/directory, or null if none found
      */
@@ -113,7 +100,7 @@ public class ShaderVersionComparator {
                 for (Path path : stream) {
                     if (isOlderBrandNameShader(path, Files.isRegularFile(path) && path.toString().endsWith(".zip"))) {
                         int[] version = extractVersionNumbers(path.getFileName().toString());
-                        if (compareVersions(version, highestVersion) > 0) {
+                        if (VersionComparator.compareVersionArrays(version, highestVersion) > 0) {
                             highestVersion = version;
                             highestVersionPath = path;
                         }
@@ -144,7 +131,7 @@ public class ShaderVersionComparator {
             int[] targetVersion = extractVersionNumbers(version);
             
             // Only consider it "older" if the version is actually lower
-            boolean isOlder = compareVersions(fileVersion, targetVersion) < 0;
+            boolean isOlder = VersionComparator.compareVersionArrays(fileVersion, targetVersion) < 0;
             
             return isOlder && (isFile ? name.endsWith(".zip") : Files.isDirectory(path));
         }

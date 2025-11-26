@@ -2,7 +2,6 @@ package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.monitoring.ShaderpacksWatcher;
-import mc.euphoria_patches.euphoria_patcher.services.ShaderVersionComparator;
 
 /**
  * Handles error messaging and recovery actions when shader validation fails
