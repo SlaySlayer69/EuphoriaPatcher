@@ -254,30 +254,20 @@ public class ShaderDetector {
             totalFilesToScan = zipFileCount + dirCount;
             debugLog("Total files to scan: " + totalFilesToScan + " (" + zipFileCount + " ZIP files, " + dirCount + " directories) - skipped " + skippedCount + " popular shaders");
 
-            // First check ZIP files (using our filtered list)
-            for (Path zipFile : zipFiles) {
-                // Increment counter and show progress message every 5 files
-                filesScannedCounter++;
-                if (filesScannedCounter % 5 == 0) {
-                    log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
+            // Combine all paths for parallel processing
+            List<Path> allPaths = new ArrayList<>(zipFiles);
+            allPaths.addAll(dirs);
+            
+            // Use parallel validation with progress callback
+            Path validShader = shaderValidator.validateByByteSizeParallel(allPaths, 
+                (scanned, total) -> {
+                    log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far");
                 }
-                if (shaderValidator.validateByByteSize(zipFile, filesScannedCounter, totalFilesToScan)) {
-                    // Found a valid shader by byte size, rename it to the correct format
-                    return namingService.renameToCorrectShaderName(zipFile);
-                }
-            }
-
-            // Then check directories (using our filtered list)
-            for (Path dir : dirs) {
-                // Increment counter and show progress message every 5 files
-                filesScannedCounter++;
-                if (filesScannedCounter % 5 == 0) {
-                    log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
-                }
-                if (shaderValidator.validateByByteSize(dir, filesScannedCounter, totalFilesToScan)) {
-                    // Found a valid shader by byte size, rename it to the correct format
-                    return namingService.renameToCorrectShaderName(dir);
-                }
+            );
+            
+            if (validShader != null) {
+                // Found a valid shader by byte size, rename it to the correct format
+                return namingService.renameToCorrectShaderName(validShader);
             }
         } catch (IOException e) {
             log(3, "Error searching for shaders by byte size: " + e.getMessage());
