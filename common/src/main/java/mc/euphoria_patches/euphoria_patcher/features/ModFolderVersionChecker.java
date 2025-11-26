@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.features;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.util.VersionComparator;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class ModFolderVersionChecker {
             if (matcher.find()) {
                 String fileMainVersion = matcher.group(1);
 
-                int mainComparison = compareVersions(fileMainVersion, currentVersion);
+                int mainComparison = VersionComparator.compareVersionStrings(fileMainVersion, currentVersion);
 
                 if (mainComparison > 0) {
                     EuphoriaPatcher.log(0, "Found newer version: " + modFile.getName());
@@ -46,18 +47,5 @@ public class ModFolderVersionChecker {
             }
         }
         return false;
-    }
-
-    private static int compareVersions(String v1, String v2) {
-        String[] parts1 = v1.split("\\.");
-        String[] parts2 = v2.split("\\.");
-        int length = Math.max(parts1.length, parts2.length);
-        for (int i = 0; i < length; i++) {
-            int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (part1 < part2) return -1;
-            if (part1 > part2) return 1;
-        }
-        return 0;
     }
 }
