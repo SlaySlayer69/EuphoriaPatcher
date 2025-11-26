@@ -4,6 +4,7 @@ import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector;
 import mc.euphoria_patches.euphoria_patcher.services.ShaderNamingService;
+import mc.euphoria_patches.euphoria_patcher.services.ShaderValidator;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -514,7 +515,9 @@ public class ShaderpacksWatcher {
                 boolean isValidByByteSize = false;
                 ShaderDetector detector = getShaderDetector();
                 if (detector != null) {
-                    isValidByByteSize = detector.isValidShaderByByteSize(path);
+                    // Use ShaderValidator with progress tracking (this is a single file check)
+                    ShaderValidator validator = new ShaderValidator();
+                    isValidByByteSize = validator.validateByByteSize(path, 1, 1);
                     debugLog("Byte size verification result: " + (isValidByByteSize ? "valid" : "invalid") + " - " + fileName);
                     
                     // Add result logging

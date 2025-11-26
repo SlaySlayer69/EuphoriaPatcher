@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.services;
 
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
+import mc.euphoria_patches.euphoria_patcher.util.ShaderPropertyReader;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.io.FileUtils;
 
@@ -24,6 +25,7 @@ public class ShaderDetector {
     private final String shaderMyFileLocation;
     private final Path shaderpacks;
     private final ShaderNamingService namingService;
+    private final ShaderValidator shaderValidator;
 
     private int filesScannedCounter = 0;
     private int totalFilesToScan = 0;
@@ -39,6 +41,7 @@ public class ShaderDetector {
         this.shaderpacks = shaderpacks;
         // Circular dependency will be resolved by setter
         this.namingService = null;
+        this.shaderValidator = new ShaderValidator();
     }
 
     /**
@@ -170,7 +173,7 @@ public class ShaderDetector {
                                 info.styleUnbound = true;
                             } else {
                                 // If not clear from directory name, check common.glsl
-                                String detectedStyle = detectStyleFromCommonFile(directory);
+                                String detectedStyle = ShaderPropertyReader.detectStyleFromCommonFile(directory, commonLocation);
                                 info.styleReimagined = "Reimagined".equals(detectedStyle);
                                 info.styleUnbound = "Unbound".equals(detectedStyle);
                             }
@@ -253,7 +256,12 @@ public class ShaderDetector {
 
             // First check ZIP files (using our filtered list)
             for (Path zipFile : zipFiles) {
-                if (isValidShaderByByteSize(zipFile)) {
+                // Increment counter and show progress message every 5 files
+                filesScannedCounter++;
+                if (filesScannedCounter % 5 == 0) {
+                    log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
+                }
+                if (shaderValidator.validateByByteSize(zipFile, filesScannedCounter, totalFilesToScan)) {
                     // Found a valid shader by byte size, rename it to the correct format
                     return namingService.renameToCorrectShaderName(zipFile);
                 }
@@ -261,7 +269,12 @@ public class ShaderDetector {
 
             // Then check directories (using our filtered list)
             for (Path dir : dirs) {
-                if (isValidShaderByByteSize(dir)) {
+                // Increment counter and show progress message every 5 files
+                filesScannedCounter++;
+                if (filesScannedCounter % 5 == 0) {
+                    log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
+                }
+                if (shaderValidator.validateByByteSize(dir, filesScannedCounter, totalFilesToScan)) {
                     // Found a valid shader by byte size, rename it to the correct format
                     return namingService.renameToCorrectShaderName(dir);
                 }
@@ -270,117 +283,6 @@ public class ShaderDetector {
             log(3, "Error searching for shaders by byte size: " + e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Check if shader is valid by byte size
-     */
-    public boolean isValidShaderByByteSize(Path path) {
-        try {
-            // Increment counter and show progress message every 5 files
-            filesScannedCounter++;
-            if (filesScannedCounter % 5 == 0) {
-                log(2, 0, "Please wait... Scanned " + filesScannedCounter + " of " + totalFilesToScan + " files so far");
-            }
-            
-            debugLog("Checking if shader is valid by byte size (" + filesScannedCounter + "/" + totalFilesToScan + "): " + path.getFileName());
-            
-            Path tempDir = ArchiveOperations.createTempDirectory();
-            if (tempDir == null) {
-                debugLog("Failed to create temp directory for byte size check");
-                return false;
-            }
-            debugLog("Created temp directory: " + tempDir);
-
-            String baseName = path.getFileName().toString().replace(".zip", "");
-            debugLog("Base name for extraction: " + baseName);
-
-            // Extract if it's a zip file
-            Path baseExtracted = tempDir.resolve(baseName);
-            baseExtracted = ArchiveOperations.extract(path, baseExtracted, "extracting archive");
-            if (baseExtracted == null) {
-                debugLog("Failed to extract base for byte size check");
-                return false;
-            }
-            debugLog("Successfully extracted to: " + baseExtracted);
-
-            // Archive for byte size comparison
-            Path baseArchived = tempDir.resolve(baseName + ".tar");
-            baseArchived = ArchiveOperations.archive(baseExtracted, baseArchived);
-            if (baseArchived == null) {
-                debugLog("Failed to archive base for byte size check");
-                return false;
-            }
-            debugLog("Successfully archived to: " + baseArchived);
-
-            // Check byte size quietly
-            boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
-            debugLog("Byte size verification result for " + path.getFileName() + ": " + result);
-
-            // Clean up
-            try {
-                debugLog("Cleaning up temp directory: " + tempDir);
-                FileUtils.deleteDirectory(tempDir.toFile());
-            } catch (IOException e) {
-                // Ignore cleanup errors
-                debugLog("Failed to clean up temp directory: " + e.getMessage());
-            }
-
-            return result;
-        } catch (Exception e) {
-            debugLog("Exception during byte size check: " + e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Determines shader style by reading the common.glsl file
-     * @param shaderPath Path to the shader file or directory
-     * @return "Reimagined" or "Unbound" based on the SHADER_STYLE value
-     */
-    public String detectStyleFromCommonFile(Path shaderPath) {
-        Path tempDir = null;
-        try {
-            // Create temp directory
-            tempDir = ArchiveOperations.createTempDirectory();
-            if (tempDir == null) return "Reimagined"; // Default if we can't create temp dir
-            
-            String baseName = shaderPath.getFileName().toString().replace(".zip", "");
-            
-            // Extract if needed
-            Path extractedPath;
-            if (shaderPath.toString().endsWith(".zip")) {
-                extractedPath = ArchiveOperations.extract(shaderPath, tempDir.resolve(baseName), "extracting archive");
-                if (extractedPath == null) return "Reimagined";
-            } else {
-                extractedPath = shaderPath;
-            }
-            
-            // Read the common.glsl file
-            Path commonFile = extractedPath.resolve(commonLocation);
-            if (Files.exists(commonFile)) {
-                String content = FileUtils.readFileToString(commonFile.toFile(), "UTF-8");
-                
-                // Look for SHADER_STYLE definition
-                if (content.contains("SHADER_STYLE 4")) {
-                    debugLog("Detected Unbound style from common.glsl");
-                    return "Unbound";
-                } else if (content.contains("SHADER_STYLE 1") || content.contains("SHADER_STYLE")) {
-                    debugLog("Detected Reimagined style from common.glsl");
-                    return "Reimagined";
-                }
-            }
-        } catch (IOException e) {
-            log(2, "Error reading common.glsl: " + e.getMessage());
-        } finally {
-            // Clean up temp directory
-            if (tempDir != null) {
-                try {
-                    FileUtils.deleteDirectory(tempDir.toFile());
-                } catch (IOException ignored) {}
-            }
-        }
-        return "Reimagined"; // Default fallback
     }
 
     /**
@@ -408,7 +310,7 @@ public class ShaderDetector {
         
         // If style isn't clear from the filename, check common.glsl
         if (!styleFromName) {
-            String detectedStyle = detectStyleFromCommonFile(path);
+            String detectedStyle = ShaderPropertyReader.detectStyleFromCommonFile(path, commonLocation);
             if ("Reimagined".equals(detectedStyle)) {
                 info.styleReimagined = true;
                 if (info.baseFile == null) {

@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.logging;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
+import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
 import mc.euphoria_patches.euphoria_patcher.integration.iris.IrisReloadManager;
 import org.apache.commons.io.FileUtils;
 
@@ -116,7 +116,7 @@ public class ErrorShaderGenerator {
      * Checks if the error shader is currently active
      */
     private static boolean isErrorShaderActive() {
-        Path currentShaderPath = UpdateShaderLoaderConfig.getCurrentShaderpackPath();
+        Path currentShaderPath = ShaderLoader.getCurrentShaderpackPath();
         if (currentShaderPath == null) {
             return false;
         }

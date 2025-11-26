@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
+import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.BufferedReader;
@@ -32,7 +32,7 @@ public class Dimensions {
         }
 
         // Get current shader pack path
-        Path shaderpackPath = UpdateShaderLoaderConfig.getCurrentShaderpackPath();
+        Path shaderpackPath = ShaderLoader.getCurrentShaderpackPath();
         if (shaderpackPath == null) {
             debugLog("No active shaderpack found");
         } else {

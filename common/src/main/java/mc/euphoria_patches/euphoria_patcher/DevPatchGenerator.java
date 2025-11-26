@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import io.sigpipe.jbsdiff.ui.FileUI;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveUtils;
 import mc.euphoria_patches.euphoria_patcher.util.ModLoaderSpecifics;
+import mc.euphoria_patches.euphoria_patcher.util.HashUtils;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
@@ -17,8 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations.calculateSHA256;
 
 /**
  * Standalone patch generator for development purposes.
@@ -351,7 +350,7 @@ public class DevPatchGenerator {
             String baseFileName = baseArchived.getFileName().toString();
             long fileSize = Files.size(baseArchived);
             System.out.println("Archive Name: " + baseFileName + " Archive size: " + BLUE + fileSize + " bytes" + RESET);
-            String hash = calculateSHA256(baseArchived);
+            String hash = HashUtils.calculateSHA256(baseArchived);
             System.out.println("Archive SHA-256: " + BLUE + hash + RESET);
             
             // Archive patched shader to TAR

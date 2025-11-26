@@ -3,11 +3,26 @@ package mc.euphoria_patches.euphoria_patcher.integration;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+/**
+ * Utility class for detecting and interacting with shader loader mods (Iris, Oculus, OptiFine, Angelica)
+ * Provides methods to:
+ * - Detect which shader loader is installed
+ * - Extract version information from shader loader filenames
+ * - Locate and read shader loader configuration files
+ * - Get information about the currently selected shaderpack
+ */
 public class ShaderLoader {
     // Constants for shader types
     public static final String IRIS = "iris";
@@ -57,7 +72,7 @@ public class ShaderLoader {
                         continue;
                     }
 
-                    if ((fileName.startsWith("iris") && (fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc"))) ||
+                    if ((fileName.startsWith("iris") && ((fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc")))) ||
                         fileName.startsWith("oculus-mc") ||
                         fileName.startsWith("mekalus-mc") ||
                         fileName.startsWith("optifine_") ||
@@ -406,5 +421,141 @@ public class ShaderLoader {
                 break;
         }
         return returnString;
+    }
+
+    /**
+     * Locates the shader loader configuration file
+     * Checks for Iris, Oculus, and OptiFine config files in that order
+     * @return Path to the shader loader config file, or null if none found
+     */
+    public static Path getShaderLoaderConfigPath() {
+        Path shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("iris.properties");
+        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
+        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
+        return shaderLoaderConfig;
+    }
+
+    /**
+     * Gets the path to the currently selected shaderpack by reading the shader loader config
+     * @return Path to the current shaderpack directory or zip file, or null if none is selected or an error occurs
+     */
+    public static Path getCurrentShaderpackPath() {
+        Path shaderLoaderConfig = getShaderLoaderConfigPath();
+        if (shaderLoaderConfig == null) {
+            return null;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(shaderLoaderConfig.toFile()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("shaderPack=")) {
+                    String shaderpackName = line.substring("shaderPack=".length()).trim();
+
+                    // Check if no shaderpack is selected (empty or "OFF")
+                    if (shaderpackName.isEmpty() || shaderpackName.equalsIgnoreCase("OFF")) {
+                        return null;
+                    }
+
+                    // Find the actual shader file by name without relying on direct path resolution
+                    try {
+                        return findShaderpackByName(shaderpackName);
+                    } catch (Exception e) {
+                        debugLog("Error finding shaderpack: " + e.getMessage());
+                        EuphoriaPatcher.log(2, 0, "Could not find shaderpack: " + shaderpackName + " - " + e.getMessage());
+                        return null;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            EuphoriaPatcher.log(3, 0, "Error reading shader loader config: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Finds a shaderpack by name in the shaderpacks directory
+     * Handles special characters that may cause issues with direct path resolution
+     * @param shaderpackName The name of the shaderpack to find
+     * @return Path to the shaderpack, or null if not found
+     * @throws IOException if there's an error reading the directory
+     */
+    private static Path findShaderpackByName(String shaderpackName) throws IOException {
+        // First try direct resolution (will work for normal filenames)
+        try {
+            Path directPath = EuphoriaPatcher.shaderpacks.resolve(shaderpackName);
+            if (Files.exists(directPath)) {
+                debugLog("Found shader directly: " + directPath);
+                return directPath;
+            }
+        } catch (InvalidPathException e) {
+            debugLog("Invalid path characters in shader name: " + e.getMessage());
+        }
+
+        debugLog("Direct path resolution failed for: " + shaderpackName + ", trying directory scan");
+
+        // If direct resolution fails (likely due to special characters), list files and find match
+        String normalizedName = normalizeShaderName(shaderpackName);
+        debugLog("Normalized shader name: " + normalizedName);
+
+        // Also try the special case for our error shader
+        final boolean isErrorShader = shaderpackName.contains("EuphoriaPatches") &&
+                                     shaderpackName.contains("Error") &&
+                                     shaderpackName.contains("Shader");
+
+        try (Stream<Path> fileStream = Files.list(EuphoriaPatcher.shaderpacks)) {
+            // Try to find a file that matches when normalized
+            Path result = fileStream
+                    .filter(Files::exists)
+                    .filter(path -> {
+                        String fileName = path.getFileName().toString();
+
+                        // Check exact match first
+                        if (fileName.equals(shaderpackName)) {
+                            debugLog("Found exact shader match: " + fileName);
+                            return true;
+                        }
+
+                        // Special handling for error shader
+                        if (isErrorShader && fileName.contains("EuphoriaPatches") &&
+                            fileName.contains("Error") && fileName.contains("Shader")) {
+                            debugLog("Found error shader: " + fileName);
+                            return true;
+                        }
+
+                        // Try normalized match
+                        String normalizedFileName = normalizeShaderName(fileName);
+                        boolean matches = normalizedFileName.equals(normalizedName);
+                        if (matches) {
+                            debugLog("Found matching shader via normalization: " + fileName);
+                        }
+                        return matches;
+                    })
+                    .findFirst().orElse(null);
+
+            if (result == null) {
+                debugLog("No matching shader found in directory scan");
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Properly normalizes a shader name by removing special characters
+     * @param name The shader name to normalize
+     * @return The normalized shader name
+     */
+    private static String normalizeShaderName(String name) {
+        // First handle the § character specifically
+        String withoutSection = name.replace("§", "").replace("\\u00A7", "");
+
+        // Then handle other special characters
+        String safeChars = withoutSection.replaceAll("[^a-zA-Z0-9_ \\-.+()\\[\\]{}]", "");
+
+        if (!name.equals(safeChars)) {
+            debugLog("Normalized '" + name + "' to '" + safeChars + "'");
+        }
+        return safeChars.trim();
     }
 }

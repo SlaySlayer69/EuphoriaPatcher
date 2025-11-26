@@ -2,7 +2,6 @@ package mc.euphoria_patches.euphoria_patcher.integration.iris;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.monitoring.PotatoFileMonitor;
@@ -50,7 +49,7 @@ public class IrisDefineHelper {
             }
             
             // Check for potato.png file and add the define if it doesn't exist
-            Path currentShaderpack = UpdateShaderLoaderConfig.getCurrentShaderpackPath();
+            Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
             if (currentShaderpack != null) {
                 if (PotatoFileMonitor.shouldAddPotatoRemovedDefine(currentShaderpack)) {
                     defineKey.accept(standardDefines, "EUPHORIA_PATCHES_POTATO_REMOVED");

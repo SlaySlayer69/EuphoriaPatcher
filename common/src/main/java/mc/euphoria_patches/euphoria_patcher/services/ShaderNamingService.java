@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.services;
 
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
+import mc.euphoria_patches.euphoria_patcher.util.ShaderPropertyReader;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.io.FileUtils;
 
@@ -62,7 +63,7 @@ public class ShaderNamingService {
                 style = "Reimagined";
             } else {
                 // If not in filename, check the common.glsl file
-                style = shaderDetector.detectStyleFromCommonFile(path);
+                style = ShaderPropertyReader.detectStyleFromCommonFile(path, commonLocation);
                 debugLog("Detected " + style + " style from common.glsl file");
             }
             

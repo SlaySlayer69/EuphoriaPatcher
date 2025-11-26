@@ -21,8 +21,6 @@ public class EuphoriaPatcher {
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = PatchInfo.VERSION;
     public static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
-    public static final String BASE_TAR_SHA256 = PatchInfo.BASE_TAR_SHA256;
-    public static final int BASE_TAR_SIZE = PatchInfo.BASE_TAR_SIZE;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -472,7 +470,7 @@ public class EuphoriaPatcher {
                 shaderInfo.styleUnbound = true;
             } else {
                 // If not clear from filename, check common.glsl
-                String detectedStyle = shaderDetector.detectStyleFromCommonFile(baseFile);
+                String detectedStyle = ShaderPropertyReader.detectStyleFromCommonFile(baseFile, COMMON_LOCATION);
                 shaderInfo.styleReimagined = "Reimagined".equals(detectedStyle);
                 shaderInfo.styleUnbound = "Unbound".equals(detectedStyle);
             }

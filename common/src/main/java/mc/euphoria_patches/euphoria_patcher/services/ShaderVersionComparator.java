@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -149,5 +150,15 @@ public class ShaderVersionComparator {
         }
         
         return false;
+    }
+
+    /**
+     * Validates if a shader file/directory name matches the expected version format
+     * @return true if it matches the expected brand, version format, and is not a test/dev version
+     */
+    public static boolean isTestOrDevVersion(String fileName) {
+        String fileNameLower = fileName.toLowerCase(Locale.ROOT);
+        return fileNameLower.contains("test") || fileNameLower.contains("fix") ||
+                fileNameLower.contains("dev") || fileNameLower.contains("pre");
     }
 }

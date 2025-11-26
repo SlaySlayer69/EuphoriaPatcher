@@ -3,7 +3,6 @@ package mc.euphoria_patches.euphoria_patcher.features;
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
-import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -74,13 +73,7 @@ public class ModifyPatchedShaderpacks {
                 EuphoriaPatcher.log(2, 0, "Failed to update shader pack: " + zipFile.getFileName());
             }
         } finally {
-            // Clean up temporary directory
-            try {
-                FileUtils.deleteDirectory(tempDir.toFile());
-                debugLog("Cleaned up temporary directory: " + tempDir);
-            } catch (IOException e) {
-                debugLog("Failed to clean up temporary directory: " + e.getMessage());
-            }
+            ArchiveOperations.deleteTempDirectory(tempDir);
         }
     }
 

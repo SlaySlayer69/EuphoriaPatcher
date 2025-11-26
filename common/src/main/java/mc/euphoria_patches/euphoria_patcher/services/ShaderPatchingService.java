@@ -65,15 +65,7 @@ public class ShaderPatchingService {
 
             return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
         } finally {
-            // Always clean up temp directory, even if processing fails
-            if (temp != null) {
-                try {
-                    debugLog("Cleaning up the temporary directory...");
-                    FileUtils.deleteDirectory(temp.toFile());
-                } catch (IOException e) {
-                    log(2, "Error cleaning up temporary directory: " + e.getMessage());
-                }
-            }
+            ArchiveOperations.deleteTempDirectory(temp);
         }
     }
 
