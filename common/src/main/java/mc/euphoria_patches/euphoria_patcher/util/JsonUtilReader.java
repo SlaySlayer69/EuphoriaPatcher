@@ -35,7 +35,7 @@ public class JsonUtilReader {
         try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
              InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
 
-            JsonElement jsonElement = new JsonParser().parse(reader);
+            JsonElement jsonElement = new JsonParser().parse(reader); // Old method used to make it work with Java 8 for old MC versions
             JsonObject jsonObject = jsonElement.getAsJsonObject();
 
             for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {

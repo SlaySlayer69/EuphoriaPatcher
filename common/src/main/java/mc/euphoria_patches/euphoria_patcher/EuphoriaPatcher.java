@@ -11,7 +11,6 @@ import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import mc.euphoria_patches.euphoria_patcher.util.*;
 
 import java.io.*;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
