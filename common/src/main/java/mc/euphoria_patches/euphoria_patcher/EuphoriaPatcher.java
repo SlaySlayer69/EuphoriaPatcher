@@ -295,7 +295,6 @@ public class EuphoriaPatcher {
     
     private void applyShaderModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
         applyUpdateNotification(shader, styleUnbound, styleReimagined);
-        applyShaderLoaderVersion(shader, styleUnbound, styleReimagined);
         applyCompatibilityModifications(shader, styleUnbound, styleReimagined);
         applyDeveloperModifications(shader, styleUnbound, styleReimagined);
     }
@@ -318,16 +317,6 @@ public class EuphoriaPatcher {
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
         } catch (IOException e) {
             log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
-        }
-    }
-    
-    private void applyShaderLoaderVersion(Path shader, boolean styleUnbound, boolean styleReimagined) {
-        try {
-            String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", "\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", "# Shader Loader Version Placeholder|\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
-        } catch (IOException e) {
-            log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
         }
     }
     

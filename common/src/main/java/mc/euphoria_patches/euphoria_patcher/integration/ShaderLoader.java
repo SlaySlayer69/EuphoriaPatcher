@@ -405,22 +405,24 @@ public class ShaderLoader {
         }
     }
 
-    public static String getShaderLoaderVersionString() {
+    /**
+     * Gets the shader loader version as a key-value pair for define injection
+     * @return String array [key, value] or null if no shader loader detected
+     */
+    public static String[] getShaderLoaderVersionDefine() {
         int version = getShaderLoaderVersion();
         String shaderLoader = getShaderLoader();
-        String returnString = "// Shader Loader Version Placeholder";
+        
         switch (shaderLoader) {
             case IRIS:
-                returnString = "#define EUPHORIA_PATCHES_IRIS_VERSION " + version;
-                break;
+                return new String[]{"EUPHORIA_PATCHES_IRIS_VERSION", String.valueOf(version)};
             case OCULUS:
-                returnString = "#define EUPHORIA_PATCHES_OCULUS_VERSION " + version;
-                break;
+                return new String[]{"EUPHORIA_PATCHES_OCULUS_VERSION", String.valueOf(version)};
             case ANGELICA:
-                returnString = "#define EUPHORIA_PATCHES_ANGELICA_VERSION " + version;
-                break;
+                return new String[]{"EUPHORIA_PATCHES_ANGELICA_VERSION", String.valueOf(version)};
+            default:
+                return null;
         }
-        return returnString;
     }
 
     /**

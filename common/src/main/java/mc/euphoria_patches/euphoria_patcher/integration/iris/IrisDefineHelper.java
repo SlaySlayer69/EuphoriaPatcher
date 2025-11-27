@@ -10,6 +10,7 @@ import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 
 public class IrisDefineHelper {
@@ -34,7 +35,7 @@ public class IrisDefineHelper {
 
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
             defineKeyValue.accept(standardDefines, new String[]{"CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion});
-            debugLog("Adding CURRENT_EUPHORIA_PATCHES_VERSION define");
+            debugLog("Adding CURRENT_EUPHORIA_PATCHES_VERSION = " + currentVersion + " define");
 
             defineKey.accept(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
@@ -43,11 +44,16 @@ public class IrisDefineHelper {
             defineKey.accept(standardDefines, currentDimension);
             debugLog("Adding " + currentDimension + " define");
 
-            if (ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS)) {
-                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_IRIS");
-                debugLog("Adding EUPHORIA_PATCHES_IRIS define");
+            String shaderLoader = ShaderLoader.getShaderLoader().toUpperCase(Locale.ROOT);
+            defineKey.accept(standardDefines, "EUPHORIA_PATCHES_" + shaderLoader);
+            debugLog("Adding EUPHORIA_PATCHES_" + shaderLoader + " define");
+
+            String[] shaderLoaderVersionDefine = ShaderLoader.getShaderLoaderVersionDefine();
+            if (shaderLoaderVersionDefine != null) {
+                defineKeyValue.accept(standardDefines, shaderLoaderVersionDefine);
+                debugLog("Adding " + shaderLoaderVersionDefine[0] + " = " + shaderLoaderVersionDefine[1] + " define");
             }
-            
+
             // Check for potato.png file and add the define if it doesn't exist
             Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
             if (currentShaderpack != null) {
