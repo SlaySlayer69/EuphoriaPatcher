@@ -19,6 +19,7 @@ public class ShaderVersionComparator {
     private final String version;
     private final Path shaderpacks;
     private ShaderVersionComparator instance;
+    public static final Pattern VERSION_PATTERN = Pattern.compile("1\\.(\\d+)\\.(\\d+)");
 
     public ShaderVersionComparator(String brandName, String patchName, String version, Path shaderpacks) {
         this.brandName = brandName;
@@ -84,6 +85,25 @@ public class ShaderVersionComparator {
         }
         
         return version;
+    }
+
+    /**
+     * Converts a shader loader version string to integer representation
+     * @param versionString Version in format "1.8.8"
+     * @return Integer representation (10808)
+     */
+    public static int convertShaderVersionToInt(String versionString) {
+        Matcher matcher = VERSION_PATTERN.matcher(versionString);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid version format: " + versionString);
+        }
+
+        // Extract parts from 1.XX.YY format
+        int minor = Integer.parseInt(matcher.group(1));
+        int release = Integer.parseInt(matcher.group(2));
+
+        // Convert to format 1MMRR
+        return 10000 + (minor * 100) + release;
     }
 
     /**

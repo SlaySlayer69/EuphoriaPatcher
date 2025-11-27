@@ -2,6 +2,8 @@ package mc.euphoria_patches.euphoria_patcher.integration;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
+import mc.euphoria_patches.euphoria_patcher.util.ShaderVersionComparator;
+import mc.euphoria_patches.euphoria_patcher.util.VersionComparator;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,7 +14,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -32,8 +33,7 @@ public class ShaderLoader {
     public static final String UNKNOWN = "unknown";
 
     // Pattern to validate Minecraft version format (1.X.Y or 1.XX.YY)
-    private static final Pattern VERSION_PATTERN = Pattern.compile("1\\.(\\d+)\\.(\\d+)");
-    
+
     // Cache variables
     private static File cachedShaderFile = null;
     private static boolean shaderFileSearched = false;
@@ -215,7 +215,7 @@ public class ShaderLoader {
 
             // Validate the extracted version format
             if (extractedVersion != null) {
-                Matcher matcher = VERSION_PATTERN.matcher(extractedVersion);
+                Matcher matcher = ShaderVersionComparator.VERSION_PATTERN.matcher(extractedVersion);
                 if (matcher.matches()) {
                     debugLog("Valid version format: " + extractedVersion);
                     cachedMCVersion = extractedVersion;
@@ -253,40 +253,11 @@ public class ShaderLoader {
         }
 
         try {
-            int versionInt = convertVersionToInt(version);
-            int minVersionInt = convertVersionToInt(minVersion);
-
-            return versionInt >= minVersionInt;
+            return VersionComparator.compareVersionStrings(version, minVersion) >= 0;
         } catch (Exception e) {
             EuphoriaPatcher.log(1, 0, "Error comparing versions: " + e.getMessage());
             return false;
         }
-    }
-
-    /**
-     * Converts a Minecraft version string (e.g., "1.21.1") to an integer representation.
-     * The format is: 1MMRR where MM is the minor version and RR is the release version.
-     * Examples:
-     * - "1.6.8" -> 10608
-     * - "1.7.10" -> 10710
-     * - "1.21.1" -> 12101
-     *
-     * @param versionString The version string to convert (e.g., "1.21.1")
-     * @return The integer representation of the version
-     * @throws IllegalArgumentException if the version format is invalid
-     */
-    private static int convertVersionToInt(String versionString) {
-        Matcher matcher = VERSION_PATTERN.matcher(versionString);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Invalid version format: " + versionString);
-        }
-
-        // Extract parts from 1.XX.YY format
-        int minor = Integer.parseInt(matcher.group(1));
-        int release = Integer.parseInt(matcher.group(2));
-
-        // Convert to format 1MMRR
-        return 10000 + (minor * 100) + release;
     }
 
     /**
@@ -384,12 +355,16 @@ public class ShaderLoader {
                 return cachedShaderLoaderVersion;
             }
 
-            // Convert the extracted version to integer using existing method
+            // Convert the extracted version to integer
             if (extractedVersion != null) {
-                int versionInt = convertVersionToInt(extractedVersion);
-                debugLog("Converted shader loader version to integer: " + versionInt);
-                cachedShaderLoaderVersion = versionInt;
-                return cachedShaderLoaderVersion;
+                try {
+                    int versionInt = ShaderVersionComparator.convertShaderVersionToInt(extractedVersion);
+                    debugLog("Converted shader loader version to integer: " + versionInt);
+                    cachedShaderLoaderVersion = versionInt;
+                    return cachedShaderLoaderVersion;
+                } catch (Exception e) {
+                    debugLog("Error converting shader loader version to int: " + e.getMessage());
+                }
             } else {
                 debugLog("Could not extract shader loader version from filename");
             }
