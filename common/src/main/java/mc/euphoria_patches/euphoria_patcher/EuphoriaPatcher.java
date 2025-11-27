@@ -11,9 +11,11 @@ import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import mc.euphoria_patches.euphoria_patcher.util.*;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.CodeSource;
 import java.util.*;
 
 public class EuphoriaPatcher {
@@ -229,53 +231,29 @@ public class EuphoriaPatcher {
     }
 
     private static Path determineModsDirectory() {
-        // Default mods directory
         Path defaultModsDir = shaderpacks.getParent().resolve("mods");
 
-        // Check if the installation info file exists
-        Path installInfoPath = configDirectory.resolve("installedByCompInstaller.txt");
-        if (!Files.exists(installInfoPath)) {
-            debugLog("Installation info file not found, using default mods directory");
-            return defaultModsDir;
-        }
-        
-        try {
-            // Read the first line of the installation info file
-            String line = Files.readAllLines(installInfoPath).get(0);
-            String prefix = "in the ";
-            String suffix = " folder";
-            
-            if (line.contains(prefix) && line.contains(suffix)) {
-                // Extract the path part between "in the " and " folder"
-                int startIndex = line.indexOf(prefix) + prefix.length();
-                int endIndex = line.indexOf(suffix);
-                
-                if (startIndex >= prefix.length() && endIndex > startIndex) {
-                    String customPath = line.substring(startIndex, endIndex);
-                    debugLog("Found custom path in installation info file: " + customPath);
-                    
-                    if (customPath.equals("mods")) {
-                        debugLog("Custom path is the standard mods folder");
-                        return defaultModsDir;
-                    }
-                    
-                    // Construct the potential custom mods path
-                    Path customModsDir = shaderpacks.getParent().resolve(customPath);
-                    
-                    // Verify this path exists
-                    if (Files.exists(customModsDir) && Files.isDirectory(customModsDir)) {
-                        debugLog("Using custom mods directory: " + customModsDir);
-                        return customModsDir;
-                    } else {
-                        debugLog("Custom mods directory doesn't exist: " + customModsDir + ", falling back to default");
-                    }
-                }
+        Path currentModLocation = getCurrentModLocation();
+        if (currentModLocation != null) {
+            debugLog("EuphoriaPatcher mod is running from: " + currentModLocation);
+            if (currentModLocation.startsWith(defaultModsDir)) {
+                debugLog("Mod is running from default mods directory, using it: " + currentModLocation);
             }
-        } catch (IOException | IndexOutOfBoundsException e) {
-            debugLog("Error reading installation info file: " + e.getMessage());
+            return currentModLocation;
+
         }
-        
         return defaultModsDir;
+    }
+    
+    private static Path getCurrentModLocation() {
+        try {
+            Path jarFile = new File(EuphoriaPatcher.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toPath();
+            debugLog("Mod JAR file: " + jarFile);
+            return jarFile.getParent(); // Return the directory containing the JAR
+        } catch (Exception e) {
+            debugLog("Could not determine current mod location: " + e.getMessage());
+            return null;
+        }
     }
 
     public static boolean isSpacEagle() {
