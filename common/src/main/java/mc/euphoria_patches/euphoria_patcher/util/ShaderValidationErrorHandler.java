@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 
 /**
@@ -8,15 +9,23 @@ import mc.euphoria_patches.euphoria_patcher.monitoring.ShaderpacksWatcher;
  */
 public class ShaderValidationErrorHandler {
 
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[ShaderValidationErrorHandler] " + message);
+    }
+
     /**
      * Handles size mismatch errors with appropriate messaging based on the situation
      */
     public static void handleSizeMismatch(String fileName, String originalFileName, ShaderVersionComparator versionComparator) {
+        debugLog("Handling size mismatch for file: " + fileName);
         if (versionComparator != null && versionComparator.isNewerShaderVersion(fileName)) {
+            debugLog("Detected newer shader version");
             handleNewerVersionDetected(fileName, originalFileName, versionComparator);
         } else if (fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
+            debugLog("Detected incomplete file with matching version");
             handleIncompleteFile(originalFileName);
         } else {
+            debugLog("Detected wrong version");
             handleWrongVersion(originalFileName);
         }
 

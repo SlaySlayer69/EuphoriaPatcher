@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,11 +22,16 @@ public class JsonUtilReader {
     private static final Map<String, List<String>> messageCategories = new HashMap<>();
     private static final Random random = new Random();
 
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[JsonUtilReader] " + message);
+    }
+
     static {
         loadMessages();
     }
 
     private static void loadMessages() {
+        debugLog("Loading messages from " + JSON_FILE_PATH);
         try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
              InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
 

@@ -11,11 +11,9 @@ import mc.euphoria_patches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import mc.euphoria_patches.euphoria_patcher.util.*;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.CodeSource;
 import java.util.*;
 
 public class EuphoriaPatcher {
@@ -270,104 +268,116 @@ public class EuphoriaPatcher {
     }
 
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir, boolean isAlreadyInstalled) {
-        // Create a safe way to get the shader path
-        Path shader = null;
+        // Get the installed shader path
+        Path shader = findInstalledShaderPath(baseFile, installedDir);
         
-        // First try using the already detected installed directory
-        if (installedDir != null) {
-            debugLog("Using already detected installed directory: " + installedDir);
-            shader = installedDir;
-        } 
-        // Fall back to standard method if installedDir is null
-        else if (baseFile != null) {
-            shader = instance.namingService.getPatchedShaderPath(baseFile);
-        } else {
-            // If baseFile is null, try to find the patched shader directory directly
-            try {
-                DirectoryStream.Filter<Path> filter = path -> 
-                    (Files.isDirectory(path) || 
-                    (Files.isRegularFile(path) && path.toString().endsWith(".zip"))) && 
-                    path.getFileName().toString().contains(BRAND_NAME) && 
-                    path.getFileName().toString().contains(" + " + PATCH_NAME + PATCH_VERSION);
-                    
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, filter)) {
-                    for (Path path : stream) {
-                        shader = path;
-                        break;  // Use the first matching directory
-                    }
-                }
-            } catch (IOException e) {
-                log(3, "Error finding patched shader directory: " + e.getMessage());
-            }
-        }
-
-        // Only proceed with update checking if we found a valid shader path
         if (shader != null) {
-            boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
-            boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
-            boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
-            if (UpdateChecker.isUpdateAvailable() && UpdateChecker.isMajorUpdate()) {
-                String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.getNewModVersion();
-                if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
-                    newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.getNewModVersion();
-                }
-                try {
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
-                } catch (IOException e) {
-                    log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
-                }
-            }
-
-            try {
-                String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", "\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
-                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", "# Shader Loader Version Placeholder|\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
-            } catch (IOException e) {
-                log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
-            }
-
-            boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
-            if (isMacOS || !(isIris || isOculus)) {
-                try {
-                    // Change COLORED_LIGHTING from 192 to 0
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
-                    
-                    // Change END_CRYSTAL_VORTEX from 3 to 0
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
-                    
-                    // Change DRAGON_DEATH_EFFECT to !DRAGON_DEATH_EFFECT
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT(\\s+.*)", "$1 !DRAGON_DEATH_EFFECT$2");
-                    
-                    // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
-                        "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
-                    
-                    debugLog("Applied compatibility modifications for macOS/non-iris loader: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
-                } catch (IOException e) {
-                    log(3, 0, "Could not apply compatibility shader modifications: " + e.getMessage());
-                }
-            }
-
-            if (isSpacEagle()) {
-                try {
-                    ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "\\/\\/ Developed by SpacEagle17", "#define SPACEAGLE17");
-                } catch (IOException e) {
-                    log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
-                }
-                // Create alternative shader names if specified in config
-                namingService.createAlternativeShaderNames(shader, isAlreadyInstalled, alternativeShaderNames);
-                log(1, "Have fun developing Euphoria Patches!\n");
-            } else {
-                // Create alternative shader names if specified in config
-                namingService.createAlternativeShaderNames(shader, isAlreadyInstalled, alternativeShaderNames);
-                log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
-            }
+            applyShaderModifications(shader, styleUnbound, styleReimagined);
+            namingService.createAlternativeShaderNames(shader, false, alternativeShaderNames);
+            displayFinalMessage();
         } else {
             debugLog("No valid shader path found for thank you message");
+            log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        }
+    }
+    
+    private Path findInstalledShaderPath(Path baseFile, Path installedDir) {
+        if (installedDir != null) {
+            debugLog("Using already detected installed directory: " + installedDir);
+            return installedDir;
+        }
+        
+        if (baseFile != null) {
+            return namingService.getPatchedShaderPath(baseFile);
+        }
+        
+        return shaderDetector.findPatchedShaderDirectory();
+    }
+    
+    private void applyShaderModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        applyUpdateNotification(shader, styleUnbound, styleReimagined);
+        applyShaderLoaderVersion(shader, styleUnbound, styleReimagined);
+        applyCompatibilityModifications(shader, styleUnbound, styleReimagined);
+        applyDeveloperModifications(shader, styleUnbound, styleReimagined);
+    }
+    
+    private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        if (!UpdateChecker.isUpdateAvailable() || !UpdateChecker.isMajorUpdate()) {
+            return;
+        }
+        
+        boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
+        boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
+        
+        String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.getNewModVersion();
+        if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
+            newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.getNewModVersion();
+        }
+        
+        try {
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
+        } catch (IOException e) {
+            log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
+        }
+    }
+    
+    private void applyShaderLoaderVersion(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        try {
+            String shaderLoaderVersion = ShaderLoader.getShaderLoaderVersionString();
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, "null", "\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/block.properties", "null", "# Shader Loader Version Placeholder|\\/\\/ Shader Loader Version Placeholder|#define EUPHORIA_PATCHES_.*_VERSION \\d{1,5}", shaderLoaderVersion);
+        } catch (IOException e) {
+            log(3, 0, "Could not modify the shader to show the shader loader version" + e.getMessage());
+        }
+    }
+    
+    private void applyCompatibilityModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
+        boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
+        boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        
+        if (!isMacOS && (isIris || isOculus)) {
+            return; // No compatibility modifications needed
+        }
+        
+        try {
+            // Change COLORED_LIGHTING from 192 to 0
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+            
+            // Change END_CRYSTAL_VORTEX from 3 to 0
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
+            
+            // Change DRAGON_DEATH_EFFECT to !DRAGON_DEATH_EFFECT
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT(\\s+.*)", "$1 !DRAGON_DEATH_EFFECT$2");
+            
+            // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
+            
+            debugLog("Applied compatibility modifications for macOS/non-iris loader: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
+        } catch (IOException e) {
+            log(3, 0, "Could not apply compatibility shader modifications: " + e.getMessage());
+        }
+    }
+    
+    private void applyDeveloperModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        if (isSpacEagle()) {
+            try {
+                ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADER_MYFILE_LOCATION, null, "\\/\\/ Developed by SpacEagle17", "#define SPACEAGLE17");
+            } catch (IOException e) {
+                log(3, 0, "Could not modify the shader for SpacEagle17" + e.getMessage());
+            }
+        }
+    }
+    
+    private void displayFinalMessage() {
+        if (isSpacEagle()) {
+            log(1, "Have fun developing Euphoria Patches!\n");
+        } else {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
     }

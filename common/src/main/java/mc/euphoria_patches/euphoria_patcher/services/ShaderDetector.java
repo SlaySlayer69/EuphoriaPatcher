@@ -462,6 +462,30 @@ public class ShaderDetector {
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderDetector] " + message);
     }
+    
+    /**
+     * Find the patched shader directory directly
+     * Used when baseFile is null but we need to find the installed shader
+     */
+    public Path findPatchedShaderDirectory() {
+        try {
+            DirectoryStream.Filter<Path> filter = path -> 
+                (Files.isDirectory(path) || 
+                (Files.isRegularFile(path) && path.toString().endsWith(".zip"))) && 
+                path.getFileName().toString().contains(brandName) && 
+                path.getFileName().toString().contains(" + " + patchName + patchVersion);
+                
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, filter)) {
+                for (Path path : stream) {
+                    debugLog("Found patched shader directory: " + path.getFileName());
+                    return path;
+                }
+            }
+        } catch (IOException e) {
+            debugLog("Error finding patched shader directory: " + e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Helper class to store shader information
