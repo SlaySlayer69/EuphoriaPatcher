@@ -23,9 +23,60 @@ public class ShaderValidator {
      */
     private static boolean isOshiAvailable() {
         try {
-            Class.forName("oshi.SystemInfo");
+            Class<?> systemInfoClass = Class.forName("oshi.SystemInfo");
+            
+            // Get detailed information about where OSHI was loaded from
+            java.security.ProtectionDomain protectionDomain = systemInfoClass.getProtectionDomain();
+            java.security.CodeSource codeSource = protectionDomain.getCodeSource();
+            
+            if (codeSource != null) {
+                java.net.URL location = codeSource.getLocation();
+                debugLog("OSHI library found!");
+                debugLog("  Location: " + location);
+                debugLog("  Protocol: " + location.getProtocol());
+                debugLog("  Path: " + location.getPath());
+                
+                // Try to get the actual file path
+                try {
+                    java.io.File file = new java.io.File(location.toURI());
+                    debugLog("  File: " + file.getAbsolutePath());
+                    debugLog("  File size: " + file.length() + " bytes");
+                    debugLog("  Exists: " + file.exists());
+                    debugLog("  Is file: " + file.isFile());
+                } catch (Exception e) {
+                    debugLog("  Could not resolve to file: " + e.getMessage());
+                }
+            } else {
+                debugLog("OSHI library found, but code source is null (might be loaded from system classloader)");
+            }
+            
+            // Get ClassLoader information
+            ClassLoader classLoader = systemInfoClass.getClassLoader();
+            if (classLoader != null) {
+                debugLog("  ClassLoader: " + classLoader.getClass().getName());
+                debugLog("  ClassLoader toString: " + classLoader);
+            } else {
+                debugLog("  ClassLoader: Bootstrap ClassLoader (null)");
+            }
+            
+            // Get package information
+            Package pkg = systemInfoClass.getPackage();
+            if (pkg != null) {
+                debugLog("  Package: " + pkg.getName());
+                if (pkg.getImplementationTitle() != null) {
+                    debugLog("  Implementation Title: " + pkg.getImplementationTitle());
+                }
+                if (pkg.getImplementationVersion() != null) {
+                    debugLog("  Implementation Version: " + pkg.getImplementationVersion());
+                }
+                if (pkg.getImplementationVendor() != null) {
+                    debugLog("  Implementation Vendor: " + pkg.getImplementationVendor());
+                }
+            }
+            
             return true;
         } catch (ClassNotFoundException e) {
+            debugLog("OSHI library not found: " + e.getMessage());
             return false;
         }
     }
