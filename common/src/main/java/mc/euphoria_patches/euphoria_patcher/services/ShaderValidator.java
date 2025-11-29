@@ -57,7 +57,7 @@ public class ShaderValidator {
                     ", Available processors: " + availableProcessors);
             
             // Scale thread count based on CPU availability
-            // Low usage (< 50%) -> use more threads (up to 16)
+            // Low usage (< 50%) -> use more threads (up to available processors)
             // Medium usage (50-80%) -> use half of available processors
             // High usage (> 80%) -> use quarter of available processors (minimum 1)
             int threadCount;
@@ -89,7 +89,7 @@ public class ShaderValidator {
      * Determines optimal thread count based on CPU usage
      * Falls back to processor count if OSHI is not available
      * 
-     * @return Thread count between 1-16, with fallback to 1-4
+     * @return Thread count between 1-maxThreadCount, with fallback to 1-4
      */
     private static int determineOptimalThreadCount() {
         // Try OSHI if available
