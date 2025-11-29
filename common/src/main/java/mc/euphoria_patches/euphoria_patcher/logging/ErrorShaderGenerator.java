@@ -56,7 +56,7 @@ public class ErrorShaderGenerator {
         EuphoriaLogger.debugLog("[ErrorShaderGenerator] " + message);
     }
     
-    private static final int MAX_ERROR_MESSAGES = 20;
+    private static final int MAX_ERROR_MESSAGES = 30;
     
     /**
      * Generates an error shader with the given error messages
