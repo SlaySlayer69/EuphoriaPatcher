@@ -19,14 +19,13 @@ dependencies {
 	implementation 'commons-io:commons-io:2.11.0'
 	implementation 'commons-codec:commons-codec:1.15'
 	
+	// OSHI for CPU usage monitoring (optional - only used if available at runtime)
+	compileOnly 'com.github.oshi:oshi-core:6.1.6'
+	
 	// Minecraft-related dependencies (provided by loader-specific modules)
 	// These are compileOnly because the actual implementation comes from Minecraft/loader
 	compileOnly 'org.apache.logging.log4j:log4j-api:2.17.1'
 	compileOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
-	
-	// // For running DevPatchGenerator standalone in IntelliJ
-	// runtimeOnly 'org.apache.logging.log4j:log4j-api:2.17.1'
-	// runtimeOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
 }
 
 tasks.withType(JavaCompile).configureEach {

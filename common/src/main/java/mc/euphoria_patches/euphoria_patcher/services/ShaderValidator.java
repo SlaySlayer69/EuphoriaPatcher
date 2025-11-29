@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher.services;
 
+import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 import mc.euphoria_patches.euphoria_patcher.util.ArchiveOperations;
 
@@ -15,6 +16,95 @@ public class ShaderValidator {
     
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderValidator] " + message);
+    }
+    
+    /**
+     * Checks if OSHI library is available at runtime
+     */
+    private static boolean isOshiAvailable() {
+        try {
+            Class.forName("oshi.SystemInfo");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Determines optimal thread count based on CPU usage using OSHI via reflection
+     * 
+     * @return Thread count between 1-16 based on CPU load, or -1 on failure
+     */
+    private static int determineOptimalThreadCountWithOshi() {
+        try {
+            // Use reflection to avoid hard dependency on OSHI classes
+            Class<?> systemInfoClass = Class.forName("oshi.SystemInfo");
+            Object systemInfo = systemInfoClass.newInstance();
+            
+            Object hardware = systemInfoClass.getMethod("getHardware").invoke(systemInfo);
+            Object processor = hardware.getClass().getMethod("getProcessor").invoke(hardware);
+            
+            // Get CPU load over a 1 second interval
+            long[] prevTicks = (long[]) processor.getClass().getMethod("getSystemCpuLoadTicks").invoke(processor);
+            Thread.sleep(1000);
+            
+            double cpuLoad = (Double) processor.getClass()
+                .getMethod("getSystemCpuLoadBetweenTicks", long[].class)
+                .invoke(processor, (Object) prevTicks);
+            
+            int availableProcessors = getAvailableProcessors();
+            debugLog("CPU usage: " + String.format("%.1f%%", cpuLoad * 100) + 
+                    ", Available processors: " + availableProcessors);
+            
+            // Scale thread count based on CPU availability
+            // Low usage (< 50%) -> use more threads (up to 16)
+            // Medium usage (50-80%) -> use half of available processors
+            // High usage (> 80%) -> use quarter of available processors (minimum 1)
+            int threadCount;
+            if (cpuLoad < 0.5) {
+                threadCount = Math.max(4, availableProcessors);
+            } else if (cpuLoad < 0.8) {
+                threadCount = Math.max(2, availableProcessors / 2);
+            } else {
+                threadCount = Math.max(1, availableProcessors / 4);
+            }
+
+            // Never exceed available processors
+            threadCount = Math.min(threadCount, availableProcessors);
+
+            debugLog("OSHI determined optimal thread count: " + threadCount);
+            return threadCount;
+            
+        } catch (Exception e) {
+            debugLog("Error using OSHI: " + e.getMessage());
+            return -1; // Signal failure
+        }
+    }
+
+    private static int getAvailableProcessors() {
+        return Math.max(1, Runtime.getRuntime().availableProcessors());
+    }
+    
+    /**
+     * Determines optimal thread count based on CPU usage
+     * Falls back to processor count if OSHI is not available
+     * 
+     * @return Thread count between 1-16, with fallback to 1-4
+     */
+    private static int determineOptimalThreadCount() {
+        // Try OSHI if available
+        if (isOshiAvailable()) {
+            int threadCount = determineOptimalThreadCountWithOshi();
+            if (threadCount > 0) {
+                return threadCount;
+            }
+        }
+
+        // Fallback: simple processor-based calculation
+        debugLog("OSHI not available, using fallback thread count calculation");
+        int availableProcessors = getAvailableProcessors();
+        debugLog("Available processors: " + availableProcessors);
+        return Math.min(4, Math.max(1, availableProcessors));
     }
 
     /**
@@ -33,11 +123,21 @@ public class ShaderValidator {
         int totalFiles = paths.size();
         AtomicInteger filesScanned = new AtomicInteger(0);
         
-        // Use available processors, but cap at 4 to avoid excessive resource usage
-        int threadCount = Math.min(4, Math.max(1, Runtime.getRuntime().availableProcessors()));
-        debugLog("Using " + threadCount + " threads for parallel validation of " + totalFiles + " files");
+        // Determine optimal thread count based on CPU usage
+        int threadCount = determineOptimalThreadCount();
+        EuphoriaPatcher.log(0, "Using " + threadCount + " threads for parallel validation of " + totalFiles + " files");
         
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        ThreadFactory threadFactory = new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, String.format("ShaderByteSizeFinder-%03d", threadNumber.getAndIncrement()));
+                t.setDaemon(true);
+                return t;
+            }
+        };
+        
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount, threadFactory);
         CompletionService<Path> completionService = new ExecutorCompletionService<>(executor);
         
         try {

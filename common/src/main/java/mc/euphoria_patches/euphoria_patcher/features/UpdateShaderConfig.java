@@ -294,12 +294,19 @@ public class UpdateShaderConfig {
         String newName = EuphoriaPatcher.BRAND_NAME + style + EuphoriaPatcher.VERSION + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + ".txt";
         try {
             Path newPath = configFilePath.resolveSibling(newName);
-            Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
             
-            // Add our identifiers to the new config file - include version since the name has current version
-            addIdentifierToSettingsFile(newPath, true);
-            
-            EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
+            // Check if target file already exists
+            if (Files.exists(newPath)) {
+                debugLog("Target config file already exists, skipping copy: " + newName);
+                EuphoriaPatcher.log(0, "Shader config file already up to date!");
+            } else {
+                Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
+                
+                // Add our identifiers to the new config file - include version since the name has current version
+                addIdentifierToSettingsFile(newPath, true);
+                
+                EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
+            }
         } catch (IOException e) {
             EuphoriaPatcher.log(3,0, "Could not rename the config file: " + e.getMessage());
         }
@@ -314,12 +321,18 @@ public class UpdateShaderConfig {
                     newName = EuphoriaPatcher.BRAND_NAME + style + EuphoriaPatcher.VERSION + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + ".txt";
                     try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
                         Path newPath = latestShaderConfigFilePath.resolveSibling(newName);
-                        Files.copy(latestShaderConfigFilePath, newPath);
                         
-                        // Add our identifiers to this copy too
-                        addIdentifierToSettingsFile(newPath, true);
-                        
-                        EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
+                        // Check if target file already exists
+                        if (Files.exists(newPath)) {
+                            debugLog("Target config file already exists, skipping copy: " + newName);
+                        } else {
+                            Files.copy(latestShaderConfigFilePath, newPath);
+                            
+                            // Add our identifiers to this copy too
+                            addIdentifierToSettingsFile(newPath, true);
+                            
+                            EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
+                        }
                     } catch (IOException e) {
                         EuphoriaPatcher.log(3,0, "Could not copy and rename the config file: " + e.getMessage());
                     }

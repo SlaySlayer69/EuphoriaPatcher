@@ -31,9 +31,16 @@ public class ModifyOutdatedPatches {
                         .replace("EuphoriaPatches_", "EP_");
                 
                 debugLog("Renaming to: " + newName);
-                Files.move(potentialFile, potentialFile.resolveSibling(newName));
-                EuphoriaPatcher.log(0, "Successfully renamed outdated " + name + " shaderpack file!");
-                renamedCount++;
+                Path targetPath = potentialFile.resolveSibling(newName);
+                
+                // Check if target file already exists
+                if (Files.exists(targetPath)) {
+                    debugLog("Target file already exists, skipping rename: " + newName);
+                } else {
+                    Files.move(potentialFile, targetPath);
+                    EuphoriaPatcher.log(0, "Successfully renamed outdated " + name + " shaderpack file!");
+                    renamedCount++;
+                }
             }
             
             if (renamedCount == 0) {
