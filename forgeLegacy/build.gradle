@@ -195,7 +195,7 @@ publishMods {
         projectId = curseforge_project_id
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
-            start = "1.8.9"
+            start = "1.8"
             end = "1.12.2"
         }
     }
@@ -203,7 +203,7 @@ publishMods {
         projectId = modrinth_project_id
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
-            start = "1.8.9"
+            start = "1.8"
             end = "1.12.2"
         }
     }
