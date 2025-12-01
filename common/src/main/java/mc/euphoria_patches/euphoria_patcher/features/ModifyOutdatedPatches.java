@@ -90,10 +90,10 @@ public class ModifyOutdatedPatches {
         
         boolean result;
         if (renameFile) {
-            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader");
+            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
         } else {
             result = (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*")) 
-                    && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader");
+                    && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
         }
         
         debugLog("Patch " + name + " is " + (result ? "outdated" : "current"));
