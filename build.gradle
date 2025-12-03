@@ -9,10 +9,14 @@ plugins {
 def versionProps = new Properties()
 file("version.properties").withInputStream { versionProps.load(it) }
 
+// Load gradle properties
+def gradleProps = new Properties()
+file("gradle.properties").withInputStream { gradleProps.load(it) }
+
 // Global publishing configuration
 
 // Only do a test run if enabled; set to false to do an actual publish
-ext.publishTestRun = true
+ext.publishTestRun = !(gradleProps.getProperty('do_live_publishing', 'false').toBoolean())
 
 ext.changelogFile = file("CHANGELOG.md")
 ext.publishConfirmed = false
@@ -56,10 +60,10 @@ tasks.register('confirmPublish') {
             println "PUBLISH CONFIRMATION"
             println "${"=" * 60}"
             println "Base Version: ${versionProps.getProperty('mod_version')}"
-            println "Dry Run: ${publishTestRun}"
+            println "Test Run: ${publishTestRun ? publishTestRun : "\u001B[31m${publishTestRun}\u001B[0m"}"
             println "${"=" * 60}"
 
-            System.out.print("Type 'yes' to confirm: ")
+            System.out.print("Are you sure you want to proceed? (yes/no): ")
             System.out.flush()
 
             def reader = new BufferedReader(new InputStreamReader(System.in))
@@ -69,19 +73,21 @@ tasks.register('confirmPublish') {
                 throw new GradleException("Publishing cancelled.")
             }
 
-            // Extra confirmation if this is NOT a dry run
+            // Extra confirmation if this is NOT a Test run
             if (!publishTestRun) {
                 println "\n${"!" * 60}"
                 println "⚠️  LIVE PUBLISH WARNING ⚠️"
                 println "${"!" * 60}"
-                println "publishTestRun is set to FALSE!"
+                println "\u001B[31mNOT A TEST RUN!\u001B[0m"
                 println "This will perform a REAL UPLOAD to CurseForge and/or Modrinth!"
                 println "Files will be publicly available immediately!"
                 println "${"!" * 60}"
                 System.out.print("\nAre you ABSOLUTELY SURE you want to proceed? (yes/no): ")
                 System.out.flush()
 
-                if (finalConfirmation != 'yes' && finalConfirmation != 'y') {
+                def liveConfirmation = reader.readLine()?.toLowerCase()?.trim()
+
+                if (liveConfirmation != 'yes' && liveConfirmation != 'y') {
                     throw new GradleException("Live publishing cancelled. No files were uploaded.")
                 }
 
