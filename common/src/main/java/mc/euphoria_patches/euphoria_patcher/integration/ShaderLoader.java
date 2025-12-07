@@ -32,7 +32,10 @@ public class ShaderLoader {
     public static final String ANGELICA = "angelica";
     public static final String UNKNOWN = "unknown";
 
-    // Pattern to validate Minecraft version format (1.X.Y or 1.XX.YY)
+    // Class names for detection (primary method)
+    private static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.Iris";
+    private static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.Iris";
+    private static final String OPTIFINE_CLASS = "optifine.OptiFineTweaker";
 
     // Cache variables
     private static File cachedShaderFile = null;
@@ -43,6 +46,156 @@ public class ShaderLoader {
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderLoader] " + message);
+    }
+
+    /**
+     * Checks if a class exists in the current classpath
+     * @param className The fully qualified class name to check
+     * @return true if the class exists, false otherwise
+     */
+    private static boolean checkClassExists(String className) {
+        try {
+            String resourceName = className.replace('.', '/') + ".class";
+            boolean exists = ShaderLoader.class.getClassLoader().getResource(resourceName) != null;
+            debugLog("Class check for " + className + ": " + (exists ? "found" : "not found"));
+            return exists;
+        } catch (Exception e) {
+            debugLog("Exception checking class " + className + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Attempts to find the Iris/Oculus/Angelica class from known possible locations
+     * @return The Iris class if found, null otherwise
+     */
+    public static Class<?> findIrisClass() {
+        if (checkClassExists(MODERN_IRIS_CLASS)) {
+            try {
+                return Class.forName(MODERN_IRIS_CLASS);
+            } catch (ClassNotFoundException e) {
+                debugLog("Class exists but couldn't load: " + MODERN_IRIS_CLASS);
+            }
+        }
+
+        if (checkClassExists(LEGACY_IRIS_CLASS)) {
+            try {
+                return Class.forName(LEGACY_IRIS_CLASS);
+            } catch (ClassNotFoundException e) {
+                debugLog("Class exists but couldn't load: " + LEGACY_IRIS_CLASS);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the MODNAME field value from the Iris/Oculus/Angelica class to distinguish between them
+     * @param classObj The Class object to check
+     * @return The shader loader type ("iris", "oculus", "angelica"), or null if not found or error
+     */
+    private static String getModIdFromClass(Class<?> classObj) {
+        try {
+            // Try MODNAME field (Iris/Oculus/Angelica all use this with distinct values)
+            try {
+                java.lang.reflect.Field modNameField = classObj.getField("MODNAME");
+                Object modNameValue = modNameField.get(null);
+                if (modNameValue instanceof String) {
+                    String modName = (String) modNameValue;
+                    debugLog("Found MODNAME field in " + classObj.getName() + ": " + modName);
+
+                    // Check which shader loader it is based on MODNAME
+                    if ("Iris".equals(modName)) {
+                        debugLog("Detected Iris via MODNAME='Iris'");
+                        return IRIS;
+                    } else if ("Oculus".equals(modName)) {
+                        debugLog("Detected Oculus via MODNAME='Oculus'");
+                        return OCULUS;
+                    } else if ("AngelicaShaders".equals(modName)) {
+                        debugLog("Detected Angelica via MODNAME='AngelicaShaders'");
+                        return ANGELICA;
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                debugLog("MODNAME field not found");
+            }
+
+        } catch (Exception e) {
+            debugLog("Error reading fields from " + classObj.getName() + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Detects shader loader by checking for known classes (primary method)
+     * @return The shader loader type, or null if not detected via class checks
+     */
+    private static String detectShaderLoaderByClass() {
+        debugLog("Attempting shader loader detection via class checks");
+
+        // Check for Iris/Oculus/Angelica (they share the same class structure)
+        // We need to check the MODNAME field to distinguish between them
+        Class<?> irisClass = findIrisClass();
+        if (irisClass != null) {
+            String modId = getModIdFromClass(irisClass);
+            if (IRIS.equals(modId)) {
+                debugLog("Detected IRIS via class check and MODNAME field");
+                return IRIS;
+            } else if (OCULUS.equals(modId)) {
+                debugLog("Detected OCULUS via class check and MODNAME field");
+                return OCULUS;
+            } else if (ANGELICA.equals(modId)) {
+                debugLog("Detected ANGELICA via class check and MODNAME field");
+                return ANGELICA;
+            } else {
+                debugLog("Found Iris-like class but MODNAME was: " + modId);
+                // Fall back to assuming Iris if we can't read the field
+                debugLog("Assuming IRIS as default for Iris-like class");
+                return IRIS;
+            }
+        }
+
+         if (checkClassExists(OPTIFINE_CLASS)) {
+             debugLog("Detected OPTIFINE via class check");
+             return OPTIFINE;
+         }
+
+        debugLog("No shader loader detected via class checks");
+        return null;
+    }
+
+    /**
+     * Detects shader loader by filename (fallback method)
+     * @param shaderFile The shader loader file to analyze
+     * @return The shader loader type, or UNKNOWN if not detected
+     */
+    private static String detectShaderLoaderByFilename(File shaderFile) {
+        debugLog("Attempting shader loader detection via filename (fallback method)");
+
+        if (shaderFile == null) {
+            debugLog("No shader file provided for filename detection");
+            return UNKNOWN;
+        }
+
+        String fileName = shaderFile.getName().toLowerCase(Locale.ROOT);
+        debugLog("Analyzing file name: " + fileName);
+
+        if (fileName.startsWith("iris")) {
+            debugLog("Detected IRIS via filename");
+            return IRIS;
+        } else if (fileName.startsWith("oculus") || fileName.startsWith("mekalus")) {
+            debugLog("Detected OCULUS via filename" + (fileName.startsWith("mekalus") ? " (Mekalus fork)" : ""));
+            return OCULUS;
+        } else if (fileName.startsWith("optifine")) {
+            debugLog("Detected OPTIFINE via filename");
+            return OPTIFINE;
+        } else if (fileName.startsWith("angelica")) {
+            debugLog("Detected ANGELICA via filename");
+            return ANGELICA;
+        }
+
+        debugLog("Could not determine shader loader type from filename");
+        return UNKNOWN;
     }
 
     private static File findShaderLoaderFile() {
@@ -109,6 +262,16 @@ public class ShaderLoader {
         }
 
         debugLog("Determining shader loader type");
+
+        // Primary method: Class-based detection
+        String detectedByClass = detectShaderLoaderByClass();
+        if (detectedByClass != null) {
+            cachedShaderLoader = detectedByClass;
+            return cachedShaderLoader;
+        }
+
+        // Fallback method: Filename-based detection
+        debugLog("Class-based detection failed, falling back to filename detection");
         File shaderFile = findShaderLoaderFile();
         if (shaderFile == null) {
             debugLog("No shader file found, returning UNKNOWN");
@@ -117,26 +280,7 @@ public class ShaderLoader {
             return cachedShaderLoader;
         }
 
-        String fileName = shaderFile.getName().toLowerCase(Locale.ROOT);
-        debugLog("Analyzing file name: " + fileName);
-
-        if (fileName.startsWith("iris")) {
-            debugLog("Detected IRIS shader loader");
-            cachedShaderLoader = IRIS;
-        } else if (fileName.startsWith("oculus") || fileName.startsWith("mekalus")) { // Treat Mekalus as Oculus
-            debugLog("Detected OCULUS shader loader" + (fileName.startsWith("mekalus") ? " (Mekalus fork)" : ""));
-            cachedShaderLoader = OCULUS;
-        } else if (fileName.startsWith("optifine")) {
-            debugLog("Detected OPTIFINE shader loader");
-            cachedShaderLoader = OPTIFINE;
-        } else if (fileName.startsWith("angelica")) {
-            debugLog("Detected ANGELICA shader loader");
-            cachedShaderLoader = ANGELICA;
-        } else {
-            debugLog("Could not determine shader loader type, returning UNKNOWN");
-            cachedShaderLoader = UNKNOWN;
-        }
-
+        cachedShaderLoader = detectShaderLoaderByFilename(shaderFile);
         return cachedShaderLoader;
     }
 
@@ -188,12 +332,9 @@ public class ShaderLoader {
                 debugLog("Detected Iris format");
                 int mcIndex = lowerFileName.indexOf("+mc");
                 if (mcIndex != -1) {
-                    // Extract version after "+mc" until the next non-version character
-                    String versionPart = lowerFileName.substring(mcIndex + 3);
-                    // Find end of version (next dot that's not part of version number)
-                    int endIndex = versionPart.indexOf(".jar");
-                    if (endIndex != -1) {
-                        extractedVersion = versionPart.substring(0, endIndex);
+                    int jarIndex = lowerFileName.indexOf(".jar");
+                    if (jarIndex != -1 && jarIndex > mcIndex) {
+                        extractedVersion = fileName.substring(mcIndex + 3, jarIndex);
                         debugLog("Extracted version: " + extractedVersion);
                     }
                 }
@@ -203,11 +344,9 @@ public class ShaderLoader {
                 debugLog("Detected " + (lowerFileName.startsWith("mekalus") ? "Mekalus" : "Oculus") + " format");
                 int mcIndex = lowerFileName.indexOf("-mc");
                 if (mcIndex != -1) {
-                    // Extract version after "-mc" until the next dash
-                    String afterMc = lowerFileName.substring(mcIndex + 3);
-                    int dashIndex = afterMc.indexOf("-");
-                    if (dashIndex != -1) {
-                        extractedVersion = afterMc.substring(0, dashIndex);
+                    int dashAfterMc = fileName.indexOf('-', mcIndex + 3);
+                    if (dashAfterMc != -1) {
+                        extractedVersion = fileName.substring(mcIndex + 3, dashAfterMc);
                         debugLog("Extracted version: " + extractedVersion);
                     }
                 }
@@ -325,11 +464,9 @@ public class ShaderLoader {
 
                     // Handle Mekalus versioning (e.g., 1.7.0.3 -> 1.7.0)
                     if (lowerFileName.startsWith("mekalus") && fullVersion.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                        String[] parts = fullVersion.split("\\.");
-                        if (parts.length >= 3) {
-                            extractedVersion = parts[0] + "." + parts[1] + "." + parts[2];
-                            debugLog("Simplified Mekalus version from " + fullVersion + " to " + extractedVersion);
-                        }
+                        String[] versionParts = fullVersion.split("\\.");
+                        extractedVersion = versionParts[0] + "." + versionParts[1] + "." + versionParts[2];
+                        debugLog("Simplified Mekalus version from " + fullVersion + " to " + extractedVersion);
                     } else {
                         extractedVersion = fullVersion;
                     }
@@ -350,7 +487,7 @@ public class ShaderLoader {
             }
             // Handle OptiFine - return 0 as requested
             else if (lowerFileName.startsWith("optifine")) {
-                debugLog("Detected OptiFine - returning 0 as requested");
+                debugLog("OptiFine detected - returning version 0 as specified");
                 cachedShaderLoaderVersion = 0;
                 return cachedShaderLoaderVersion;
             }

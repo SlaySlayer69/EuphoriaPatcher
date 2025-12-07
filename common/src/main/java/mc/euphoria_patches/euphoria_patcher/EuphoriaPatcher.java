@@ -183,8 +183,20 @@ public class EuphoriaPatcher {
                 "\nDefault = false"));
         doDisplayShaderInGameMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderInGameMessage", "true", "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris" +
                 "\nDefault = true"));
-        doDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
+
+        // Read debug logging from config first
+        boolean configDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
                 "\nDefault = false"));
+
+        // Check for JVM argument -DEPDebug=true/false which takes priority over config
+        String jvmDebugArg = System.getProperty("ebugEP");
+        if (jvmDebugArg != null) {
+            doDebugLogging = Boolean.parseBoolean(jvmDebugArg);
+            debugLog("Debug logging set via JVM argument -DebugEP=" + jvmDebugArg + " (overriding config value)");
+        } else {
+            doDebugLogging = configDebugLogging;
+        }
+
         alternativeShaderNames = Config.readWriteConfig("alternativeShaderNames", "", "Here one can set alternative Shader Names which will also be generated alongside the normal one." +
                 "\nThis is useful if you want multiple different settings you can quickly switch between" +
                 "\nDefault = Empty String, which means no alternative names will be generated." +

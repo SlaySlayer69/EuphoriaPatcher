@@ -1,6 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.integration.iris;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
+import mc.euphoria_patches.euphoria_patcher.integration.ShaderLoader;
 import mc.euphoria_patches.euphoria_patcher.logging.EuphoriaLogger;
 
 /**
@@ -12,30 +13,6 @@ public class IrisReloadManager {
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[IrisReloadManager] " + message);
-    }
-
-    /**
-     * Attempts to find the Iris class from known possible locations
-     * @return The Iris class if found, null otherwise
-     */
-    public static Class<?> findIrisClass() {
-        // Try both possible Iris class locations
-        try {
-            Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");
-            debugLog("Found Iris class at net.irisshaders.iris.Iris");
-            return irisClass;
-        } catch (ClassNotFoundException e1) {
-            debugLog("Iris class not found at net.irisshaders.iris.Iris, trying alternative location");
-            try {
-                Class<?> irisClass = Class.forName("net.coderbot.iris.Iris");
-                debugLog("Found Iris class at net.coderbot.iris.Iris");
-                return irisClass;
-            } catch (ClassNotFoundException e2) {
-                // Iris isn't installed, this is fine - just log to debug
-                debugLog("Iris not found - this is normal if Iris isn't installed");
-                return null;
-            }
-        }
     }
 
     /**
@@ -56,7 +33,7 @@ public class IrisReloadManager {
      * Convenience method to find and schedule a reload in one step
      */
     public static void findAndScheduleReload() {
-        Class<?> irisClass = findIrisClass();
+        Class<?> irisClass = ShaderLoader.findIrisClass();
         if (irisClass != null) {
             scheduleReload(irisClass);
         }
@@ -79,13 +56,5 @@ public class IrisReloadManager {
                 pendingIrisClass = null;
             }
         }
-    }
-
-    /**
-     * Checks if Iris is installed
-     * @return true if Iris is installed, false otherwise
-     */
-    public static boolean isIrisInstalled() {
-        return findIrisClass() != null;
     }
 }
