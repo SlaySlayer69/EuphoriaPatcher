@@ -38,7 +38,7 @@ public class Dimensions {
         } else {
             debugLog("Active shaderpack: " + shaderpackPath.getFileName());
         }
-        
+
         if (shaderpackPath != null) {
             // Parse dimension mappings
             Map<String, String> dimensionMappings = parseDimensionProperties(shaderpackPath);

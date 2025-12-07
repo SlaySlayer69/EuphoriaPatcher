@@ -8,7 +8,7 @@ import java.io.File;
 import java.nio.file.Path;
 
 public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
-    
+
     private final Path shaderpacksPath;
     private final Path configDirectory;
 

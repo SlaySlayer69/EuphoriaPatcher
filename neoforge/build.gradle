@@ -103,7 +103,7 @@ shadowJar {
 
     // No classifier for final output jar
     archiveClassifier.set('')
-    
+
     // Output to central build/libs directory
     destinationDirectory.set(file("${rootProject.buildDir}/libs"))
 
@@ -194,7 +194,7 @@ tasks.whenTaskAdded { task ->
 
 publishMods {
     file = shadowJar.archiveFile
-    
+
     changelog = rootProject.ext.changelogFile.text
 
     displayName = "Euphoria Patcher ${project.version}"

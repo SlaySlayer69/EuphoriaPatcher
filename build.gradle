@@ -200,28 +200,28 @@ gradle.projectsEvaluated {
 		 publishMods: tasks.findByPath(':forge1_7_10:publishMods'),
 		 curseforge: tasks.findByPath(':forge1_7_10:publishCurseforge'),
 		 modrinth: tasks.findByPath(':forge1_7_10:publishModrinth')],
-		
+
 		[name: 'forgeLegacy',
 		 publishMods: tasks.findByPath(':forgeLegacy:publishMods'),
 		 curseforge: tasks.findByPath(':forgeLegacy:publishCurseforge'),
 		 modrinth: tasks.findByPath(':forgeLegacy:publishModrinth')],
-		
+
 		[name: 'neoforge',
 		 publishMods: tasks.findByPath(':neoforge:publishMods'),
 		 curseforge: tasks.findByPath(':neoforge:publishCurseforge'),
 		 modrinth: tasks.findByPath(':neoforge:publishModrinth')],
-		
+
 		[name: 'forge',
 		 publishMods: tasks.findByPath(':forge:publishMods'),
 		 curseforge: tasks.findByPath(':forge:publishCurseforge'),
 		 modrinth: tasks.findByPath(':forge:publishModrinth')],
-		
+
 		[name: 'fabric',
 		 publishMods: tasks.findByPath(':fabric:publishMods'),
 		 curseforge: tasks.findByPath(':fabric:publishCurseforge'),
 		 modrinth: tasks.findByPath(':fabric:publishModrinth')]
 	]
-	
+
 	// Create sequential chain: each loader waits for the previous ACTIVE loader
 	def previousActive = null
 	loaders.each { current ->
@@ -230,7 +230,7 @@ gradle.projectsEvaluated {
 			// If there's a previous active loader, make current wait for it (with delay)
 			if (previousActive) {
 				println "[Publish Order] ${current.name} will wait for ${previousActive.name}"
-				
+
 				// Create a delay task for this loader
 				def delayTaskName = "delayBefore${current.name.capitalize()}Publish"
 				def delayTask = tasks.create(delayTaskName) {
@@ -249,10 +249,10 @@ gradle.projectsEvaluated {
 						println "0\n"
 					}
 				}
-				
+
 				// Main publishMods dependency: wait for delay task
 				current.publishMods.dependsOn(delayTask)
-				
+
 				// Platform task dependencies: also wait for delay task
 				current.curseforge?.dependsOn(delayTask)
 				current.modrinth?.dependsOn(delayTask)

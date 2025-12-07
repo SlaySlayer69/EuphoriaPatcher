@@ -13,29 +13,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Service for validating shader files through various verification methods
  */
 public class ShaderValidator {
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderValidator] " + message);
     }
-    
+
     /**
      * Checks if OSHI library is available at runtime
      */
     private static boolean isOshiAvailable() {
         try {
             Class<?> systemInfoClass = Class.forName("oshi.SystemInfo");
-            
+
             // Get detailed information about where OSHI was loaded from
             java.security.ProtectionDomain protectionDomain = systemInfoClass.getProtectionDomain();
             java.security.CodeSource codeSource = protectionDomain.getCodeSource();
-            
+
             if (codeSource != null) {
                 java.net.URL location = codeSource.getLocation();
                 debugLog("OSHI library found!");
                 debugLog("  Location: " + location);
                 debugLog("  Protocol: " + location.getProtocol());
                 debugLog("  Path: " + location.getPath());
-                
+
                 // Try to get the actual file path
                 try {
                     java.io.File file = new java.io.File(location.toURI());
@@ -49,7 +49,7 @@ public class ShaderValidator {
             } else {
                 debugLog("OSHI library found, but code source is null (might be loaded from system classloader)");
             }
-            
+
             // Get ClassLoader information
             ClassLoader classLoader = systemInfoClass.getClassLoader();
             if (classLoader != null) {
@@ -58,7 +58,7 @@ public class ShaderValidator {
             } else {
                 debugLog("  ClassLoader: Bootstrap ClassLoader (null)");
             }
-            
+
             // Get package information
             Package pkg = systemInfoClass.getPackage();
             if (pkg != null) {
@@ -73,17 +73,17 @@ public class ShaderValidator {
                     debugLog("  Implementation Vendor: " + pkg.getImplementationVendor());
                 }
             }
-            
+
             return true;
         } catch (ClassNotFoundException e) {
             debugLog("OSHI library not found: " + e.getMessage());
             return false;
         }
     }
-    
+
     /**
      * Determines optimal thread count based on CPU usage using OSHI via reflection
-     * 
+     *
      * @return Thread count between 1-16 based on CPU load, or -1 on failure
      */
     private static int determineOptimalThreadCountWithOshi() {
@@ -91,22 +91,22 @@ public class ShaderValidator {
             // Use reflection to avoid hard dependency on OSHI classes
             Class<?> systemInfoClass = Class.forName("oshi.SystemInfo");
             Object systemInfo = systemInfoClass.newInstance();
-            
+
             Object hardware = systemInfoClass.getMethod("getHardware").invoke(systemInfo);
             Object processor = hardware.getClass().getMethod("getProcessor").invoke(hardware);
-            
+
             // Get CPU load over a 1 second interval
             long[] prevTicks = (long[]) processor.getClass().getMethod("getSystemCpuLoadTicks").invoke(processor);
             Thread.sleep(1000);
-            
+
             double cpuLoad = (Double) processor.getClass()
                 .getMethod("getSystemCpuLoadBetweenTicks", long[].class)
                 .invoke(processor, (Object) prevTicks);
-            
+
             int availableProcessors = getAvailableProcessors();
-            debugLog("CPU usage: " + String.format("%.1f%%", cpuLoad * 100) + 
+            debugLog("CPU usage: " + String.format("%.1f%%", cpuLoad * 100) +
                     ", Available processors: " + availableProcessors);
-            
+
             // Scale thread count based on CPU availability
             // Low usage (< 50%) -> use more threads (up to available processors)
             // Medium usage (50-80%) -> use half of available processors
@@ -125,7 +125,7 @@ public class ShaderValidator {
 
             debugLog("OSHI determined optimal thread count: " + threadCount);
             return threadCount;
-            
+
         } catch (Exception e) {
             debugLog("Error using OSHI: " + e.getMessage());
             return -1; // Signal failure
@@ -135,11 +135,11 @@ public class ShaderValidator {
     private static int getAvailableProcessors() {
         return Math.max(1, Runtime.getRuntime().availableProcessors());
     }
-    
+
     /**
      * Determines optimal thread count based on CPU usage
      * Falls back to processor count if OSHI is not available
-     * 
+     *
      * @return Thread count between 1-maxThreadCount, with fallback to 1-4
      */
     private static int determineOptimalThreadCount() {
@@ -161,7 +161,7 @@ public class ShaderValidator {
     /**
      * Validates multiple shaders in parallel by extracting, re-archiving, and checking byte size
      * This is a heavy operation used to identify unpatched base shaders
-     * 
+     *
      * @param paths List of paths to validate
      * @param progressCallback Callback for progress updates (filesScanned, totalFiles)
      * @return The first path that passes validation, or null if none pass
@@ -173,11 +173,11 @@ public class ShaderValidator {
 
         int totalFiles = paths.size();
         AtomicInteger filesScanned = new AtomicInteger(0);
-        
+
         // Determine optimal thread count based on CPU usage
         int threadCount = determineOptimalThreadCount();
         EuphoriaPatcher.log(0, "Using " + threadCount + " threads for parallel validation of " + totalFiles + " files");
-        
+
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
 
@@ -187,28 +187,28 @@ public class ShaderValidator {
                 return t;
             }
         };
-        
+
         ExecutorService executor = Executors.newFixedThreadPool(threadCount, threadFactory);
         CompletionService<Path> completionService = new ExecutorCompletionService<>(executor);
-        
+
         try {
             // Submit all validation tasks
             for (Path path : paths) {
                 completionService.submit(() -> {
                     int currentCount = filesScanned.incrementAndGet();
-                    
+
                     // Report progress every 5 files
                     if (currentCount % 5 == 0 && progressCallback != null) {
                         progressCallback.onProgress(currentCount, totalFiles);
                     }
-                    
+
                     if (validateByByteSize(path, currentCount, totalFiles)) {
                         return path; // Return the valid path
                     }
                     return null;
                 });
             }
-            
+
             // Wait for results and return the first valid one
             for (int i = 0; i < totalFiles; i++) {
                 try {
@@ -226,10 +226,10 @@ public class ShaderValidator {
                     debugLog("Error during parallel validation: " + e.getMessage());
                 }
             }
-            
+
             debugLog("No valid shader found after checking all " + totalFiles + " files");
             return null;
-            
+
         } finally {
             executor.shutdownNow();
             try {
@@ -245,7 +245,7 @@ public class ShaderValidator {
     /**
      * Validates a shader by extracting, re-archiving, and checking byte size
      * This is a heavy operation used to identify unpatched base shaders
-     * 
+     *
      * @param path Path to the shader file or directory
      * @param filesScanned Current count of files scanned (for progress reporting)
      * @param totalFiles Total files to scan (for progress reporting)
@@ -254,7 +254,7 @@ public class ShaderValidator {
     public boolean validateByByteSize(Path path, int filesScanned, int totalFiles) {
         try {
             debugLog("Validating shader by byte size (" + filesScanned + "/" + totalFiles + "): " + path.getFileName());
-            
+
             Path tempDir = ArchiveOperations.createTempDirectory();
             if (tempDir == null) {
                 debugLog("Failed to create temp directory for byte size validation");

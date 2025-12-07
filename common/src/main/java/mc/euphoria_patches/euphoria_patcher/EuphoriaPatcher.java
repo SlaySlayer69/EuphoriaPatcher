@@ -47,7 +47,7 @@ public class EuphoriaPatcher {
     private static EuphoriaPatcher instance;
     private ShaderpacksWatcher shaderpacksWatcher;
     private static EuphoriaLogger loggerInstance;
-    
+
     // Service classes
     private ShaderDetector shaderDetector;
     private ShaderPatchingService patchingService;
@@ -61,7 +61,7 @@ public class EuphoriaPatcher {
         ALREADY_LAUNCHED = true;
         instance = this;
         System.out.println("\nEuphoria Patcher:");
-        
+
         // Initialize the logger
         loggerInstance = new EuphoriaLogger();
         loggerInstance.checkErrorLogFileAndAddSeparator();
@@ -111,17 +111,17 @@ public class EuphoriaPatcher {
     private void initializeServices() {
         // Initialize version comparator
         versionComparator = new ShaderVersionComparator(BRAND_NAME, PATCH_NAME, VERSION, shaderpacks);
-        
+
         // Initialize detector (without naming service initially)
-        shaderDetector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION, 
+        shaderDetector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
                                            COMMON_LOCATION, SHADER_MYFILE_LOCATION, shaderpacks);
-        
+
         // Initialize naming service (needs detector for some operations)
         namingService = new ShaderNamingService(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
                                                COMMON_LOCATION, SHADER_MYFILE_LOCATION, shaderpacks, shaderDetector);
-        
+
         // Initialize patching service
-        patchingService = new ShaderPatchingService(PATCH_NAME, PATCH_VERSION, COMMON_LOCATION, 
+        patchingService = new ShaderPatchingService(PATCH_NAME, PATCH_VERSION, COMMON_LOCATION,
                                                    shaderpacks, namingService);
     }
 
@@ -241,7 +241,7 @@ public class EuphoriaPatcher {
         }
         return defaultModsDir;
     }
-    
+
     private static Path getCurrentModLocation() {
         try {
             Path jarFile = new File(EuphoriaPatcher.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toPath();
@@ -269,7 +269,7 @@ public class EuphoriaPatcher {
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir, boolean isAlreadyInstalled) {
         // Get the installed shader path
         Path shader = findInstalledShaderPath(baseFile, installedDir);
-        
+
         if (shader != null) {
             applyShaderModifications(shader, styleUnbound, styleReimagined);
             namingService.createAlternativeShaderNames(shader, false, alternativeShaderNames);
@@ -279,39 +279,39 @@ public class EuphoriaPatcher {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
     }
-    
+
     private Path findInstalledShaderPath(Path baseFile, Path installedDir) {
         if (installedDir != null) {
             debugLog("Using already detected installed directory: " + installedDir);
             return installedDir;
         }
-        
+
         if (baseFile != null) {
             return namingService.getPatchedShaderPath(baseFile);
         }
-        
+
         return shaderDetector.findPatchedShaderDirectory();
     }
-    
+
     private void applyShaderModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
         applyUpdateNotification(shader, styleUnbound, styleReimagined);
         applyCompatibilityModifications(shader, styleUnbound, styleReimagined);
         applyDeveloperModifications(shader, styleUnbound, styleReimagined);
     }
-    
+
     private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
         if (!UpdateChecker.isUpdateAvailable() || !UpdateChecker.isMajorUpdate()) {
             return;
         }
-        
+
         boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
         boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
-        
+
         String newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.getNewModVersion();
         if (isOculus || isOptifine && !ShaderLoader.isMinecraftVersionAtLeast("1.21.1")) {
             newVersionText = "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " -> " + UpdateChecker.getNewModVersion();
         }
-        
+
         try {
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
@@ -319,39 +319,39 @@ public class EuphoriaPatcher {
             log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
         }
     }
-    
+
     private void applyCompatibilityModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
         boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
         boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
         boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
-        
+
         if (!isMacOS && (isIris || isOculus)) {
             return; // No compatibility modifications needed
         }
-        
+
         try {
             // Change COLORED_LIGHTING from 192 to 0
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
-            
+
             // Change END_CRYSTAL_VORTEX from 3 to 0
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
-            
+
             // Change DRAGON_DEATH_EFFECT to !DRAGON_DEATH_EFFECT
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT(\\s+.*)", "$1 !DRAGON_DEATH_EFFECT$2");
-            
+
             // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, 
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
-            
+
             debugLog("Applied compatibility modifications for macOS/non-iris loader: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
         } catch (IOException e) {
             log(3, 0, "Could not apply compatibility shader modifications: " + e.getMessage());
         }
     }
-    
+
     private void applyDeveloperModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
         if (isSpacEagle()) {
             try {
@@ -361,7 +361,7 @@ public class EuphoriaPatcher {
             }
         }
     }
-    
+
     private void displayFinalMessage() {
         if (isSpacEagle()) {
             log(1, "Have fun developing Euphoria Patches!\n");
@@ -373,13 +373,13 @@ public class EuphoriaPatcher {
     private void installBaseMessage() {
         if (IS_BASE_MESSAGE_SHOWN) return;
         IS_BASE_MESSAGE_SHOWN = true;
-        
+
         // Try to find the highest older version
         Path highestOlderVersion = versionComparator.findHighestOlderVersion();
-        
+
         log(3, 8, "=== SHADER NOT FOUND ===");
         log(3, 8, "Required: " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
-        
+
         if (highestOlderVersion != null) {
             log(3, 8, "Found: " + highestOlderVersion.getFileName().toString());
             log(3, 8, "You have an older version installed.");
@@ -391,7 +391,7 @@ public class EuphoriaPatcher {
             log(3, 8, "");
             log(3, 8, "SOLUTION: Download " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
         }
-        
+
         log(3, 8, "Download from: " + DOWNLOAD_URL);
 
         // Start watching for the shader to be added
@@ -438,7 +438,7 @@ public class EuphoriaPatcher {
             ShaderInfo shaderInfo = new ShaderInfo();
             shaderInfo.baseFile = baseFile;
             String name = baseFile.getFileName().toString();
-            
+
             // Determine style from filename or common.glsl
             if (name.contains("Reimagined")) {
                 shaderInfo.styleReimagined = true;

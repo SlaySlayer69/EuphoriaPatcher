@@ -32,9 +32,9 @@
 </center>
 <br>
 
-- **Euphoria Patches**, an add-on for Complementary Shaders ([<ins>Reimagined</ins>](https://modrinth.com/shader/complementary-reimagined)/[<ins>Unbound</ins>](https://modrinth.com/shader/complementary-unbound)), developed by [SpacEagle17](https://linktr.ee/SpacEagle17).  
-- Expands Complementary with optional handcrafted features.  
-- All options are disabled by default but can be individually enabled.  
+- **Euphoria Patches**, an add-on for Complementary Shaders ([<ins>Reimagined</ins>](https://modrinth.com/shader/complementary-reimagined)/[<ins>Unbound</ins>](https://modrinth.com/shader/complementary-unbound)), developed by [SpacEagle17](https://linktr.ee/SpacEagle17).
+- Expands Complementary with optional handcrafted features.
+- All options are disabled by default but can be individually enabled.
   A "Popular Settings" tab and preset profile make it easy to apply commonly used options.</b>
 
 **Important notice: Please don't report any bugs while using this add-on to Emin, contact information is below.**
@@ -52,23 +52,24 @@ If you don't know how to Install Euphoria Patches, read these instructions: **[<
 - Live config watcher and optional popup/debug logging.
 - Filesystem watcher: automatically patches newly added shaderpacks.
 
-
 ## 🔗 Links
-* **Support SpacEagle17 on [<ins>Patreon</ins>](https://www.euphoriapatches.com/support/) and get access to Preview Versions!**
-* **[<ins>Website</ins>](https://euphoriapatches.com)** of Euphoria Patches!
-* **[<ins>Changelogs</ins>](https://www.euphoriapatches.com/changelogs/)** of Euphoria Patches!
-* **Contact:** **https://euphoriapatches.com/contact**
-* Add **[<ins>Modded Blocks</ins>](https://www.euphoriapatches.com/properties/)** or **[<ins>Translation Files</ins>](https://www.euphoriapatches.com/lang/)** to Euphoria Patches!
+
+- **Support SpacEagle17 on [<ins>Patreon</ins>](https://www.euphoriapatches.com/support/) and get access to Preview Versions!**
+- **[<ins>Website</ins>](https://euphoriapatches.com)** of Euphoria Patches!
+- **[<ins>Changelogs</ins>](https://www.euphoriapatches.com/changelogs/)** of Euphoria Patches!
+- **Contact:** **https://euphoriapatches.com/contact**
+- Add **[<ins>Modded Blocks</ins>](https://www.euphoriapatches.com/properties/)** or **[<ins>Translation Files</ins>](https://www.euphoriapatches.com/lang/)** to Euphoria Patches!
 
 ## ❓ FAQ
+
 Got anymore questions? Frequently Asked Questions Page: **[<ins>euphoriapatches.com/faq/</ins>](https://www.euphoriapatches.com/faq)**!
 
-
 ## Sponsored by Ember Host
+
 Looking for an affordable and reliable Minecraft server host? Ember Host offers incredible value and top-tier support!
 
 Click the banner or use code **[EUPHORIA](https://www.euphoriapatches.com/ember-referral)** at checkout for **10%** off your first purchase. Plus, **70%** of your purchase supports Euphoria Patches!
 
 <a href="https://www.euphoriapatches.com/ember-referral"><img src=https://www.euphoriapatches.com/assets/img/other/ember_host_ep.png></a>
 
-Special thanks to Emin the developer of Complementary Shaders and all testers on Discord! This project would have been impossible without you! Credits For Euphoria Patches: [https://www.euphoriapatches.com/credits/](https://www.euphoriapatches.com/credits/)  
+Special thanks to Emin the developer of Complementary Shaders and all testers on Discord! This project would have been impossible without you! Credits For Euphoria Patches: [https://www.euphoriapatches.com/credits/](https://www.euphoriapatches.com/credits/)

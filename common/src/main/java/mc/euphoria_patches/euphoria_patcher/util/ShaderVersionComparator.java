@@ -44,11 +44,11 @@ public class ShaderVersionComparator {
         if (!fileName.contains(brandName)) {
             return false;
         }
-        
+
         // Extract version numbers using regex
         int[] fileVersion = extractVersionNumbers(fileName);
         int[] targetVersion = extractVersionNumbers(version);
-        
+
         // Compare versions using generic comparator
         return VersionComparator.compareVersionArrays(fileVersion, targetVersion) > 0;
     }
@@ -73,17 +73,17 @@ public class ShaderVersionComparator {
      */
     public int[] extractVersionNumbers(String filename) {
         int[] version = {0, 0, 0};
-        
+
         // Extract r-version number (e.g., _r5.1 or _r5.3.2)
         Pattern pattern = Pattern.compile("_r(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
         Matcher matcher = pattern.matcher(filename);
-        
+
         if (matcher.find()) {
             version[0] = Integer.parseInt(matcher.group(1));  // Major
             version[1] = Integer.parseInt(matcher.group(2));  // Minor
             version[2] = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;  // Patch
         }
-        
+
         return version;
     }
 
@@ -113,7 +113,7 @@ public class ShaderVersionComparator {
     public Path findHighestOlderVersion() {
         Path highestVersionPath = null;
         int[] highestVersion = {0, 0, 0}; // major, minor, patch
-        
+
         try {
             // Check files
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
@@ -130,7 +130,7 @@ public class ShaderVersionComparator {
         } catch (IOException e) {
             EuphoriaLogger.debugLog("[ShaderVersionComparator] Error checking for older shader versions: " + e.getMessage());
         }
-        
+
         return highestVersionPath;
     }
 
@@ -139,23 +139,23 @@ public class ShaderVersionComparator {
      */
     public boolean isOlderBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
-        
+
         // First check if it's a Complementary shader without the patch
-        boolean isComplementary = name.contains(brandName) && 
-                                 name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") && 
+        boolean isComplementary = name.contains(brandName) &&
+                                 name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") &&
                                  !name.contains(patchName);
-        
+
         if (isComplementary) {
             // Extract version numbers and compare
             int[] fileVersion = extractVersionNumbers(name);
             int[] targetVersion = extractVersionNumbers(version);
-            
+
             // Only consider it "older" if the version is actually lower
             boolean isOlder = VersionComparator.compareVersionArrays(fileVersion, targetVersion) < 0;
-            
+
             return isOlder && (isFile ? name.endsWith(".zip") : Files.isDirectory(path));
         }
-        
+
         return false;
     }
 

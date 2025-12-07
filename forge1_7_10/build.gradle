@@ -28,9 +28,9 @@ java {
 minecraft {
     mcVersion.set('1.7.10')
     username.set('Developer')
-    
+
     injectedTags.put('VERSION', project.version.toString())
-    
+
     extraRunJvmArguments.add("-ea:${project.group}")
 }
 
@@ -43,7 +43,7 @@ tasks.injectTags.configure {
 processResources {
     def projVersion = project.version.toString()
     inputs.property 'version', projVersion
-    
+
     filesMatching('mcmod.info') {
         expand 'version': projVersion
     }
@@ -52,7 +52,7 @@ processResources {
 dependencies {
     // Common project - regular implementation
     implementation(project(':common'))
-    
+
     // Dependencies to be shadowed - using standard implementation
     implementation('io.sigpipe:jbsdiff:1.0')
     implementation('com.google.code.gson:gson:2.8.9')
@@ -64,7 +64,7 @@ dependencies {
 // Shadow configuration - bundle specific dependencies
 shadowJar {
     archiveClassifier.set('dev')
-    
+
     // Just shadow the specific dependencies we need
     dependencies {
         include(project(':common'))
@@ -74,20 +74,20 @@ shadowJar {
         include(dependency('commons-io:commons-io:.*'))
         include(dependency('commons-codec:commons-codec:.*'))
     }
-    
+
     // Relocate shadowed dependencies to avoid conflicts
     relocate 'io.sigpipe', "${project.group}.shadow.io.sigpipe"
     relocate 'com.google.gson', "${project.group}.shadow.com.google.gson"
     relocate 'org.apache.commons', "${project.group}.shadow.org.apache.commons"
-    
+
     // Minimize to remove unused classes
     minimize()
-    
+
     exclude 'META-INF/maven/**'
     exclude 'META-INF/*.SF'
     exclude 'META-INF/*.DSA'
     exclude 'META-INF/*.RSA'
-    
+
     from('../LICENSE') {
         rename { "${it}_${archivesBaseName}.txt" }
     }
@@ -96,7 +96,7 @@ shadowJar {
 // Make regular jar not the main artifact
 jar {
     archiveClassifier.set('dev-preshadow')
-    
+
     manifest {
         from(project(':common').tasks.jar.manifest)
     }
@@ -135,7 +135,7 @@ build.dependsOn copyToRootBuild
 
 publishMods {
     file = tasks.reobfJar.archiveFile
-    
+
     changelog = rootProject.ext.changelogFile.text
 
     displayName = "Euphoria Patcher ${project.version}"

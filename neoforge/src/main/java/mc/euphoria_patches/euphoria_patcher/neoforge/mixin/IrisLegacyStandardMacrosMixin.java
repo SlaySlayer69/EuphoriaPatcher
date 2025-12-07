@@ -36,7 +36,7 @@ public class IrisLegacyStandardMacrosMixin {
     )
     private static void addEuphoriaDefine(CallbackInfoReturnable<?> cir, ArrayList<?> standardDefines) {
         IrisDefineHelper.addEuphoriaDefines(
-            standardDefines, 
+            standardDefines,
             true,  // isLegacy = true
             IrisLegacyStandardMacrosMixin::define,
             (defines, keyValue) -> define(defines, keyValue[0], keyValue[1])

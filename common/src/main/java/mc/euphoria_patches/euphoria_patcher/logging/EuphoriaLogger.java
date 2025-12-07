@@ -19,7 +19,7 @@ import java.util.TimerTask;
 public class EuphoriaLogger {
     private static Logger logger;
     private static boolean log4jAvailable = true;
-    
+
     static {
         try {
             logger = LogManager.getLogger("euphoriaPatches");
@@ -29,12 +29,12 @@ public class EuphoriaLogger {
             System.out.println("[EuphoriaLogger] Log4j not available, using System.out fallback");
         }
     }
-    
+
     private static final String ERROR_LOG_FILE_NAME = "_0EUPHORIA_PATCHES_ERROR_LOGS.txt";
     private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);
     private boolean isSodiumInstalled;
     private boolean shouldCreateErrorLog = true;
-    
+
     // For error shader generation
     private List<String> errorMessages = new ArrayList<>();
     private int lastProcessedErrorCount = 0;
@@ -48,7 +48,7 @@ public class EuphoriaLogger {
     public EuphoriaLogger() {
         this.isSodiumInstalled = false;
     }
-    
+
     /**
      * Checks if Sodium is available and sets up Sodium logging if it is
      */
@@ -65,11 +65,11 @@ public class EuphoriaLogger {
     public void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
         if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
-        
+
         if (isSodiumInstalled && messageFadeTimer > 0) {
             SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
-        
+
         switch (messageLevel) {
             case -1:
             case 0:
@@ -106,7 +106,7 @@ public class EuphoriaLogger {
                 System.out.println(loggingMessage);
                 break;
         }
-        
+
         if (message.contains("Have fun developing Euphoria Patches!") || message.contains("Thank you for using Euphoria Patches - SpacEagle17")) {
             deleteErrorLogFile();
         }
@@ -130,11 +130,11 @@ public class EuphoriaLogger {
         synchronized (errorCollectionLock) {
             errorMessages.add(message);
             hasErrors = true;
-            
+
             // Debug to check message collection
             debugLog("Collected error #" + errorMessages.size() + ": " + message);
             debugLog("lastProcessedErrorCount = " + lastProcessedErrorCount);
-            
+
             // Schedule error shader generation if this is the first error
             if (errorMessages.size() == 1) {
                 debugLog("First error, scheduling initial generation");
@@ -154,7 +154,7 @@ public class EuphoriaLogger {
             }
         }
     }
-    
+
     /**
      * Schedules the error shader generation after a delay to collect multiple errors
      */
@@ -164,28 +164,28 @@ public class EuphoriaLogger {
                 debugLog("Timer already scheduled, skipping");
                 return; // Already scheduled
             }
-            
+
             // Cancel any existing timer
             cancelScheduledErrorShader();
-            
+
             // Create new timer
             errorShaderTimer = new Timer("ErrorShaderTimer", true); // true = daemon thread
             errorShaderTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     synchronized (errorCollectionLock) {
-                        debugLog("Timer firing: messages=" + errorMessages.size() + 
+                        debugLog("Timer firing: messages=" + errorMessages.size() +
                                  ", lastProcessed=" + lastProcessedErrorCount);
-                        
+
                         if (hasErrors && errorMessages.size() > lastProcessedErrorCount) {
                             // Only regenerate if we have new errors
                             debugLog("Generating shader with " + errorMessages.size() + " messages");
                             ErrorShaderGenerator.generateErrorShader(errorMessages);
                             lastProcessedErrorCount = errorMessages.size();
-                            
+
                             // We're done with this scheduled task
                             errorShaderScheduled = false;
-                            
+
                             // IMPORTANT: Only reschedule if we expect more errors
                             if (errorMessages.size() % 5 == 0) { // Arbitrary check - reschedule periodically
                                 debugLog("Rescheduling timer for potential future errors");
@@ -200,12 +200,12 @@ public class EuphoriaLogger {
                     }
                 }
             }, ERROR_COLLECTION_DELAY_MS);
-            
+
             errorShaderScheduled = true;
             debugLog("Scheduled error shader generation in " + (ERROR_COLLECTION_DELAY_MS / 1000) + " seconds");
         }
     }
-    
+
     /**
      * Cancels any scheduled error shader generation
      */
@@ -246,16 +246,16 @@ public class EuphoriaLogger {
             if (!Files.exists(errorLogFilePath.getParent())) {
                 Files.createDirectories(errorLogFilePath.getParent());
             }
-            
+
             // Format with timestamp
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             String logEntry = timestamp + " " + message + System.lineSeparator();
-            
+
             // Create or append to file
-            java.nio.file.StandardOpenOption option = Files.exists(errorLogFilePath) 
-                ? java.nio.file.StandardOpenOption.APPEND 
+            java.nio.file.StandardOpenOption option = Files.exists(errorLogFilePath)
+                ? java.nio.file.StandardOpenOption.APPEND
                 : java.nio.file.StandardOpenOption.CREATE;
-                
+
             Files.write(errorLogFilePath, logEntry.getBytes(), option);
         } catch (IOException e) {
             log(0,"Failed to write to error log file: " + e.getMessage());
@@ -273,14 +273,14 @@ public class EuphoriaLogger {
                     log(0,"Deleted error log file as shader was successfully installed");
                     shouldCreateErrorLog = false;
                 }
-                
+
                 // Also delete error shader if it exists
                 Path errorShaderPath = EuphoriaPatcher.shaderpacks.resolve("_0EuphoriaPatches_ErrorShader");
                 if (Files.exists(errorShaderPath)) {
                     FileUtils.deleteDirectory(errorShaderPath.toFile());
                     log(0, "Deleted error shader as installation was successful");
                 }
-                
+
                 // Clear error messages and cancel any pending timer
                 errorMessages.clear();
                 hasErrors = false;

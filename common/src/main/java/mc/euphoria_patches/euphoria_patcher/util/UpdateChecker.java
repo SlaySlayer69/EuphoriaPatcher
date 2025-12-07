@@ -47,7 +47,7 @@ public class UpdateChecker {
     public static boolean isMajorUpdate() {
         checkForUpdates();
         debugLog("Checking if update is major...");
-        
+
         if (LATEST_CHANGELOG == null || LATEST_CHANGELOG.isEmpty()) {
             debugLog("No changelog available, assuming minor update");
             return false;
@@ -55,20 +55,20 @@ public class UpdateChecker {
 
         // Split changelog into lines
         String[] lines = LATEST_CHANGELOG.split("\n");
-        
+
         for (String line : lines) {
             debugLog("Checking line: " + line.trim());
-            
+
             // Check if line contains the pattern and "This is a minor update"
-            if (line.toLowerCase().contains("updated to complementary shaders") && 
+            if (line.toLowerCase().contains("updated to complementary shaders") &&
                 line.toLowerCase().contains("euphoria patches") &&
                 line.toLowerCase().contains("this is a minor update")) {
-                
+
                 debugLog("Found minor update indicator in changelog - this is NOT a major update");
                 return false;
             }
         }
-        
+
         debugLog("No minor update indicator found in changelog - this is a major update");
         return true;
     }
@@ -81,7 +81,7 @@ public class UpdateChecker {
         UPDATE_CHECK_PERFORMED = true;
         debugLog("Starting update check...");
         debugLog("Current version: " + MOD_VERSION);
-        
+
         try {
             NEW_MOD_VERSION = fetchLatestVersion();
             if (NEW_MOD_VERSION == null) {
@@ -120,11 +120,11 @@ public class UpdateChecker {
     // Fetch the latest version from the Modrinth API
     private static String fetchLatestVersion() throws Exception {
         debugLog("Fetching latest version from Modrinth API: " + UPDATE_URL);
-        
+
         try {
             URL url = new URL(UPDATE_URL);
             debugLog("URL created successfully");
-            
+
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");

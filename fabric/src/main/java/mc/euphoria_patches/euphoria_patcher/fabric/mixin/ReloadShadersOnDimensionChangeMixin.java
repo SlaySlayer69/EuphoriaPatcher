@@ -27,22 +27,22 @@ public class ReloadShadersOnDimensionChangeMixin {
     @Inject(method = "setWorld", at = @At("RETURN"))
     private void onDimensionChange(CallbackInfo ci) {
         euphoriaPatcher$debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
-        
+
         // Get current dimension
         String currentDimension = ModLoaderSpecifics.getCurrentDimensionStatic();
-        
+
         // First-time initialization
         if (euphoriaPatcher$lastDimension == null) {
             euphoriaPatcher$lastDimension = currentDimension;
             euphoriaPatcher$debugLog("Initial dimension set to: " + currentDimension);
             return;
         }
-        
+
         // Check if dimension changed
         if (!currentDimension.equals(euphoriaPatcher$lastDimension)) {
             euphoriaPatcher$debugLog("!!! DIMENSION CHANGED: " + euphoriaPatcher$lastDimension + " -> " + currentDimension + " !!!");
             euphoriaPatcher$lastDimension = currentDimension;
-            
+
             // Use IrisReloadManager to handle the reload
             try {
                 MinecraftClient.getInstance().execute(() -> {

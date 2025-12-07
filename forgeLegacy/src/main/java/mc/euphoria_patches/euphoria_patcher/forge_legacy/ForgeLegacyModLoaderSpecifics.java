@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import java.nio.file.Path;
 
 public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
-    
+
     private final Path shaderpacksPath;
     private final Path configDirectory;
 
@@ -42,17 +42,17 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     public String getCurrentDimension() {
         // debugLog("Getting current dimension");
         // Minecraft minecraft = Minecraft.getInstance();
-        
+
         // if (minecraft == null || minecraft.level == null) {
         //     debugLog("Minecraft or level is null, defaulting to 'overworld'");
         //     return "overworld"; // Default if world isn't loaded
         // }
-        
+
         // // Get current dimension ID
         // ResourceLocation dimensionId = minecraft.level.dimension().location();
         // String currentDimensionId = dimensionId.toString();
         // debugLog("Current dimension ID: " + currentDimensionId);
-        
+
         // return Dimensions.getCurrentDimension(currentDimensionId);
         return "overworld";
     }

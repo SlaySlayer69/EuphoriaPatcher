@@ -23,7 +23,7 @@ public class ShaderNamingService {
     private final Path shaderpacks;
     private final ShaderDetector shaderDetector;
 
-    public ShaderNamingService(String brandName, String patchName, String version, String patchVersion, 
+    public ShaderNamingService(String brandName, String patchName, String version, String patchVersion,
                                String commonLocation, String shaderMyFileLocation, Path shaderpacks,
                                ShaderDetector shaderDetector) {
         this.brandName = brandName;
@@ -55,7 +55,7 @@ public class ShaderNamingService {
         try {
             String fileName = path.getFileName().toString();
             String style;
-            
+
             // First try to determine style from filename
             if (fileName.contains("Unbound")) {
                 style = "Unbound";
@@ -66,31 +66,31 @@ public class ShaderNamingService {
                 style = ShaderPropertyReader.detectStyleFromCommonFile(path, commonLocation);
                 debugLog("Detected " + style + " style from common.glsl file");
             }
-            
+
             // Create the correct name format
             String correctName = brandName + style + version;
             if (fileName.endsWith(".zip")) {
                 correctName += ".zip";
             }
-            
+
             // If the name is already correct, return the original path
             if (fileName.equals(correctName)) {
                 return path;
             }
-            
+
             // Create path for the renamed shader
             Path targetPath = path.resolveSibling(correctName);
-            
+
             // Skip if a file with the target name already exists
             if (Files.exists(targetPath)) {
                 debugLog("A file with the correct name already exists: " + targetPath.getFileName());
                 return path;
             }
-            
+
             // Rename the file/directory
             Path renamedPath = Files.move(path, targetPath);
             log(0, "Renamed shader from \"" + fileName + "\" to \"" + correctName + "\"");
-            
+
             return renamedPath;
         } catch (IOException e) {
             log(2, "Failed to rename shader: " + e.getMessage());
@@ -114,7 +114,7 @@ public class ShaderNamingService {
             String fileName = baseFile.getFileName().toString();
             String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
             baseName = cleanBaseName(baseName);
-            
+
             return baseFile.resolveSibling(baseName + " + " + patchName + patchVersion);
         } catch (Exception e) {
             log(3, "Error creating patched shader path: " + e.getMessage());
@@ -191,27 +191,27 @@ public class ShaderNamingService {
         try {
             // Get the parent directory (shaderpacks folder)
             Path shaderpacks = sourceShaderPath.getParent();
-            
+
             // Create the new path with the alternative name
             Path targetPath = shaderpacks.resolve(newName);
-            
+
             // Check if it already exists
             if (Files.exists(targetPath)) {
                 // Check if it's an outdated version by examining myFile.glsl
                 Path myFilePath = targetPath.resolve(shaderMyFileLocation);
-                
+
                 if (Files.exists(myFilePath)) {
                     // Read first line of the file to extract version
                     String firstLine;
                     try (BufferedReader reader = Files.newBufferedReader(myFilePath)) {
                         firstLine = reader.readLine();
                     }
-                    
+
                     // Check if it's a Euphoria Patches file with a different version
                     if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
                         String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
                         String expectedVersion = patchVersion.replace("_", "");
-                        
+
                         if (!fileVersion.equals(expectedVersion)) {
                             debugLog("Found outdated alternative shader \"" + newName + "\" (version " + fileVersion + "), updating to " + expectedVersion);
                             // Delete outdated version
@@ -234,11 +234,11 @@ public class ShaderNamingService {
             }
 
             log(0, "Creating alternative shader names from: " + sourceShaderPath.getFileName());
-            
+
             // Copy the directory
             debugLog("Creating alternative shader with name: \"" + newName + "\"");
             FileUtils.copyDirectory(sourceShaderPath.toFile(), targetPath.toFile());
-            
+
             log(0, "Successfully created alternative shader: \"" + newName + "\"");
         } catch (IOException e) {
             log(2, "Error creating alternative shader \"" + newName + "\": " + e.getMessage());

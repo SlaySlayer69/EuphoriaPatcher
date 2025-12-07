@@ -27,7 +27,7 @@ public class HashUtils {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] fileBytes = Files.readAllBytes(filePath);
             byte[] hashBytes = digest.digest(fileBytes);
-            
+
             StringBuilder hexString = new StringBuilder();
             for (byte b : hashBytes) {
                 String hex = Integer.toHexString(0xff & b);
@@ -36,7 +36,7 @@ public class HashUtils {
                 }
                 hexString.append(hex);
             }
-            
+
             return hexString.toString();
         } catch (IOException | NoSuchAlgorithmException e) {
             debugLog("Error calculating SHA-256: " + e.getMessage());
@@ -55,13 +55,13 @@ public class HashUtils {
         if (actualHash == null) {
             return false;
         }
-        
+
         boolean hashMatches = expectedHash.equals(actualHash);
         debugLog("Hash verification for " + filePath.getFileName());
         debugLog("  Expected: " + expectedHash);
         debugLog("  Actual:   " + actualHash);
         debugLog("  Match:    " + hashMatches);
-        
+
         return hashMatches;
     }
 

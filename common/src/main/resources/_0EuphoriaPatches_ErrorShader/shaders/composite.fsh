@@ -74,18 +74,18 @@ vec3 errorOverlay(vec2 texCoordBorder) {
     float verticalIndicator = 0.0;
 
     applyVerticalScreenDisplacement(displacedCoord, verticalIndicator, 1.0, 1.0, 1.0, false);
-    
+
     // Convert the offset to screen space for text positioning
     int verticalTextOffset = int(displacedCoord.y * 15); // Adjust multiplier to match your text scale
     verticalTextOffset += int(displacedCoord.x * 4.0);
 
-    beginTextM(15, vec2(144 + verticalTextOffset, 90)); 
+    beginTextM(15, vec2(144 + verticalTextOffset, 90));
 		text.fgCol = vec4(1.0, 0.0, 0.0, 0.85);
 		text.bgCol = vec4(0.0, 0.0, 0.0, 0.0);
         printString((_E, _R, _R, _O, _R));
     endText(color);
     return color;
-} 
+}
 
 void main() {
 	vec3 color = texture2D(gcolor, texcoord).rgb;

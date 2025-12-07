@@ -178,7 +178,7 @@ void endText(inout vec3 fragColor) {
 void printChar(uint character) {
     // Calculate effective spacing that includes current padding settings
     ivec2 effectiveSpaceSize = spaceSize + text.charPadding * 2;
-    
+
     // Use this effective spacing for positioning
     ivec2 pos = text.fragPos - text.textPos - effectiveSpaceSize * text.charPos * ivec2(1, -1) + ivec2(0, effectiveSpaceSize.y);
 

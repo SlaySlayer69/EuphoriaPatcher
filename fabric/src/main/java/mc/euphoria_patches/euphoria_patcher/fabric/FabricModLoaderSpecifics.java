@@ -11,7 +11,7 @@ import net.minecraft.util.Identifier;
 import java.nio.file.Path;
 
 public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
-    
+
     private final Path shaderpacksPath;
     private final Path configDirectory;
 
@@ -43,17 +43,17 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     public String getCurrentDimension() {
         debugLog("Getting current dimension");
         MinecraftClient client = MinecraftClient.getInstance();
-        
+
         if (client == null || client.world == null) {
             debugLog("Client or world is null, defaulting to 'overworld'");
             return "overworld"; // Default if world isn't loaded
         }
-        
+
         // Get current dimension ID
         Identifier dimensionId = client.world.getRegistryKey().getValue();
         String currentDimensionId = dimensionId.toString();
         debugLog("Current dimension ID: " + currentDimensionId);
-        
+
         return Dimensions.getCurrentDimension(currentDimensionId);
     }
 

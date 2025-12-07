@@ -16,7 +16,7 @@ public class UpdateShaderLoaderConfig {
 
     public static void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
         debugLog("Starting updateShaderLoaderConfig - Unbound: " + styleUnbound + ", Reimagined: " + styleReimagined);
-        
+
         Path shaderLoaderConfig = ShaderLoader.getShaderLoaderConfigPath();
         if (shaderLoaderConfig == null) {
             debugLog("No shader loader config found");
@@ -25,8 +25,8 @@ public class UpdateShaderLoaderConfig {
         }
         debugLog("Found shader loader config at: " + shaderLoaderConfig);
 
-        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris.properties" : 
-                                 shaderLoaderConfig.toString().contains("oculus") ? "oculus.properties" : 
+        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris.properties" :
+                                 shaderLoaderConfig.toString().contains("oculus") ? "oculus.properties" :
                                  "OptiFine's optionsshaders.txt";
         debugLog("Identified shader loader: " + shaderLoaderName);
 
@@ -59,13 +59,13 @@ public class UpdateShaderLoaderConfig {
                     EuphoriaPatcher.log(3,0, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
                     return;
                 }
-                
-                String oldPack = oldContent.toString().contains("shaderPack=") ? 
+
+                String oldPack = oldContent.toString().contains("shaderPack=") ?
                     oldContent.toString().split("shaderPack=")[1].split("\n")[0].trim() : "unknown";
-                String newPack = newContent.contains("shaderPack=") ? 
+                String newPack = newContent.contains("shaderPack=") ?
                     newContent.split("shaderPack=")[1].split("\n")[0].trim() : "unknown";
                 debugLog("Updated shader pack reference from '" + oldPack + "' to '" + newPack + "'");
-                    
+
                 EuphoriaPatcher.log(0, "Successfully applied new version in " + shaderLoaderName + " config file!");
                 EuphoriaPatcher.log(0, oldPack + " -> " + newPack);
             } else {

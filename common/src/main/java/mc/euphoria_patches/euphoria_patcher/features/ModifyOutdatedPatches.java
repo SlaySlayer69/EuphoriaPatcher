@@ -12,27 +12,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class ModifyOutdatedPatches {
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ModifyOutdatedPatches] " + message);
     }
-    
+
     public static void rename() {
         debugLog("Starting rename process for outdated patches");
         int renamedCount = 0;
-        
+
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks, path -> isOutdatedPatch(path, true))) {
             for (Path potentialFile : stream) {
                 String name = potentialFile.getFileName().toString();
                 debugLog("Found outdated pack to rename: " + name);
-                
+
                 String newName = name
                         .replaceFirst("(.*) \\+", "Outdated $1 +")
                         .replace("EuphoriaPatches_", "EP_");
-                
+
                 debugLog("Renaming to: " + newName);
                 Path targetPath = potentialFile.resolveSibling(newName);
-                
+
                 // Check if target file already exists
                 if (Files.exists(targetPath)) {
                     debugLog("Target file already exists, skipping rename: " + newName);
@@ -42,7 +42,7 @@ public class ModifyOutdatedPatches {
                     renamedCount++;
                 }
             }
-            
+
             if (renamedCount == 0) {
                 debugLog("No outdated patches found to rename");
             } else {
@@ -57,7 +57,7 @@ public class ModifyOutdatedPatches {
     public static void delete() {
         debugLog("Starting delete process for outdated patches");
         AtomicInteger deletedCount = new AtomicInteger();
-        
+
         try (Stream<Path> stream = Files.list(EuphoriaPatcher.shaderpacks)) {
             stream.forEach(path -> {
                 try {
@@ -72,7 +72,7 @@ public class ModifyOutdatedPatches {
                     EuphoriaPatcher.log(2, 0, "Error processing path: " + path + " - " + e.getMessage());
                 }
             });
-            
+
             if (deletedCount.get() == 0) {
                 debugLog("No outdated patches found to delete");
             } else {
@@ -87,15 +87,15 @@ public class ModifyOutdatedPatches {
     private static boolean isOutdatedPatch(Path path, boolean renameFile) {
         String name = path.getFileName().toString();
         debugLog("Checking if patch is outdated: " + name + " (for " + (renameFile ? "rename" : "delete") + ")");
-        
+
         boolean result;
         if (renameFile) {
             result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
         } else {
-            result = (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*")) 
+            result = (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*"))
                     && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
         }
-        
+
         debugLog("Patch " + name + " is " + (result ? "outdated" : "current"));
         return result;
     }

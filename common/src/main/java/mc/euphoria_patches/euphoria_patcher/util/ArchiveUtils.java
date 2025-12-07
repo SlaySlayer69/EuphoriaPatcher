@@ -32,7 +32,7 @@ public class ArchiveUtils {
      */
     public static void extract(Path in, Path out) throws IOException, ArchiveException {
         debugLog("Starting extraction from " + in + " to " + out);
-        
+
         // Create the output directory if it doesn't exist
         Files.createDirectories(out);
         debugLog("Created output directory: " + out);
@@ -41,11 +41,11 @@ public class ArchiveUtils {
         try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(
                 new BufferedInputStream(Files.newInputStream(in)))) {
             debugLog("Archive input stream created");
-            
+
             ArchiveEntry entry;
             int extractedCount = 0;
             int skippedCount = 0;
-            
+
             // Iterate through each entry in the archive
             while ((entry = archiveInputStream.getNextEntry()) != null) {
                 // Skip entries that can't be read
@@ -53,17 +53,17 @@ public class ArchiveUtils {
                     debugLog("Skipping unreadable entry: " + entry.getName());
                     continue;
                 }
-                
+
                 try {
                     // Get entry name and remove leading slash if present
                     String entryName = entry.getName();
                     if (entryName.startsWith("/")) {
                         entryName = entryName.substring(1);
                     }
-                    
+
                     // Resolve the target path for the current entry
                     Path targetFilePath = out.resolve(entryName).normalize();
-                    
+
                     debugLog("Processing entry: " + entry.getName() + " -> " + targetFilePath);
 
                     if (entry.isDirectory()) {
@@ -87,7 +87,7 @@ public class ArchiveUtils {
                     skippedCount++;
                 }
             }
-            
+
             String completionMessage = "Extraction completed. " + extractedCount + " files extracted";
             if (skippedCount > 0) {
                 completionMessage += ", " + skippedCount + " entries skipped";
@@ -112,15 +112,15 @@ public class ArchiveUtils {
      */
     public static void archive(Path sourceDir, Path archive) throws IOException {
         debugLog("Starting archive creation from " + sourceDir + " to " + archive);
-        
+
         // Use try-with-resources to automatically close the output stream
         try (TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(Files.newOutputStream(archive))) {
             debugLog("TAR archive output stream created");
-            
+
             // Walk through the file tree of the source directory
             try (Stream<Path> fileStream = Files.walk(sourceDir)) {
                 debugLog("Walking file tree in source directory");
-                
+
                 // Sort files to ensure a platform-independent order
                 fileStream.sorted(Comparator.comparing(Path::toUri)).forEach(filePath -> addFileToArchive(tarOutputStream, sourceDir, filePath));
             }
@@ -143,7 +143,7 @@ public class ArchiveUtils {
         String fileName = null;
         try {
             fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
-            
+
              // Skip version control directories and hidden system folders
              if (fileName.startsWith(".git/") || fileName.equals(".git") ||
                  fileName.startsWith(".svn/") || fileName.equals(".svn") ||
@@ -151,15 +151,15 @@ public class ArchiveUtils {
                  debugLog("Skipping version control directory: " + fileName);
                  return;
              }
-            
+
             debugLog("Adding to archive: " + fileName);
-            
+
             // Check if file still exists and is accessible
             if (!Files.exists(filePath)) {
                 debugLog("File no longer exists, skipping: " + fileName);
                 return;
             }
-            
+
             TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName); // Create a TAR entry for the file or directory
 
             // Set deterministic metadata
@@ -187,7 +187,7 @@ public class ArchiveUtils {
         } catch (java.nio.channels.ClosedChannelException e) {
             // Expected when parallel validation finds a match and cancels other threads
             // This is normal behavior - one thread found a valid shader, so we stop processing the rest
-            debugLog("Archive operation cancelled by thread interruption (this is fine - valid shader found by another thread): " 
+            debugLog("Archive operation cancelled by thread interruption (this is fine - valid shader found by another thread): "
                 + fileName + " [Thread: " + Thread.currentThread().getName() + "]");
         } catch (IOException e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();

@@ -10,13 +10,13 @@ import java.util.Objects;
 
 public class GUIScreen {
     private static final String URL = "https://www.euphoriapatches.com/how-to-install/";
-    
+
     private static final Color BACKGROUND_COLOR = new Color(43, 43, 43);
     private static final Color TEXT_COLOR = new Color(220, 220, 220);
     private static final Color ACCENT_COLOR = new Color(232, 69, 198);
     private static final Color BUTTON_COLOR = new Color(75, 75, 75);
     private static final Color BUTTON_HOVER_COLOR = new Color(90, 90, 90);
-    
+
     public static void main(String[] args) {
         if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac")) {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -29,32 +29,32 @@ public class GUIScreen {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception ignored) {}
-        
+
         JFrame dialog = new JFrame("Euphoria Patcher");
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         dialog.setSize(350, 200);
         dialog.setResizable(false);
         dialog.setLocationRelativeTo(null);
-        
+
         ImageIcon icon = null;
         try {
             icon = new ImageIcon(Objects.requireNonNull(GUIScreen.class.getResource("/icon32x.png")));
             dialog.setIconImage(icon.getImage());
         } catch (Exception ignored) {}
-        
+
         JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
         mainPanel.setBackground(BACKGROUND_COLOR);
         mainPanel.setBorder(new EmptyBorder(20, 20, 5, 20));
-        
+
         JPanel contentPanel = new JPanel(new BorderLayout(0, 10));
         contentPanel.setBackground(BACKGROUND_COLOR);
-        
+
         if (icon != null) {
             JLabel iconLabel = new JLabel(icon);
             iconLabel.setVerticalAlignment(JLabel.TOP);
             mainPanel.add(iconLabel, BorderLayout.WEST);
         }
-        
+
         JLabel message = getJLabel(dialog);
         message.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
         contentPanel.add(message, BorderLayout.CENTER);
@@ -63,7 +63,7 @@ public class GUIScreen {
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setBackground(BACKGROUND_COLOR);
         bottomPanel.setPreferredSize(new Dimension(0, 40));
-        
+
         JButton okButton = getJButton(dialog);
         okButton.setFont(new Font(Font.DIALOG, Font.PLAIN, 14));
         bottomPanel.add(okButton);

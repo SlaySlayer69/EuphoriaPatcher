@@ -49,11 +49,11 @@ public class ModifyPatchedShaderpacks {
                 EuphoriaPatcher.log(2, 0, "Error processing files in " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
-        
+
         debugLog("Finished modifying files for target path: " + targetPath);
     }
-    
-    private static void processZipShaderpack(Path zipFile, String targetPath, String fileExtension, 
+
+    private static void processZipShaderpack(Path zipFile, String targetPath, String fileExtension,
                                           String... regexAndReplacements) throws IOException {
         debugLog("Processing ZIP shader pack: " + zipFile.getFileName());
         Path tempDir = Files.createTempDirectory("shader-patch-");
@@ -64,10 +64,10 @@ public class ModifyPatchedShaderpacks {
                 EuphoriaPatcher.log(2, 0, "Failed to extract shader pack: " + zipFile.getFileName());
                 return;
             }
-            
+
             // Process the extracted directory
             processDirectoryShaderpack(extractedDir, targetPath, fileExtension, regexAndReplacements);
-            
+
             // Archive the modified directory back to the original ZIP
             if (ArchiveOperations.archive(extractedDir, zipFile) == null) {
                 EuphoriaPatcher.log(2, 0, "Failed to update shader pack: " + zipFile.getFileName());
@@ -105,7 +105,7 @@ public class ModifyPatchedShaderpacks {
 
     private static void modifyFile(Path filePath, String... regexAndReplacements) throws IOException {
         debugLog("Modifying file: " + filePath.getFileName());
-        
+
         // For larger files (>100KB), use line-by-line processing
         if (Files.size(filePath) > 100_000) {
             debugLog("File size is larger than 100KB, using line-by-line modification for: " + filePath.getFileName());
@@ -120,24 +120,24 @@ public class ModifyPatchedShaderpacks {
             String modifiedContent = applyReplacements(content, regexAndReplacements);
             Files.write(filePath, modifiedContent.getBytes());
         }
-        
+
         debugLog("Successfully modified file: " + filePath.getFileName());
     }
 
     private static void lineByLineModify(Path filePath, String... regexAndReplacements) throws IOException {
         List<String> lines = Files.readAllLines(filePath);
         boolean modified = false;
-        
+
         // Prepare all regex patterns
         List<java.util.regex.Pattern> patterns = new ArrayList<>();
         boolean[] patternMatched = new boolean[regexAndReplacements.length / 2]; // Track which patterns were matched
         int totalPatterns = regexAndReplacements.length / 2;
         int matchedPatterns = 0;
-        
+
         for (int i = 0; i < regexAndReplacements.length; i += 2) {
             patterns.add(java.util.regex.Pattern.compile(regexAndReplacements[i]));
         }
-        
+
         // Process each line
         for (int lineNum = 0; lineNum < lines.size(); lineNum++) {
             String line = lines.get(lineNum);
@@ -146,10 +146,10 @@ public class ModifyPatchedShaderpacks {
             for (int i = 0; i < patterns.size(); i++) {
                 // Skip patterns we've already matched
                 if (patternMatched[i]) continue;
-                
+
                 java.util.regex.Pattern pattern = patterns.get(i);
                 String replacement = regexAndReplacements[i * 2 + 1];
-                
+
                 if (pattern.matcher(line).find()) {
                     // Only replace if pattern matches this line
                     String newLine = line.replaceAll(pattern.pattern(), replacement);
@@ -162,14 +162,14 @@ public class ModifyPatchedShaderpacks {
                     }
                 }
             }
-            
+
             // Exit early if we've matched all patterns
             if (matchedPatterns == totalPatterns) {
                 debugLog("All " + totalPatterns + " patterns matched - exiting file scan early at line " + (lineNum + 1));
                 break;
             }
         }
-        
+
         // Only write the file if changes were made
         if (modified) {
             Files.write(filePath, lines);

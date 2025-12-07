@@ -21,14 +21,14 @@ import java.util.Map;
  * Generates an error shader that displays error messages in-game
  */
 public class ErrorShaderGenerator {
-    
+
     private static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches_ErrorShader";
     private static final String ERROR_TEXTS_FILE = "shaders/errorTexts.glsl";
     private static final int MAX_LINE_LENGTH = 90;
-    
+
     // Character mappings for GLSL conversion
     private static final Map<Character, String> CHAR_TO_GLSL = new HashMap<>();
-    
+
     static {
         // Initialize character mappings
         CHAR_TO_GLSL.put(' ', "_space");
@@ -51,13 +51,13 @@ public class ErrorShaderGenerator {
         CHAR_TO_GLSL.put(':', "_colon");
         CHAR_TO_GLSL.put('/', "_slash");
     }
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ErrorShaderGenerator] " + message);
     }
-    
+
     private static final int MAX_ERROR_MESSAGES = 30;
-    
+
     /**
      * Generates an error shader with the given error messages
      *
@@ -72,16 +72,16 @@ public class ErrorShaderGenerator {
                 errorMessages.add("");
                 errorMessages.add("... and " + (errorMessages.size() - MAX_ERROR_MESSAGES) + " more errors (truncated to prevent overflow)");
             }
-            
+
             debugLog("Generating error shader with " + errorMessages.size() + " messages");
-            
+
             // Create target directory in shaderpacks
             Path targetDir = EuphoriaPatcher.shaderpacks.resolve(ERROR_SHADER_FOLDER);
-            
+
             // Check if the error shader is currently selected
             boolean isErrorShaderActive = isErrorShaderActive();
             debugLog("Error shader is " + (isErrorShaderActive ? "active" : "not active"));
-            
+
             // Ensure the target directory exists
             if (Files.exists(targetDir)) {
                 // No need to delete, just update the file
@@ -89,7 +89,7 @@ public class ErrorShaderGenerator {
             } else {
                 debugLog("Creating new error shader directory");
                 Files.createDirectories(targetDir);
-                
+
                 // Copy error shader folder to shaderpacks
                 boolean copySuccess = copyErrorShaderFolder(targetDir);
                 if (!copySuccess) {
@@ -97,19 +97,19 @@ public class ErrorShaderGenerator {
                     return;
                 }
             }
-            
+
             // Generate GLSL error text
             String glslErrorText = generateGLSLErrorText(errorMessages);
-            
+
             // Update errorTexts.glsl
             Path errorTextsPath = targetDir.resolve(ERROR_TEXTS_FILE);
             if (!Files.exists(errorTextsPath.getParent())) {
                 Files.createDirectories(errorTextsPath.getParent());
             }
-            
+
             Files.write(errorTextsPath, glslErrorText.getBytes(StandardCharsets.UTF_8));
             debugLog("Successfully updated errorTexts.glsl");
-            
+
             // Schedule a shader reload if the error shader is currently active
             if (isErrorShaderActive) {
                 debugLog("Scheduling shader reload since error shader is active");
@@ -121,7 +121,7 @@ public class ErrorShaderGenerator {
             EuphoriaPatcher.log(3, "Error generating error shader: " + e.getMessage());
         }
     }
-    
+
     /**
      * Checks if the error shader is currently active
      */
@@ -130,11 +130,11 @@ public class ErrorShaderGenerator {
         if (currentShaderPath == null) {
             return false;
         }
-        
+
         String shaderName = currentShaderPath.getFileName().toString();
         return shaderName.contains("EuphoriaPatches Error Shader");
     }
-    
+
     /**
      * Schedules a shader reload on the main thread
      */
@@ -142,7 +142,7 @@ public class ErrorShaderGenerator {
         debugLog("Scheduling shader reload for error shader updates");
         IrisReloadManager.findAndScheduleReload();
     }
-    
+
     /**
      * Copies the error shader folder from resources to the target directory
      * @param targetDir The target directory to copy to
@@ -152,17 +152,17 @@ public class ErrorShaderGenerator {
         try {
             // Get the resource from classpath
             String resourcePath = ERROR_SHADER_FOLDER;
-            
+
             // Try to copy from development environment first
             Path sourcePath = Paths.get("src/main/resources/" + resourcePath);
             if (Files.exists(sourcePath)) {
                 FileUtils.copyDirectory(sourcePath.toFile(), targetDir.toFile());
                 return true;
             }
-            
+
             // Otherwise, copy files from the JAR
             ClassLoader classLoader = ErrorShaderGenerator.class.getClassLoader();
-            
+
             // List of files to copy - expand this list to include all files
             String[] filesToCopy = {
                 "shaders/composite.fsh",
@@ -201,7 +201,7 @@ public class ErrorShaderGenerator {
                 "shaders/textRenderer.glsl",
                 "shaders/warning.png"
             };
-            
+
             for (String file : filesToCopy) {
                 InputStream is = classLoader.getResourceAsStream(resourcePath + "/" + file);
                 if (is != null) {
@@ -213,7 +213,7 @@ public class ErrorShaderGenerator {
                     debugLog("Could not find resource: " + resourcePath + "/" + file);
                 }
             }
-            
+
             return true;
         } catch (IOException e) {
             debugLog("Error copying error shader folder: " + e.getMessage());
@@ -221,7 +221,7 @@ public class ErrorShaderGenerator {
             return false;
         }
     }
-    
+
     /**
      * Generates GLSL error text from the given error messages
      * @param messages List of error messages
@@ -229,10 +229,10 @@ public class ErrorShaderGenerator {
      */
     private static String generateGLSLErrorText(List<String> messages) {
         StringBuilder glsl = new StringBuilder();
-        
+
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
-            
+
             // Clean prefix if present
             if (message.startsWith("EuphoriaPatcher: ")) {
                 message = message.substring("EuphoriaPatcher: ".length());
@@ -246,38 +246,38 @@ public class ErrorShaderGenerator {
                 glsl.append("offset.y += 1;\n\n");
                 continue;
             }
-            
+
             // Split message into lines
             List<String> lines = splitTextIntoLines(message);
-            
+
             // Begin text block
             glsl.append("beginTextError(3, offset);\n");
-            
+
             // Add each line
             for (int j = 0; j < lines.size(); j++) {
                 String line = lines.get(j);
                 String[] chars = convertTextToGLSLChars(line);
                 glsl.append("    printString((").append(String.join(", ", chars)).append("));\n");
-                
+
                 // Add printLine() if not the last line
                 if (j < lines.size() - 1) {
                     glsl.append("    printLine();\n");
                 }
             }
-            
+
             // End text block
             glsl.append("endText(textColor);\n\n");
-            
+
             // Add spacing between messages
             if (i < messages.size() - 1) {
                 // Use exactly the number of lines for the offset
                 glsl.append("offset.y += ").append(lines.size()).append(";\n\n");
             }
         }
-        
+
         return glsl.toString();
     }
-    
+
     /**
      * Splits text into lines at word boundaries, respecting maximum line length
      * @param text Text to split
@@ -285,17 +285,17 @@ public class ErrorShaderGenerator {
      */
     private static List<String> splitTextIntoLines(String text) {
         List<String> lines = new ArrayList<>();
-        
+
         // If text is shorter than threshold, just return it directly
         if (text.length() <= MAX_LINE_LENGTH) {
             lines.add(text);
             return lines;
         }
-        
+
         // Split text into words
         String[] words = text.split(" ");
         StringBuilder currentLine = new StringBuilder();
-        
+
         for (String word : words) {
             // Check if adding this word would exceed the limit
             if (currentLine.length() + word.length() + 1 > MAX_LINE_LENGTH) {
@@ -310,15 +310,15 @@ public class ErrorShaderGenerator {
                 currentLine.append(word);
             }
         }
-        
+
         // Add the last line if not empty
         if (currentLine.length() > 0) {
             lines.add(currentLine.toString());
         }
-        
+
         return lines;
     }
-    
+
     /**
      * Converts text to GLSL character representation
      * @param text Text to convert
@@ -326,7 +326,7 @@ public class ErrorShaderGenerator {
      */
     private static String[] convertTextToGLSLChars(String text) {
         List<String> result = new ArrayList<>();
-        
+
         for (char c : text.toCharArray()) {
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
                 // Handle basic Latin letters only (a-z, A-Z)
@@ -340,7 +340,7 @@ public class ErrorShaderGenerator {
             }
             // Skip unsupported characters
         }
-        
+
         return result.toArray(new String[0]);
     }
 }

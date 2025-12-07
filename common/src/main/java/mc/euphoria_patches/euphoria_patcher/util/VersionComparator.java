@@ -23,7 +23,7 @@ public class VersionComparator {
                 return v1Part - v2Part;
             }
         }
-        
+
         // If all compared parts are equal, the longer version is considered newer
         // (e.g., "1.2.3" > "1.2")
         return v1Parts.length - v2Parts.length;
@@ -47,13 +47,13 @@ public class VersionComparator {
      */
     public static int compareVersionArrays(int[] v1, int[] v2) {
         int minLength = Math.min(v1.length, v2.length);
-        
+
         for (int i = 0; i < minLength; i++) {
             if (v1[i] != v2[i]) {
                 return v1[i] - v2[i];
             }
         }
-        
+
         // If all compared parts are equal, the longer array is considered newer
         return v1.length - v2.length;
     }

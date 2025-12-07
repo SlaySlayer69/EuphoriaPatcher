@@ -35,7 +35,7 @@ public class ShaderpacksWatcher {
     private long lastByteSizeVerificationTime = 0;
     // Minimum time between byte size verifications (5 seconds)
     private static final long BYTE_SIZE_VERIFICATION_COOLDOWN = 5000;
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderpacksWatcher] " + message);
     }
@@ -60,7 +60,7 @@ public class ShaderpacksWatcher {
     public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
         this(patcher, false);
     }
-    
+
     public ShaderpacksWatcher(EuphoriaPatcher patcher, boolean skipInitialScan) throws IOException {
         debugLog("Initializing ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
         this.patcher = patcher;
@@ -143,7 +143,7 @@ public class ShaderpacksWatcher {
             debugLog("Watcher already running, ignoring start request");
             return;
         }
-        
+
         debugLog("Starting to watch shaderpacks folder");
         isRunning = true;
 
@@ -157,7 +157,7 @@ public class ShaderpacksWatcher {
                     debugLog("Processing watch events");
                     for (WatchEvent<?> event : key.pollEvents()) {
                         WatchEvent.Kind<?> kind = event.kind();
-                        
+
                         // Get the file name from the event context
                         @SuppressWarnings("unchecked")
                         WatchEvent<Path> ev = (WatchEvent<Path>) event;
@@ -187,7 +187,7 @@ public class ShaderpacksWatcher {
                         if (kind == StandardWatchEventKinds.ENTRY_CREATE ||
                                 kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                             Path fullPath = shaderpacks.resolve(fileName);
-                            debugLog((kind == StandardWatchEventKinds.ENTRY_CREATE ? "CREATE" : "MODIFY") + 
+                            debugLog((kind == StandardWatchEventKinds.ENTRY_CREATE ? "CREATE" : "MODIFY") +
                                      " event: Processing " + fileNameStr);
 
                             try {
@@ -205,7 +205,7 @@ public class ShaderpacksWatcher {
                                     debugLog("File no longer exists: " + fileNameStr);
                                     continue;
                                 }
-                                
+
                                 if (!isPotentialShaderPack(fullPath)) {
                                     debugLog("Not a potential shader pack: " + fileNameStr);
                                     continue;
@@ -228,7 +228,7 @@ public class ShaderpacksWatcher {
                                     boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileNameStr);
                                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
 
-                                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " + 
+                                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " +
                                              isInvalidByteSize + ", changed: " + hasChanged);
 
                                     shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
@@ -251,7 +251,7 @@ public class ShaderpacksWatcher {
 
                                         debugLog("Starting shader pack processing for: " + fileNameStr);
                                         boolean wasSuccessful = patcher.processNewShaderpack(fullPath);
-                                        debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") + 
+                                        debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") +
                                                  " for: " + fileNameStr);
 
                                         // Update tracking sets
@@ -291,7 +291,7 @@ public class ShaderpacksWatcher {
                 EuphoriaPatcher.log(3, 0, "Error in shader pack watcher: " + e.getMessage());
             }
         }, 0, 2, TimeUnit.SECONDS);
-        
+
         debugLog("Watcher scheduled and running");
     }
 
@@ -299,7 +299,7 @@ public class ShaderpacksWatcher {
         debugLog("Starting full directory scan");
         int scannedCount = 0;
         int processedCount = 0;
-        
+
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
             for (Path path : stream) {
                 String fileName = path.getFileName().toString();
@@ -319,8 +319,8 @@ public class ShaderpacksWatcher {
                     boolean isNewFile = !processedFiles.contains(fileName);
                     boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileName);
                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
-                    
-                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " + 
+
+                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " +
                              isInvalidByteSize + ", changed: " + hasChanged);
 
                     boolean shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
@@ -343,7 +343,7 @@ public class ShaderpacksWatcher {
 
                         debugLog("Starting shader pack processing for: " + fileName);
                         boolean wasSuccessful = patcher.processNewShaderpack(path);
-                        debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") + 
+                        debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") +
                                  " for: " + fileName);
                         processedCount++;
 
@@ -376,14 +376,14 @@ public class ShaderpacksWatcher {
             debugLog("Watcher not running, ignoring stop request");
             return;
         }
-        
+
         debugLog("Stopping shader packs watcher");
         isRunning = false;
 
         EuphoriaPatcher.log(0, "Stopping shaderpacks folder watcher");
         executor.shutdownNow();
         debugLog("Executor service shutdown requested");
-        
+
         try {
             watchService.close();
             debugLog("Watch service closed");
@@ -410,7 +410,7 @@ public class ShaderpacksWatcher {
         processedFiles.clear();
         fileMetadata.clear();
         debugLog("Processed files and metadata cleared, invalid byte size tracking maintained");
-        
+
         if (!isRunning) {
             debugLog("Watcher stopped, attempting to restart");
             try {
@@ -442,7 +442,7 @@ public class ShaderpacksWatcher {
     public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher) {
         return createAndStart(patcher, false);
     }
-    
+
     public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher, boolean skipInitialScan) {
         debugLog("Creating and starting new ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
         try {
@@ -456,15 +456,15 @@ public class ShaderpacksWatcher {
             return null;
         }
     }
-    
+
     private boolean isPotentialShaderPack(Path path) {
         String fileName = path.getFileName().toString();
-        
+
         if (fileName.contains("_0EuphoriaPatches_ErrorShader")) {
             debugLog("Skipping error shader from processing: " + fileName);
             return false;
         }
-        
+
         try {
             debugLog("Evaluating potential shader pack: " + fileName);
 
@@ -519,15 +519,15 @@ public class ShaderpacksWatcher {
                     ShaderValidator validator = new ShaderValidator();
                     isValidByByteSize = validator.validateByByteSize(path, 1, 1);
                     debugLog("Byte size verification result: " + (isValidByByteSize ? "valid" : "invalid") + " - " + fileName);
-                    
+
                     // Add result logging
                     if (isValidByByteSize) {
                         EuphoriaPatcher.log(0, "File passed byte size verification: " + fileName);
                     } else {
-                        EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " + 
-                                EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION + 
+                        EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " +
+                                EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION +
                                 ". It may be an incorrect version or modified.");
-                        EuphoriaPatcher.log(3, "Please download the correct and official version from " + 
+                        EuphoriaPatcher.log(3, "Please download the correct and official version from " +
                                 EuphoriaPatcher.DOWNLOAD_URL);
                     }
 
@@ -545,7 +545,7 @@ public class ShaderpacksWatcher {
                         // Update the cache with both old and new names
                         byteSizeVerificationCache.put(fileName, true);
                         debugLog("Added to byte size cache: " + fileName);
-                        
+
                         if (!fileName.equals(newFileName)) {
                             byteSizeVerificationCache.put(newFileName, true);
                             debugLog("Added new name to byte size cache: " + newFileName);

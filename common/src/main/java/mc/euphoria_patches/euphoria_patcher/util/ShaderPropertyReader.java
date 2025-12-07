@@ -11,14 +11,14 @@ import java.nio.file.Path;
  * Utility for reading shader property files and extracting information
  */
 public class ShaderPropertyReader {
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderPropertyReader] " + message);
     }
 
     /**
      * Determines shader style by reading the common.glsl file
-     * 
+     *
      * @param shaderPath Path to the shader file or directory
      * @param commonLocation Relative path to common.glsl within the shader (e.g., "shaders/common.glsl")
      * @return "Reimagined" or "Unbound" based on the SHADER_STYLE value, defaults to "Reimagined"
@@ -32,9 +32,9 @@ public class ShaderPropertyReader {
                 debugLog("Could not create temp directory, returning default style");
                 return "Reimagined"; // Default if we can't create temp dir
             }
-            
+
             String baseName = shaderPath.getFileName().toString().replace(".zip", "");
-            
+
             // Extract if needed
             Path extractedPath;
             if (shaderPath.toString().endsWith(".zip")) {
@@ -46,12 +46,12 @@ public class ShaderPropertyReader {
             } else {
                 extractedPath = shaderPath;
             }
-            
+
             // Read the common.glsl file
             Path commonFile = extractedPath.resolve(commonLocation);
             if (Files.exists(commonFile)) {
                 String content = FileUtils.readFileToString(commonFile.toFile(), "UTF-8");
-                
+
                 // Look for SHADER_STYLE definition
                 if (content.contains("SHADER_STYLE 4")) {
                     debugLog("Detected Unbound style from common.glsl");
@@ -68,7 +68,7 @@ public class ShaderPropertyReader {
         } finally {
             ArchiveOperations.deleteTempDirectory(tempDir);
         }
-        
+
         debugLog("Returning default Reimagined style");
         return "Reimagined"; // Default fallback
     }

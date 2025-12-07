@@ -28,7 +28,7 @@ public class IrisDefineHelper {
             injectCount++;
             debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
 
-            if (EuphoriaPatcher.isSpacEagle()) { 
+            if (EuphoriaPatcher.isSpacEagle()) {
                 defineKey.accept(standardDefines, "SPACEAGLE17");
                 debugLog("Adding SPACEAGLE17 define");
             }
@@ -39,7 +39,7 @@ public class IrisDefineHelper {
 
             defineKey.accept(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
-            
+
             String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase();
             defineKey.accept(standardDefines, currentDimension);
             debugLog("Adding " + currentDimension + " define");

@@ -28,7 +28,7 @@ public class ShaderPatchingService {
     private final Path shaderpacks;
     private final ShaderNamingService namingService;
 
-    public ShaderPatchingService(String patchName, String patchVersion, String commonLocation, 
+    public ShaderPatchingService(String patchName, String patchVersion, String commonLocation,
                                 Path shaderpacks, ShaderNamingService namingService) {
         this.patchName = patchName;
         this.patchVersion = patchVersion;
@@ -49,7 +49,7 @@ public class ShaderPatchingService {
             // Get base name and remove .zip extension
             String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
             baseName = namingService.cleanBaseName(baseName);
-            
+
             String patchedName = baseName + " + " + patchName + patchVersion;
 
             Path baseExtracted = temp.resolve(baseName);
@@ -101,15 +101,15 @@ public class ShaderPatchingService {
     public boolean applyProductionPatch(Path baseArchived, Path patchedArchive, Path patchFile, Path patchedFile, boolean styleUnbound, boolean styleReimagined) {
         String patchResourceName = patchName + patchVersion + ".patch";
         debugLog("Attempting to load patch resource: " + patchResourceName);
-        
+
         try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchResourceName)) {
             if (patchStream != null) {
                 debugLog("Patch resource found, copying to: " + patchFile);
                 FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
-                
+
                 debugLog("Applying patch from " + baseArchived + " to " + patchedArchive);
                 FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-                
+
                 debugLog("Extracting patched archive to: " + patchedFile);
                 try {
                     ArchiveUtils.extract(patchedArchive, patchedFile);
@@ -118,7 +118,7 @@ public class ShaderPatchingService {
                     debugLog("Error extracting archive: " + e.getMessage());
                     return false;
                 }
-                
+
                 debugLog("Applying style settings...");
                 applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
                 log(1, patchName + " was successfully installed. Enjoy! -SpacEagle17");

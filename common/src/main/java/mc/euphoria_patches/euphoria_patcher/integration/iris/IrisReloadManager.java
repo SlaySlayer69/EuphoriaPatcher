@@ -80,7 +80,7 @@ public class IrisReloadManager {
             }
         }
     }
-    
+
     /**
      * Checks if Iris is installed
      * @return true if Iris is installed, false otherwise

@@ -18,7 +18,7 @@ public class UpdateShaderConfig {
     private static final String VERSION_IDENTIFIER_PREFIX = "AAB_FOR_EUPHORIA_PATCHES_VERSION_";
     private static final String VERSION_IDENTIFIER_SUFFIX = "=true";
 
-    private static final java.util.concurrent.ScheduledExecutorService scheduler = 
+    private static final java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "EuphoriaPatcher-FileWriter");
             t.setDaemon(true); // Make sure it doesn't prevent game exit
@@ -39,7 +39,7 @@ public class UpdateShaderConfig {
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UpdateShaderConfig] " + message);
     }
-    
+
     private static String getVersionIdentifier() {
         // Convert PATCH_VERSION (like "_1.5.2") to format "1_5_2" for the identifier
         String version = EuphoriaPatcher.PATCH_VERSION;
@@ -47,17 +47,17 @@ public class UpdateShaderConfig {
         version = version.replace(".", "_"); // Replace dots with underscores
         return VERSION_IDENTIFIER_PREFIX + version + VERSION_IDENTIFIER_SUFFIX;
     }
-    
+
     // Extract version from identifier line
     private static String extractVersionFromIdentifier(String line) {
         if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-            String versionPart = line.substring(VERSION_IDENTIFIER_PREFIX.length(), 
+            String versionPart = line.substring(VERSION_IDENTIFIER_PREFIX.length(),
                                               line.length() - VERSION_IDENTIFIER_SUFFIX.length());
             return "_" + versionPart.replace("_", "."); // Convert back to PATCH_VERSION format
         }
         return null;
     }
-    
+
     public static void updateShaderTxtConfigFile(boolean styleUnbound, boolean styleReimagined) {
         try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
                 path -> isConfigFile(path, true))) {
@@ -78,7 +78,7 @@ public class UpdateShaderConfig {
         } catch (IOException e) {
             EuphoriaPatcher.log(3,0, "Error reading shaderpacks directory: " + e.getMessage());
         }
-        
+
         // Add identifier to all Euphoria Patches settings files
         markEuphoriaPatchesSettingsFiles();
     }
@@ -88,16 +88,16 @@ public class UpdateShaderConfig {
             // Get all the files that need to be updated
             List<Path> filesToUpdate = new ArrayList<>();
             List<Boolean> addVersionFlags = new ArrayList<>();
-            
+
             // Use existing pattern - modified to match just file identification parts
             Pattern euphoriaFilePattern = Pattern.compile(
                 "(?:Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches))",
                 Pattern.CASE_INSENSITIVE
             );
-            
+
             try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
                     path -> Files.isRegularFile(path) && path.toString().endsWith(".txt"))) {
-                
+
                 for (Path configFile : configStream) {
                     String fileName = configFile.getFileName().toString();
                     // Check if matches any Euphoria Patches pattern
@@ -109,17 +109,17 @@ public class UpdateShaderConfig {
                     }
                 }
             }
-            
+
             // Schedule the updates to happen after a delay
             if (!filesToUpdate.isEmpty()) {
                 debugLog("Scheduling identifier updates for " + filesToUpdate.size() + " files after shader reload");
-                
+
                 // Schedule the task to run 1 second after shader reload completes
                 scheduler.schedule(() -> {
                     for (int i = 0; i < filesToUpdate.size(); i++) {
                         Path configFile = filesToUpdate.get(i);
                         boolean addVersionIdentifier = addVersionFlags.get(i);
-                        
+
                         debugLog("Delayed processing of file: " + configFile.getFileName());
                         addIdentifierToSettingsFile(configFile, addVersionIdentifier);
                     }
@@ -139,14 +139,14 @@ public class UpdateShaderConfig {
                     Thread.sleep(200 * attempt);
                     EuphoriaPatcher.log(0, "Retry attempt " + attempt + " for file: " + configFile.getFileName());
                 }
-                
+
                 debugLog("Starting to process file: " + configFile.getFileName());
-                
+
                 if (!Files.isWritable(configFile)) {
                     debugLog("File is not writable: " + configFile.getFileName());
                     return;
                 }
-                
+
                 List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
 
                 // Apply settings conversions
@@ -154,14 +154,14 @@ public class UpdateShaderConfig {
                 // Check if any settings were actually changed
                 boolean settingsChanged = !lines.equals(convertedLines);
                 lines = convertedLines;
-                
-                debugLog("Applied settings conversions to file: " + configFile.getFileName() + 
+
+                debugLog("Applied settings conversions to file: " + configFile.getFileName() +
                          (settingsChanged ? " (changes applied)" : " (no changes needed)"));
 
                 // Check for identifiers
                 boolean mainIdentifierExists = false;
                 String existingVersionIdentifier = null;
-                
+
                 // First scan the file to check what identifiers exist
                 for (String line : lines) {
                     if (line.trim().equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
@@ -170,25 +170,25 @@ public class UpdateShaderConfig {
                         existingVersionIdentifier = line;
                     }
                 }
-                
+
                 // Only return early if both conditions are true:
-                // 1. No settings were changed 
+                // 1. No settings were changed
                 // 2. Identifiers are already correct AND are at the top of the file after comments
                 boolean identifiersAtTop = areIdentifiersAtTop(lines);
-                if (!settingsChanged && mainIdentifierExists && 
-                    (!addVersionIdentifier || 
+                if (!settingsChanged && mainIdentifierExists &&
+                    (!addVersionIdentifier ||
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier()))) &&
                     identifiersAtTop) {
-                    
+
                     debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
                     return; // Nothing to do
                 } else if (!identifiersAtTop) {
                     debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
                 }
-                
+
                 // We need to modify the file - create new content with reorganized structure
                 List<String> newLines = new ArrayList<>();
-                
+
                 // Phase 1: Add all comment lines that start with #
                 // Usually the first line is a timestamp comment
                 for (String line : lines) {
@@ -196,50 +196,50 @@ public class UpdateShaderConfig {
                         newLines.add(line);
                     }
                 }
-                
+
                 // Phase 2: Add identifiers right after comments
                 newLines.add(EUPHORIA_IDENTIFIER);
-                
+
                 if (addVersionIdentifier) {
                     newLines.add(getVersionIdentifier());
                 } else if (existingVersionIdentifier != null) {
                     newLines.add(existingVersionIdentifier);
                     debugLog("Preserved existing version identifier: " + existingVersionIdentifier);
                 }
-                
+
                 // Phase 3: Add all remaining lines except comments and identifiers
                 for (String line : lines) {
                     String trimmed = line.trim();
                     // Skip comments (already added), and identifiers (also already added)
-                    if (!trimmed.startsWith("#") && 
-                        !trimmed.equals(EUPHORIA_IDENTIFIER) && 
+                    if (!trimmed.startsWith("#") &&
+                        !trimmed.equals(EUPHORIA_IDENTIFIER) &&
                         !(trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
                         newLines.add(line);
                     }
                 }
-                
+
                 debugLog("About to write to file: " + configFile.getFileName());
-                
+
                 // Use try-with-resources to ensure streams are properly closed
                 try (java.io.BufferedWriter writer = Files.newBufferedWriter(
                         configFile, StandardCharsets.UTF_8)) {
-                    
+
                     for (String line : newLines) {
                         writer.write(line);
                         writer.newLine();
                     }
-                    
+
                     // Make sure to flush
                     writer.flush();
                 }
-                
+
                 debugLog("Updated identifiers in settings file: " + configFile.getFileName());
-                
+
                 // If we got here without errors, break the retry loop
                 break;
             } catch (IOException e) {
                 if (attempt == 2) { // The Last attempt failed
-                    EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " + 
+                    EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " +
                                         configFile.getFileName() + ": " + e.getMessage());
                 }
             } catch (InterruptedException e) {
@@ -250,18 +250,18 @@ public class UpdateShaderConfig {
     }
     private static boolean areIdentifiersAtTop(List<String> lines) {
         boolean foundMainIdentifier = false;
-        
+
         for (String line : lines) {
             String trimmed = line.trim();
-            
+
             if (trimmed.isEmpty()) {
                 continue;
             }
-            
+
             if (trimmed.startsWith("#")) {
                 continue;
             }
-            
+
             // First non-comment line should be our main identifier
             if (!foundMainIdentifier) {
                 if (trimmed.equals(EUPHORIA_IDENTIFIER)) {
@@ -285,7 +285,7 @@ public class UpdateShaderConfig {
                 }
             }
         }
-        
+
         return foundMainIdentifier; // True only if we found main identifier in the correct position
     }
 
@@ -294,23 +294,23 @@ public class UpdateShaderConfig {
         String newName = EuphoriaPatcher.BRAND_NAME + style + EuphoriaPatcher.VERSION + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + ".txt";
         try {
             Path newPath = configFilePath.resolveSibling(newName);
-            
+
             // Check if target file already exists
             if (Files.exists(newPath)) {
                 debugLog("Target config file already exists, skipping copy: " + newName);
                 EuphoriaPatcher.log(0, "Shader config file already up to date!");
             } else {
                 Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
-                
+
                 // Add our identifiers to the new config file - include version since the name has current version
                 addIdentifierToSettingsFile(newPath, true);
-                
+
                 EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
             }
         } catch (IOException e) {
             EuphoriaPatcher.log(3,0, "Could not rename the config file: " + e.getMessage());
         }
-        
+
         if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
             EuphoriaPatcher.log(0, "Both shader styles detected!");
             try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
@@ -321,16 +321,16 @@ public class UpdateShaderConfig {
                     newName = EuphoriaPatcher.BRAND_NAME + style + EuphoriaPatcher.VERSION + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION + ".txt";
                     try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
                         Path newPath = latestShaderConfigFilePath.resolveSibling(newName);
-                        
+
                         // Check if target file already exists
                         if (Files.exists(newPath)) {
                             debugLog("Target config file already exists, skipping copy: " + newName);
                         } else {
                             Files.copy(latestShaderConfigFilePath, newPath);
-                            
+
                             // Add our identifiers to this copy too
                             addIdentifierToSettingsFile(newPath, true);
-                            
+
                             EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
                         }
                     } catch (IOException e) {
@@ -346,14 +346,14 @@ public class UpdateShaderConfig {
     // Helper method to check if a file is a config file
     private static boolean isConfigFile(Path path, boolean containsPatchName) {
         String nameText = path.getFileName().toString();
-        
+
         // If we're specifically looking for patched files
         if (containsPatchName) {
             // Check for our standard naming first
-            boolean hasStandardName = nameText.matches("(?:Comp\\d\\.\\d|" + EuphoriaPatcher.BRAND_NAME + ").*") && 
-                                     nameText.endsWith(".txt") && 
+            boolean hasStandardName = nameText.matches("(?:Comp\\d\\.\\d|" + EuphoriaPatcher.BRAND_NAME + ").*") &&
+                                     nameText.endsWith(".txt") &&
                                      (nameText.contains(EuphoriaPatcher.PATCH_NAME) || nameText.contains(" + EP_"));
-            
+
             // If it doesn't have our standard name, check ANY .txt file since it might have our identifier
             if (!hasStandardName) {
                 return nameText.endsWith(".txt");
@@ -396,7 +396,7 @@ public class UpdateShaderConfig {
             }
         }
 
-        debugLog("Found " + euphoriaFiles.size() + " Euphoria files, " + 
+        debugLog("Found " + euphoriaFiles.size() + " Euphoria files, " +
                 flaggedFiles.size() + " flagged files, and " + baseFiles.size() + " base files");
 
         // STEP 1: Try to find Euphoria files by name
@@ -406,7 +406,7 @@ public class UpdateShaderConfig {
             euphoriaFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
             Path latestEuphoriaConfig = euphoriaFiles.get(euphoriaFiles.size() - 1);
             String latestName = latestEuphoriaConfig.getFileName().toString();
-            
+
             if (searchOldEuphoriaConfigs) {
                 if (!latestName.contains(EuphoriaPatcher.PATCH_VERSION) || latestName.contains("dev")) {
                     debugLog("Selected old Euphoria config: " + latestName);
@@ -418,14 +418,14 @@ public class UpdateShaderConfig {
                 return latestEuphoriaConfig;
             }
         }
-        
+
         // STEP 2: If no suitable Euphoria file by name, try flagged files
         if (!flaggedFiles.isEmpty()) {
             debugLog("Sorting flagged files by embedded version...");
             flaggedFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
             Path latestFlaggedFile = flaggedFiles.get(flaggedFiles.size() - 1);
             String latestName = latestFlaggedFile.getFileName().toString();
-            debugLog("Selected flagged file: " + latestName + 
+            debugLog("Selected flagged file: " + latestName +
                        " with embedded version: " + getEuphoriaPatchesVersionFromFile(latestFlaggedFile));
             return latestFlaggedFile;
         }
@@ -483,10 +483,10 @@ public class UpdateShaderConfig {
             debugLog("Using embedded version for " + path.getFileName() + ": " + result);
             return result;
         }
-        
+
         // Fall back to parsing from filename
         String name = path.getFileName().toString();
-        
+
         // First try to match Euphoria pattern
         Pattern euphoriaPattern = Pattern.compile("(?:[a-zA-Z_]+)?[rdp]?(\\d+(?:\\.\\d+)*)(?:[rdp]\\d+)?(?: \\+ )?(?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*(?:-dev\\d+)?)");
         Matcher euphoriaMatcher = euphoriaPattern.matcher(name);
@@ -501,7 +501,7 @@ public class UpdateShaderConfig {
             debugLog("Found main version only in " + name + ": 0|" + mainVersion);
             return "0|" + mainVersion; // If no Euphoria Patches version, use 0
         }
-        
+
         // For base files (Complementary shaders without Euphoria)
         Pattern basePattern = Pattern.compile(".*" + EuphoriaPatcher.BRAND_NAME + ".*[_r]([\\d.]+).*");
         Matcher baseMatcher = basePattern.matcher(name);
@@ -511,7 +511,7 @@ public class UpdateShaderConfig {
             debugLog("Extracted base version from filename " + name + ": " + result);
             return result;
         }
-        
+
         debugLog("Could not extract any version from " + name + ", using default 0|0");
         return "0|0"; // Default version if no pattern matches
     }

@@ -9,7 +9,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import java.nio.file.Path;
 
 public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
-    
+
     private final Path shaderpacksPath;
     private final Path configDirectory;
 

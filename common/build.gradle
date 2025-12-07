@@ -18,10 +18,10 @@ dependencies {
 	implementation 'org.apache.commons:commons-compress:1.21'
 	implementation 'commons-io:commons-io:2.11.0'
 	implementation 'commons-codec:commons-codec:1.15'
-	
+
 	// OSHI for CPU usage monitoring (optional - only used if available at runtime)
 	compileOnly 'com.github.oshi:oshi-core:6.1.6'
-	
+
 	// Minecraft-related dependencies (provided by loader-specific modules)
 	// These are compileOnly because the actual implementation comes from Minecraft/loader
 	compileOnly 'org.apache.logging.log4j:log4j-api:2.17.1'
@@ -40,7 +40,7 @@ task verifyPatchFile {
 		def patchVersion = versionProps.getProperty('mod_version').split("-")[0]
 		def expectedPatchFile = "EuphoriaPatches_${patchVersion}.patch"
 		def patchFilePath = file("src/main/resources/${expectedPatchFile}")
-		
+
 		// Find what patch file actually exists (if any)
 		def actualPatchFile = "NONE"
 		def resourcesDir = file("src/main/resources")

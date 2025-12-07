@@ -40,7 +40,7 @@ public class ShaderLoader {
     private static String cachedShaderLoader = null;
     private static String cachedMCVersion = null;
     private static Integer cachedShaderLoaderVersion = null;
-    
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderLoader] " + message);
     }
@@ -51,7 +51,7 @@ public class ShaderLoader {
             debugLog("Using cached shader file result: " + (cachedShaderFile != null ? cachedShaderFile.getName() : "null"));
             return cachedShaderFile;
         }
-        
+
         debugLog("Searching for shader loader file in mods directory");
         try {
             File modsFolder = new File(String.valueOf(EuphoriaPatcher.modDirectory));
@@ -64,8 +64,8 @@ public class ShaderLoader {
                     debugLog("Checking file: " + fileName);
 
                     // Skip compatibility and addon mods
-                    if (fileName.contains("compat") || 
-                        fileName.contains("addon") || 
+                    if (fileName.contains("compat") ||
+                        fileName.contains("addon") ||
                         fileName.contains("compatibility") ||
                         fileName.contains("flywheel")) {
                         debugLog("Skipping compatibility/addon mod: " + fileName);
@@ -107,7 +107,7 @@ public class ShaderLoader {
             debugLog("Using cached shader loader type: " + cachedShaderLoader);
             return cachedShaderLoader;
         }
-        
+
         debugLog("Determining shader loader type");
         File shaderFile = findShaderLoaderFile();
         if (shaderFile == null) {
@@ -119,7 +119,7 @@ public class ShaderLoader {
 
         String fileName = shaderFile.getName().toLowerCase(Locale.ROOT);
         debugLog("Analyzing file name: " + fileName);
-        
+
         if (fileName.startsWith("iris")) {
             debugLog("Detected IRIS shader loader");
             cachedShaderLoader = IRIS;
@@ -152,7 +152,7 @@ public class ShaderLoader {
             debugLog("Using cached MC version: " + cachedMCVersion);
             return cachedMCVersion;
         }
-        
+
         debugLog("Extracting Minecraft version from shader loader filename");
         try {
             File shaderFile = findShaderLoaderFile();
@@ -274,7 +274,7 @@ public class ShaderLoader {
 
     /**
      * Gets the shader loader version from the shader loader filename.
-     * Examples: 
+     * Examples:
      * - iris-fabric-1.8.8+mc1.21.4.jar -> 10808
      * - oculus-mc1.20.1-1.8.0.jar -> 10800
      * - mekalus-mc1.20.1-1.7.0.3.jar -> 10700 (simplifying to 1.7.0)
@@ -288,7 +288,7 @@ public class ShaderLoader {
             debugLog("Using cached shader loader version: " + cachedShaderLoaderVersion);
             return cachedShaderLoaderVersion;
         }
-        
+
         debugLog("Extracting shader loader version from filename");
         try {
             File shaderFile = findShaderLoaderFile();
@@ -322,7 +322,7 @@ public class ShaderLoader {
                 int jarIndex = lowerFileName.indexOf(".jar");
                 if (lastDashIndex != -1 && jarIndex != -1 && jarIndex > lastDashIndex) {
                     String fullVersion = fileName.substring(lastDashIndex + 1, jarIndex);
-                    
+
                     // Handle Mekalus versioning (e.g., 1.7.0.3 -> 1.7.0)
                     if (lowerFileName.startsWith("mekalus") && fullVersion.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
                         String[] parts = fullVersion.split("\\.");
@@ -333,7 +333,7 @@ public class ShaderLoader {
                     } else {
                         extractedVersion = fullVersion;
                     }
-                    
+
                     debugLog("Extracted version: " + extractedVersion);
                 }
             }
@@ -387,7 +387,7 @@ public class ShaderLoader {
     public static String[] getShaderLoaderVersionDefine() {
         int version = getShaderLoaderVersion();
         String shaderLoader = getShaderLoader();
-        
+
         switch (shaderLoader) {
             case IRIS:
                 return new String[]{"EUPHORIA_PATCHES_IRIS_VERSION", String.valueOf(version)};

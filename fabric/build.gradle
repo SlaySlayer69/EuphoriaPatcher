@@ -72,7 +72,7 @@ shadowJar {
 	relocate 'org.apache.commons', 'mc.euphoria_patches.shadow.org.apache.commons'
 	relocate 'io.sigpipe.jbsdiff', 'mc.euphoria_patches.shadow.io.sigpipe.jbsdiff'
 	relocate 'com.google.gson', 'mc.euphoria_patches.shadow.com.google.gson'
-	
+
 	// Include license file
 	from("../LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}.txt"}
@@ -135,7 +135,7 @@ tasks.whenTaskAdded { task ->
 
 publishMods {
     file = remapJar.archiveFile
-    
+
     changelog = rootProject.ext.changelogFile.text
 
     displayName = "Euphoria Patcher ${project.version}"

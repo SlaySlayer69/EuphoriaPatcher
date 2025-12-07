@@ -105,12 +105,12 @@ public class ShaderDetector {
     public void checkForExistingPatchedShaders(ShaderInfo info) {
         try {
             // First check using the standard naming pattern
-            DirectoryStream.Filter<Path> patchedFilter = path -> 
-                path.getFileName().toString().contains(brandName) && 
+            DirectoryStream.Filter<Path> patchedFilter = path ->
+                path.getFileName().toString().contains(brandName) &&
                 path.getFileName().toString().contains(" + " + patchName + patchVersion) &&
-                (Files.isDirectory(path) || 
+                (Files.isDirectory(path) ||
                 (Files.isRegularFile(path) && path.toString().endsWith(".zip")));
-            
+
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, patchedFilter)) {
                 for (Path path : stream) {
                     checkIfAlreadyInstalled(path, info, null);
@@ -121,7 +121,7 @@ public class ShaderDetector {
             }
 
             debugLog("No existing patched shaders found by standard naming pattern, checking for Euphoria Patches files...");
-            
+
             // If not found by name, check all directories for the myFile.glsl with version signature
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, Files::isDirectory)) {
 
@@ -133,28 +133,28 @@ public class ShaderDetector {
                     Path myFilePath = directory.resolve(shaderMyFileLocation);
 
                     debugLog("Checking directory: " + directory.getFileName() + " for myFile.glsl");
-                    
+
                     // Skip if the myFile.glsl doesn't exist
                     if (!Files.exists(myFilePath)) {
                         continue;
                     }
 
                     debugLog("Found myFile.glsl in directory: " + directory.getFileName());
-                    
+
                     // Read first line of the file
                     String firstLine;
                     try (BufferedReader reader = Files.newBufferedReader(myFilePath)) {
                         firstLine = reader.readLine();
                     }
-                    
+
                     // Check if it's a Euphoria Patches file with the matching version
                     if (firstLine != null && firstLine.startsWith("// Euphoria Patches")) {
                         String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
                         String expectedVersion = patchVersion.replace("_", "");
-                        
+
                         debugLog("Found potential correct Euphoria Patches version in: " + directory.getFileName());
                         debugLog("File version: " + fileVersion + ", Expected: " + expectedVersion);
-                        
+
                         if (fileVersion.equals(expectedVersion)) {
                             String dirName = directory.getFileName().toString();
                             if (dirName.equals(("Euphoria-Patches")) || dirName.matches("dev\\d+") || dirName.contains("earlyDev")) {
@@ -162,10 +162,10 @@ public class ShaderDetector {
                                 continue;
                             }
                             debugLog("Version match found - this is a correct Euphoria Patches installation");
-                            
+
                             info.isAlreadyInstalled = true;
                             info.installedDir = directory;
-                            
+
                             // Try to determine style from directory name or common.glsl
                             if (dirName.contains("Reimagined")) {
                                 info.styleReimagined = true;
@@ -177,7 +177,7 @@ public class ShaderDetector {
                                 info.styleReimagined = "Reimagined".equals(detectedStyle);
                                 info.styleUnbound = "Unbound".equals(detectedStyle);
                             }
-                            
+
                             log(0, patchName + patchVersion + " is already installed as the renamed folder: " + directory.getFileName());
                             return;
                         }
@@ -194,7 +194,7 @@ public class ShaderDetector {
      */
     public boolean isBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
-        
+
         // Basic conditions
         boolean hasBrandName = name.startsWith(brandName);
         boolean notPatched = !name.contains(patchName);
@@ -257,14 +257,14 @@ public class ShaderDetector {
             // Combine all paths for parallel processing
             List<Path> allPaths = new ArrayList<>(zipFiles);
             allPaths.addAll(dirs);
-            
+
             // Use parallel validation with progress callback
-            Path validShader = shaderValidator.validateByByteSizeParallel(allPaths, 
+            Path validShader = shaderValidator.validateByByteSizeParallel(allPaths,
                 (scanned, total) -> {
                     log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far");
                 }
             );
-            
+
             if (validShader != null) {
                 // Found a valid shader by byte size, rename it to the correct format
                 return namingService.renameToCorrectShaderName(validShader);
@@ -280,10 +280,10 @@ public class ShaderDetector {
      */
     public void processShaderPath(Path path, ShaderInfo info, ShaderNamingService namingService) {
         String name = path.getFileName().toString();
-        
+
         // Check shader style from filename first
         boolean styleFromName = false;
-        
+
         if (name.contains("Reimagined")) {
             info.styleReimagined = true;
             styleFromName = true;
@@ -297,7 +297,7 @@ public class ShaderDetector {
                 info.baseFile = path;
             }
         }
-        
+
         // If style isn't clear from the filename, check common.glsl
         if (!styleFromName) {
             String detectedStyle = ShaderPropertyReader.detectStyleFromCommonFile(path, commonLocation);
@@ -314,7 +314,7 @@ public class ShaderDetector {
             }
             log(0, "Shader style not in filename, detected " + detectedStyle + " from common.glsl");
         }
-        
+
         checkIfAlreadyInstalled(path, info, namingService);
     }
 
@@ -324,20 +324,20 @@ public class ShaderDetector {
     public void checkIfAlreadyInstalled(Path path, ShaderInfo info, ShaderNamingService namingService) {
         Path potentialInstallPath;
         boolean isDirectPatchedDir = path.getFileName().toString().contains(" + " + patchName + patchVersion);
-        
+
         if (isDirectPatchedDir) {
             // This is already a patched shader directory
             potentialInstallPath = path;
-            
+
             // Try to reconstruct the base file name
             String name = path.getFileName().toString();
             String baseName = name.substring(0, name.indexOf(" + " + patchName + patchVersion));
             Path potentialBaseZip = shaderpacks.resolve(baseName + ".zip");
-            
+
             // Set shader styles based on directory name
             info.styleReimagined = name.contains("Reimagined");
             info.styleUnbound = name.contains("Unbound");
-            
+
             if (Files.exists(potentialBaseZip)) {
                 info.baseFile = potentialBaseZip;
             }
@@ -462,19 +462,19 @@ public class ShaderDetector {
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderDetector] " + message);
     }
-    
+
     /**
      * Find the patched shader directory directly
      * Used when baseFile is null but we need to find the installed shader
      */
     public Path findPatchedShaderDirectory() {
         try {
-            DirectoryStream.Filter<Path> filter = path -> 
-                (Files.isDirectory(path) || 
-                (Files.isRegularFile(path) && path.toString().endsWith(".zip"))) && 
-                path.getFileName().toString().contains(brandName) && 
+            DirectoryStream.Filter<Path> filter = path ->
+                (Files.isDirectory(path) ||
+                (Files.isRegularFile(path) && path.toString().endsWith(".zip"))) &&
+                path.getFileName().toString().contains(brandName) &&
                 path.getFileName().toString().contains(" + " + patchName + patchVersion);
-                
+
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, filter)) {
                 for (Path path : stream) {
                     debugLog("Found patched shader directory: " + path.getFileName());
