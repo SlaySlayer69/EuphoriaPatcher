@@ -184,15 +184,20 @@ public class EuphoriaPatcher {
         doDisplayShaderInGameMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderInGameMessage", "true", "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris" +
                 "\nDefault = true"));
 
-        // Read debug logging from config first
         boolean configDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
                 "\nDefault = false"));
 
         // Check for JVM argument -DEPDebug=true/false which takes priority over config
         String jvmDebugArg = System.getProperty("ebugEP");
         if (jvmDebugArg != null) {
-            doDebugLogging = Boolean.parseBoolean(jvmDebugArg);
-            debugLog("Debug logging set via JVM argument -DebugEP=" + jvmDebugArg + " (overriding config value)");
+            String argLower = jvmDebugArg.trim().toLowerCase(Locale.ROOT);
+            if ("true".equals(argLower) || "false".equals(argLower)) {
+                doDebugLogging = Boolean.parseBoolean(argLower);
+                debugLog("Debug logging set via JVM argument -DebugEP=" + jvmDebugArg + " (overriding config value)");
+            } else {
+                log(2, 0, "Invalid value for -DebugEP: " + jvmDebugArg + ". Only 'true' or 'false' are accepted. Using config value.");
+                doDebugLogging = configDebugLogging;
+            }
         } else {
             doDebugLogging = configDebugLogging;
         }
