@@ -24,7 +24,7 @@ ext.skipCurseforge = false
 ext.skipModrinth = false
 
 allprojects {
-	group = 'mc.euphoria_patches'
+	group = 'com.euphoriapatches'
 	ext.versionProps = versionProps
 	ext.changelogFile = rootProject.ext.changelogFile
 	ext.publishTestRun = rootProject.ext.publishTestRun

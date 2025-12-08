@@ -19,7 +19,7 @@
   },
   "entrypoints": {
     "main": [
-      "mc.euphoria_patches.euphoria_patcher.fabric.ClientEuphoriaPatcher"
+      "com.euphoriapatches.euphoria_patcher.fabric.ClientEuphoriaPatcher"
     ]
   },
   "mixins": ["euphoria_patcher.mixins.json"],

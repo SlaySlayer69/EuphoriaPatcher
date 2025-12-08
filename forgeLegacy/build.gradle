@@ -107,9 +107,9 @@ shadowJar {
     }
 
     // Relocate packages to avoid conflicts
-    relocate 'io.sigpipe.jbsdiff', 'mc.euphoria_patches.shadow.io.sigpipe.jbsdiff'
-    relocate 'com.google.gson', 'mc.euphoria_patches.shadow.com.google.gson'
-    relocate 'org.apache.commons', 'mc.euphoria_patches.shadow.org.apache.commons'
+    relocate 'io.sigpipe.jbsdiff', 'com.euphoriapatches.shadow.io.sigpipe.jbsdiff'
+    relocate 'com.google.gson', 'com.euphoriapatches.shadow.com.google.gson'
+    relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
 
     // Exclude unnecessary files
     exclude 'META-INF/maven/**'

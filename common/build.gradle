@@ -77,7 +77,7 @@ assemble.dependsOn verifyPatchFile
 jar {
 	manifest {
 		attributes(
-			'Main-Class': 'mc.euphoria_patches.euphoria_patcher.GUIScreen'
+			'Main-Class': 'com.euphoriapatches.euphoria_patcher.GUIScreen'
 		)
 	}
 }
