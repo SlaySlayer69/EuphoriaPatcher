@@ -25,6 +25,10 @@ public class UpdateChecker {
         EuphoriaLogger.debugLog("[UpdateChecker] " + message);
     }
 
+    /**
+    * Checks if a new version of the mod is available.
+    * @return true if a new version is available, false otherwise
+    */
     public static boolean isUpdateAvailable() {
         try {
             checkForUpdates();
@@ -34,16 +38,30 @@ public class UpdateChecker {
         }
     }
 
+    /**
+    * Returns the new mod version if an update check has been performed.
+    * If no update check has been performed yet, it triggers one.
+    * @return The latest mod version as a String, formatted: "major.minor.patch"
+    */
     public static String getNewModVersion() {
         checkForUpdates();
         return NEW_MOD_VERSION;
     }
 
+    /**
+    * Returns the latest changelog if an update check has been performed.
+    * If no update check has been performed yet, it triggers one.
+    * @return The latest changelog as a String
+    */
     public static String getLatestChangelog() {
         checkForUpdates();
         return LATEST_CHANGELOG;
     }
 
+    /**
+     * Determines if the latest update is a major update based on the changelog content.
+     * @return true if the update is major, false if minor or undetermined
+     */
     public static boolean isMajorUpdate() {
         checkForUpdates();
         debugLog("Checking if update is major...");
@@ -73,6 +91,9 @@ public class UpdateChecker {
         return true;
     }
 
+    /**
+     * Check for updates by querying the Modrinth API
+     */
     public static void checkForUpdates() {
         if (UPDATE_CHECK_PERFORMED || !EuphoriaPatcher.doUpdateChecking) {
             debugLog("Update check skipped. Already performed: " + UPDATE_CHECK_PERFORMED + ", Update checking enabled: " + EuphoriaPatcher.doUpdateChecking);
