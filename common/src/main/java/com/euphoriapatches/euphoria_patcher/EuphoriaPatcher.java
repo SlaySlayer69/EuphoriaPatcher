@@ -317,9 +317,9 @@ public class EuphoriaPatcher {
     }
 
     private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
-        if (!UpdateChecker.isUpdateAvailable() || !UpdateChecker.isMajorUpdate()) {
-            return;
-        }
+        // if (!UpdateChecker.isUpdateAvailable() || !UpdateChecker.isMajorUpdate()) {
+        //     return;
+        // }
 
         boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
         boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
@@ -330,8 +330,17 @@ public class EuphoriaPatcher {
         }
 
         try {
+            // Shaders Properties Modifications
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null, "screen=<empty> <empty>", "screen=info19 info20");
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
+
+            // Iris Shader Folder Mod Description
+            // 4 \\\\ have to be used to represent 1 \ in the final JSON due to multiple layers of escaping
+            String shaderDescriptionText = "\\\\u00A7cComplementary Shaders " + VERSION.replace("_", "") + "\\\\u00A7r + \\\\u00A7dEuphoria Patches " + PATCH_VERSION.replace("_", "") + "\\\\u00A7r Complementary add-on by SpacEagle17 extending it with many more unique optional features and settings.\\\\nDev versions: \\\\u00A7dwww.euphoriapatches.com/support\\\\u00A7r";
+
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/pack.json", null,
+            "\"shaderDescription\":.*", "\"shaderDescription\": \"" + "\\\\u00A7aUPDATE AVAILABLE!\\\\u00A7r\\\\nCurrent version: \\\\u00A7c" + PATCH_VERSION.replace("_", "") + "\\\\u00A7r -> " + "New version: \\\\u00A7a" + "1.8.0" + "\\\\u00A7r\\\\n----------------\\\\n" + shaderDescriptionText + "\",");
+
         } catch (IOException e) {
             log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
         }
