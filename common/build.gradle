@@ -32,6 +32,21 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 8
 }
 
+// Replace buildDate placeholder in randomUtil.json during resource processing
+processResources {
+	def buildDate = new Date().format('yyyy-MM-dd')
+
+	filesMatching('randomUtil.json') {
+		filter { line ->
+			line.replace('"buildDate": "year-month-day"', "\"buildDate\": \"${buildDate}\"")
+		}
+	}
+
+	doLast {
+		println "✓ Set buildDate to: ${buildDate}"
+	}
+}
+
 // Task to verify patch file exists with correct version
 task verifyPatchFile {
 	doLast {

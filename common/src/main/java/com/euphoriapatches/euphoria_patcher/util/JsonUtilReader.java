@@ -74,4 +74,29 @@ public class JsonUtilReader {
     public static Set<String> getAllCategories() {
         return messageCategories.keySet();
     }
+
+    /**
+     * Get a string value from the JSON file
+     * @param key The key to retrieve
+     * @return The string value or null if not found
+     */
+    public static String getString(String key) {
+        debugLog("Getting string value for key: " + key);
+        try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
+             InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
+
+            JsonElement jsonElement = new JsonParser().parse(reader);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+            if (jsonObject.has(key)) {
+                JsonElement element = jsonObject.get(key);
+                if (element.isJsonPrimitive()) {
+                    return element.getAsString();
+                }
+            }
+        } catch (Exception e) {
+            debugLog("Error getting string value for key " + key + ": " + e.getMessage());
+        }
+        return null;
+    }
 }
