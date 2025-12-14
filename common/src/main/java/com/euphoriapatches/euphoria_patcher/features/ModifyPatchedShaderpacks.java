@@ -39,42 +39,18 @@ public class ModifyPatchedShaderpacks {
 
         processShaderPacks(patchedFile, styleUnbound, styleReimagined, shaderPack -> {
             try {
-                // Handle ZIP files or directories appropriately
+                // Only process directories - skip ZIP files to avoid corruption issues
                 if (Files.isRegularFile(shaderPack) && shaderPack.toString().endsWith(".zip")) {
-                    processZipShaderpack(shaderPack, targetPath, fileExtension, regexAndReplacements);
-                } else {
-                    processDirectoryShaderpack(shaderPack, targetPath, fileExtension, regexAndReplacements);
+                    debugLog("Skipping ZIP file modification (not supported): " + shaderPack.getFileName());
+                    return;
                 }
+                processDirectoryShaderpack(shaderPack, targetPath, fileExtension, regexAndReplacements);
             } catch (IOException e) {
                 EuphoriaPatcher.log(2, 0, "Error processing files in " + shaderPack.getFileName() + ": " + e.getMessage());
             }
         });
 
         debugLog("Finished modifying files for target path: " + targetPath);
-    }
-
-    private static void processZipShaderpack(Path zipFile, String targetPath, String fileExtension,
-                                          String... regexAndReplacements) throws IOException {
-        debugLog("Processing ZIP shader pack: " + zipFile.getFileName());
-        Path tempDir = Files.createTempDirectory("shader-patch-");
-        try {
-            // Extract ZIP using existing ArchiveOperations utility
-            Path extractedDir = ArchiveOperations.extract(zipFile, tempDir, "extracting shader pack");
-            if (extractedDir == null) {
-                EuphoriaPatcher.log(2, 0, "Failed to extract shader pack: " + zipFile.getFileName());
-                return;
-            }
-
-            // Process the extracted directory
-            processDirectoryShaderpack(extractedDir, targetPath, fileExtension, regexAndReplacements);
-
-            // Archive the modified directory back to the original ZIP
-            if (ArchiveOperations.archive(extractedDir, zipFile) == null) {
-                EuphoriaPatcher.log(2, 0, "Failed to update shader pack: " + zipFile.getFileName());
-            }
-        } finally {
-            ArchiveOperations.deleteTempDirectory(tempDir);
-        }
     }
 
     private static void processDirectoryShaderpack(Path shaderPack, String targetPath, String fileExtension,

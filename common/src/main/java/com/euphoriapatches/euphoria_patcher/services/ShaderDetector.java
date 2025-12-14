@@ -424,25 +424,12 @@ public class ShaderDetector {
      */
     private boolean checkForNewerDevVersion(ShaderInfo info) {
         try {
-            // Pattern to match numbered dev version files: Comp.*EuphoriaPatches_(version)-dev(number).zip
             Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
-            // Pattern to match date-based earlyDev files: EuphoriaPatches_earlyDev_(yyyy-mm-dd).zip
             Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
 
-            // Get current patch version without underscore (e.g., "1.7.8")
             String currentVersion = patchVersion.replace("_", "");
-
-            // Get build date from JSON and convert to integer for comparison
             String buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
-            Integer currentBuildDate = null;
-            if (buildDateStr != null && !buildDateStr.equals("year-month-day")) {
-                try {
-                    currentBuildDate = Integer.parseInt(buildDateStr.replace("-", ""));
-                    debugLog("Current build date: " + buildDateStr + " (" + currentBuildDate + ")");
-                } catch (NumberFormatException e) {
-                    debugLog("Could not parse build date: " + buildDateStr);
-                }
-            }
+            Integer currentBuildDate = parseBuildDate(buildDateStr);
 
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
                 for (Path path : stream) {
@@ -452,62 +439,83 @@ public class ShaderDetector {
 
                     String fileName = path.getFileName().toString();
 
-                    // Check numbered dev pattern
-                    Matcher numberedMatcher = numberedDevPattern.matcher(fileName);
-                    if (numberedMatcher.matches()) {
-                        String devVersion = numberedMatcher.group(1);
-                        debugLog("Found numbered dev version file: " + fileName + " with version: " + devVersion);
-
-                        // Compare versions
-                        int comparison = VersionComparator.compareVersionStrings(devVersion, currentVersion);
-
-                        if (comparison > 0) {
-                            // Dev version is newer
-                            debugLog("Dev version " + devVersion + " is newer than current patch version " + currentVersion);
-                            info.isAlreadyInstalled = true;
-                            info.installedDir = path;
-
-                            log(0, "Your dev version: " + devVersion + " vs current public release version: " + currentVersion);
-                            log(0, "Your dev version is more recent than the last public release. Enjoy!");
-                            log(0, "Thanks for the support! <3");
-                            return true;
-                        } else {
-                            debugLog("Dev version " + devVersion + " is older or equal to current patch version " + currentVersion);
-                        }
+                    if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion, info, path)) {
+                        return true;
                     }
 
-                    // Check earlyDev date pattern
-                    Matcher earlyDevMatcher = earlyDevPattern.matcher(fileName);
-                    if (earlyDevMatcher.matches() && currentBuildDate != null) {
-                        String devDateStr = earlyDevMatcher.group(1);
-                        debugLog("Found earlyDev file: " + fileName + " with date: " + devDateStr);
-
-                        try {
-                            // Convert date to integer (e.g., "2025-12-05" -> 20251205)
-                            int devDate = Integer.parseInt(devDateStr.replace("-", ""));
-                            debugLog("Comparing dates: earlyDev=" + devDate + " vs current=" + currentBuildDate);
-
-                            if (devDate > currentBuildDate) {
-                                // earlyDev version is newer
-                                debugLog("EarlyDev date " + devDateStr + " is newer than current build date");
-                                info.isAlreadyInstalled = true;
-                                info.installedDir = path;
-
-                                log(0, "Your earlyDev version date: " + devDateStr + " vs current build date: " + buildDateStr);
-                                log(0, "Your earlyDev version is more recent than the last public release. Enjoy!");
-                                log(0, "Thanks for the support! <3");
-                                return true;
-                            } else {
-                                debugLog("EarlyDev date " + devDateStr + " is older or equal to current build date");
-                            }
-                        } catch (NumberFormatException e) {
-                            debugLog("Could not parse earlyDev date: " + devDateStr);
-                        }
+                    if (checkEarlyDevVersion(fileName, earlyDevPattern, currentBuildDate, buildDateStr, info, path)) {
+                        return true;
                     }
                 }
             }
         } catch (IOException e) {
             debugLog("Error checking for dev versions: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private Integer parseBuildDate(String buildDateStr) {
+        if (buildDateStr != null && !buildDateStr.equals("year-month-day")) {
+            try {
+                Integer date = Integer.parseInt(buildDateStr.replace("-", ""));
+                debugLog("Current build date: " + buildDateStr + " (" + date + ")");
+                return date;
+            } catch (NumberFormatException e) {
+                debugLog("Could not parse build date: " + buildDateStr);
+            }
+        }
+        return null;
+    }
+
+    private boolean checkNumberedDevVersion(String fileName, Pattern pattern, String currentVersion, ShaderInfo info, Path path) {
+        Matcher matcher = pattern.matcher(fileName);
+        if (matcher.matches()) {
+            String devVersion = matcher.group(1);
+            debugLog("Found numbered dev version file: " + fileName + " with version: " + devVersion);
+
+            int comparison = VersionComparator.compareVersionStrings(devVersion, currentVersion);
+
+            if (comparison > 0) {
+                debugLog("Dev version " + devVersion + " is newer than current patch version " + currentVersion);
+                info.isAlreadyInstalled = true;
+                info.installedDir = path;
+
+                log(0, "Your dev version: " + devVersion + " vs current public release version: " + currentVersion);
+                log(0, "Your dev version is more recent than the last public release. Enjoy!");
+                log(0, "Thanks for the support! <3");
+                return true;
+            } else {
+                debugLog("Dev version " + devVersion + " is older or equal to current patch version " + currentVersion);
+            }
+        }
+        return false;
+    }
+
+    private boolean checkEarlyDevVersion(String fileName, Pattern pattern, Integer currentBuildDate, String buildDateStr, ShaderInfo info, Path path) {
+        Matcher matcher = pattern.matcher(fileName);
+        if (matcher.matches() && currentBuildDate != null) {
+            String devDateStr = matcher.group(1);
+            debugLog("Found earlyDev file: " + fileName + " with date: " + devDateStr);
+
+            try {
+                int devDate = Integer.parseInt(devDateStr.replace("-", ""));
+                debugLog("Comparing dates: earlyDev=" + devDate + " vs current=" + currentBuildDate);
+
+                if (devDate > currentBuildDate) {
+                    debugLog("EarlyDev date " + devDateStr + " is newer than current build date");
+                    info.isAlreadyInstalled = true;
+                    info.installedDir = path;
+
+                    log(0, "Your earlyDev version date: " + devDateStr + " vs current build date: " + buildDateStr);
+                    log(0, "Your earlyDev version is more recent than the last public release. Enjoy!");
+                    log(0, "Thanks for the support! <3");
+                    return true;
+                } else {
+                    debugLog("EarlyDev date " + devDateStr + " is older or equal to current build date");
+                }
+            } catch (NumberFormatException e) {
+                debugLog("Could not parse earlyDev date: " + devDateStr);
+            }
         }
         return false;
     }
