@@ -527,8 +527,9 @@ public class ShaderpacksWatcher {
                         EuphoriaPatcher.log(3, "The " + fileName + " shaderpack which just got added did not pass the byte size verification for " +
                                 EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION +
                                 ". It may be an incorrect version or modified.");
-                        EuphoriaPatcher.log(3, "Please download the correct and official version from " +
-                                EuphoriaPatcher.DOWNLOAD_URL);
+                        EuphoriaPatcher.log(3, "Please download the correct and official version from " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+                        EuphoriaPatcher.log(3, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+
                     }
 
                     // If valid by byte size, rename the file to the correct format

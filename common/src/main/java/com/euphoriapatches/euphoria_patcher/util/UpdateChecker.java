@@ -118,7 +118,7 @@ public class UpdateChecker {
                 debugLog("New version available!");
 
                 EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
-                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
+                EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Download it from Modrinth: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
                 EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
             } else {
                 debugLog("Mod is up to date");

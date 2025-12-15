@@ -132,7 +132,7 @@ public class ErrorShaderGenerator {
         }
 
         String shaderName = currentShaderPath.getFileName().toString();
-        return shaderName.contains("EuphoriaPatches Error Shader");
+        return shaderName.equals("_0EuphoriaPatches_ErrorShader");
     }
 
     /**

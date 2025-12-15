@@ -30,7 +30,7 @@ public class EuphoriaLogger {
         }
     }
 
-    private static final String ERROR_LOG_FILE_NAME = "_0EUPHORIA_PATCHES_ERROR_LOGS.txt";
+    public static final String ERROR_LOG_FILE_NAME = "_0EUPHORIA_PATCHES_ERROR_LOGS.txt";
     private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);
     private boolean isSodiumInstalled;
     private boolean shouldCreateErrorLog = true;

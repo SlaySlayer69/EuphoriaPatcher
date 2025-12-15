@@ -21,7 +21,8 @@ public class EuphoriaPatcher {
     public static final String VERSION = PatchInfo.VERSION;
     public static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
 
-    public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
+    public static final String COMP_DOWNLOAD_URL = "https://www.complementary.dev/";
+    public static final String EP_DOWNLOAD_URL = "https://euphoriapatches.com/download";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
     public static final String LANG_LOCATION = "shaders/lang";
     public static final String SHADERS_PROPERTIES_LOCATION = "shaders/shaders.properties";
@@ -418,7 +419,8 @@ public class EuphoriaPatcher {
             log(3, 8, "SOLUTION: Download " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
         }
 
-        log(3, 8, "Download from: " + DOWNLOAD_URL);
+        log(3, 8, "Download from: " + COMP_DOWNLOAD_URL);
+        log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
 
         // Start watching for the shader to be added
         startShaderpacksWatcher();
