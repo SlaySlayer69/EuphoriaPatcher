@@ -32,6 +32,7 @@ allprojects {
 
 // Create a task to validate the changelog at root level
 tasks.register('validateChangelog') {
+    outputs.upToDateWhen {false}
     doLast {
         def baseVersion = versionProps.getProperty('mod_version').split("-")[0]
         def compVersion = versionProps.getProperty('mod_version').split("-")[1]
@@ -46,6 +47,8 @@ tasks.register('validateChangelog') {
         if (!changelogContent.contains(baseVersion)) {
             throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")
         }
+
+        println "\u001B[32m✓ Changelog validated for version: ${baseVersion}\u001B[0m"
     }
 }
 

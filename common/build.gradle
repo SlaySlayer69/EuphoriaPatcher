@@ -45,7 +45,7 @@ processResources {
 	}
 
 	doLast {
-		println "✓ Set buildDate to: ${buildDate}"
+		println "\u001B[32m✓ Set buildDate to: ${buildDate}\u001B[0m"
 	}
 }
 
@@ -70,7 +70,7 @@ task verifyPatchFile {
 			}
 		}
 
-		println "Verifying patch file: ${expectedPatchFile}"
+		println "Searching for patch file... expected patch file: ${expectedPatchFile}"
 
 		if (!patchFilePath.exists()) {
 			throw new GradleException("""
@@ -82,7 +82,7 @@ task verifyPatchFile {
 			""".stripIndent().trim())
 		}
 
-		println "✓ Patch file verified: ${expectedPatchFile}"
+		println "\u001B[32m✓ Patch file found: ${expectedPatchFile}\u001B[0m"
 	}
 }
 
