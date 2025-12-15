@@ -34,6 +34,8 @@ tasks.withType(JavaCompile).configureEach {
 
 // Replace buildDate placeholder in randomUtil.json during resource processing
 processResources {
+	outputs.upToDateWhen {false} // Always run this task
+
 	def buildDate = new Date().format('yyyy-MM-dd')
 
 	filesMatching('randomUtil.json') {
@@ -49,6 +51,7 @@ processResources {
 
 // Task to verify patch file exists with correct version
 task verifyPatchFile {
+	outputs.upToDateWhen {false} // Always run this task
 	doLast {
 		// Get version from root project's version.properties
 		def versionProps = rootProject.ext.versionProps
