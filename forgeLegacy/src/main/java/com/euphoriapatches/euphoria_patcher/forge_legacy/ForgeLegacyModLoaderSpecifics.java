@@ -32,7 +32,7 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     public boolean serverCheck() {
         MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
         if (server != null && server.isDedicatedServer()) {
-            System.err.println("The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
             return true;
         }
         return false;

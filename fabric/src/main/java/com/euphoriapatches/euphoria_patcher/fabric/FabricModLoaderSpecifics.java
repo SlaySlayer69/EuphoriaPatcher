@@ -33,7 +33,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public boolean serverCheck() {
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
-            System.err.println("[EuphoriaPatcher] The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
             return true;
         }
         return false;

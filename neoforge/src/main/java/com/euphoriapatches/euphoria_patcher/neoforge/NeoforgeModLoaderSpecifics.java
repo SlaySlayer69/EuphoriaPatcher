@@ -38,13 +38,13 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             java.lang.reflect.Method getDistMethod = FMLEnvironment.class.getMethod("getDist");
             Object dist = getDistMethod.invoke(null);
             if (dist == Dist.DEDICATED_SERVER) {
-                System.err.println("The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+                System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
                 return true;
             }
         } catch (NoSuchMethodException e) {
             // Fallback for older NeoForge versions
             if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-                System.err.println("The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+                System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
                 return true;
             }
         } catch (Throwable t) {
