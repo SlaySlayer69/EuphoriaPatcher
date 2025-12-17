@@ -119,7 +119,7 @@ public class DevPatchGenerator {
 
             @Override
             public Path getConfigDirectory() {
-                return INTELLIJ_BASE_DIR.resolve("config");
+                return INTELLIJ_BASE_DIR.resolve("dummy");
             }
 
             @Override

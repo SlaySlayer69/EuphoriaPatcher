@@ -60,14 +60,34 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
 
         if (minecraft == null || minecraft.level == null) {
             debugLog("Minecraft or level is null, defaulting to 'overworld'");
-            return "overworld"; // Default if world isn't loaded
+            return "overworld";
         }
 
-        // Get current dimension ID
-        ResourceLocation dimensionId = minecraft.level.dimension().location();
-        String currentDimensionId = dimensionId.toString();
-        debugLog("Current dimension ID: " + currentDimensionId);
+        // Get current dimension ID - handle API changes in 1.21.11
+        String currentDimensionId;
+        try {
+            // Try to call location() via reflection (pre-1.21.11)
+            java.lang.reflect.Method locationMethod = minecraft.level.dimension().getClass().getMethod("location");
+            Object locationResult = locationMethod.invoke(minecraft.level.dimension());
+            currentDimensionId = locationResult.toString();
+        } catch (NoSuchMethodException e) {
+            // 1.21.11+: location() doesn't exist, parse from toString()
+            debugLog("location() method not available, parsing dimension from toString()");
+            String dimensionString = minecraft.level.dimension().toString();
+            debugLog("Dimension toString(): " + dimensionString);
+            // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
+            if (dimensionString.contains("/")) {
+                currentDimensionId = dimensionString.substring(dimensionString.indexOf("/") + 1)
+                    .replace("]", "").trim();
+            } else {
+                currentDimensionId = "minecraft:overworld";
+            }
+        } catch (Exception e) {
+            debugLog("Error getting dimension: " + e.getMessage());
+            currentDimensionId = "minecraft:overworld";
+        }
 
+        debugLog("Current dimension ID: " + currentDimensionId);
         return Dimensions.getCurrentDimension(currentDimensionId);
     }
 

@@ -32,9 +32,13 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public boolean serverCheck() {
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
-            System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
-            return true;
+        try {
+            if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
+                System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
+                return true;
+            }
+        } catch (Throwable t) {
+            // Any error, assume not a server
         }
         return false;
     }
@@ -48,11 +52,16 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Client or world is null, defaulting to 'overworld'");
             return "overworld"; // Default if world isn't loaded
         }
-
-        // Get current dimension ID
-        Identifier dimensionId = client.world.getRegistryKey().getValue();
-        String currentDimensionId = dimensionId.toString();
-        debugLog("Current dimension ID: " + currentDimensionId);
+        String currentDimensionId;
+        try {
+            // Get current dimension ID
+            Identifier dimensionId = client.world.getRegistryKey().getValue();
+            currentDimensionId = dimensionId.toString();
+            debugLog("Current dimension ID: " + currentDimensionId);
+        } catch (Exception e) {
+            debugLog("Error getting dimension: " + e.getMessage());
+            currentDimensionId = "minecraft:overworld";
+        }
 
         return Dimensions.getCurrentDimension(currentDimensionId);
     }

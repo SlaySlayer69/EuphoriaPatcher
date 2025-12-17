@@ -30,30 +30,20 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public boolean serverCheck() {
-        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
-        if (server != null && server.isDedicatedServer()) {
-            System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
-            return true;
+        try {
+            MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+            if (server != null && server.isDedicatedServer()) {
+                System.err.println("[EuphoriaPatcher] Server Detected! The Euphoria Patcher Mod disables itself gracefully on a server. Disabling...");
+                return true;
+            }
+        } catch (Throwable t) {
+            // Any error, assume not a server
         }
         return false;
     }
 
     @Override
     public String getCurrentDimension() {
-        // debugLog("Getting current dimension");
-        // Minecraft minecraft = Minecraft.getInstance();
-
-        // if (minecraft == null || minecraft.level == null) {
-        //     debugLog("Minecraft or level is null, defaulting to 'overworld'");
-        //     return "overworld"; // Default if world isn't loaded
-        // }
-
-        // // Get current dimension ID
-        // ResourceLocation dimensionId = minecraft.level.dimension().location();
-        // String currentDimensionId = dimensionId.toString();
-        // debugLog("Current dimension ID: " + currentDimensionId);
-
-        // return Dimensions.getCurrentDimension(currentDimensionId);
         return "overworld";
     }
 
