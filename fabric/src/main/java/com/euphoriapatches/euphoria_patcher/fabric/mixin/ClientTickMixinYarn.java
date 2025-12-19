@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
+import net.minecraft.client.MinecraftClient;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -9,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Debug(export = true)
-@Mixin(targets = "net.minecraft.client.Minecraft", remap = false)
+@Mixin(MinecraftClient.class)
 @Pseudo
-public class ClientTickMixin {
+public class ClientTickMixinYarn {
     @Inject(
             method = {
                     "tick",

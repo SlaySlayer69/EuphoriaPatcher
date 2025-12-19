@@ -55,40 +55,32 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        debugLog("Getting current dimension");
-        Minecraft minecraft = Minecraft.getInstance();
-
-        if (minecraft == null || minecraft.level == null) {
-            debugLog("Minecraft or level is null, defaulting to 'overworld'");
-            return "overworld";
-        }
-
-        // Get current dimension ID - handle API changes in 1.21.11
-        String currentDimensionId;
         try {
-            // Try to call location() via reflection (pre-1.21.11)
-            java.lang.reflect.Method locationMethod = minecraft.level.dimension().getClass().getMethod("location");
-            Object locationResult = locationMethod.invoke(minecraft.level.dimension());
-            currentDimensionId = locationResult.toString();
-        } catch (NoSuchMethodException e) {
-            // 1.21.11+: location() doesn't exist, parse from toString()
-            debugLog("location() method not available, parsing dimension from toString()");
+            debugLog("Getting current dimension");
+            Minecraft minecraft = Minecraft.getInstance();
+
+            if (minecraft.level == null) {
+                debugLog("Minecraft or level is null, defaulting to 'overworld'");
+                return "overworld";
+            }
+
+            String currentDimensionId;
             String dimensionString = minecraft.level.dimension().toString();
             debugLog("Dimension toString(): " + dimensionString);
             // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
             if (dimensionString.contains("/")) {
                 currentDimensionId = dimensionString.substring(dimensionString.indexOf("/") + 1)
-                    .replace("]", "").trim();
+                        .replace("]", "").trim();
             } else {
                 currentDimensionId = "minecraft:overworld";
             }
-        } catch (Exception e) {
-            debugLog("Error getting dimension: " + e.getMessage());
-            currentDimensionId = "minecraft:overworld";
-        }
 
-        debugLog("Current dimension ID: " + currentDimensionId);
-        return Dimensions.getCurrentDimension(currentDimensionId);
+            debugLog("Current dimension ID: " + currentDimensionId);
+            return Dimensions.getCurrentDimension(currentDimensionId);
+        } catch (Throwable t) {
+            debugLog("Unexpected error getting current dimension: " + t.getMessage());
+            return "overworld";
+        }
     }
 
     private void debugLog(String message) {

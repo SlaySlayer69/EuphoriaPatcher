@@ -10,6 +10,8 @@ import java.util.Set;
 public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.gl.shader.StandardMacros";
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
+    public static final String MINECRAFT_CLIENT_CLASS = "net.minecraft.client.Minecraft";
+    public static final String MINECRAFT_CLIENT_YARN_CLASS = "net.minecraft.class_310";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -29,6 +31,24 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisModernStandardMacrosMixin")) {
             return checkClassExists(MODERN_IRIS_CLASS);
+        }
+
+        // New Minecraft class (net.minecraft.client.Minecraft) - for newer versions
+        if (mixinClassName.contains("ClientTickMixin") && !mixinClassName.contains("Yarn")) {
+            return checkClassExists(MINECRAFT_CLIENT_CLASS);
+        }
+
+        if (mixinClassName.contains("ReloadShadersOnDimensionChangeMixin") && !mixinClassName.contains("Yarn")) {
+            return checkClassExists(MINECRAFT_CLIENT_CLASS);
+        }
+
+        // Old Yarn mappings (net.minecraft.client.MinecraftClient) - for older versions
+        if (mixinClassName.contains("ClientTickMixinYarn")) {
+            return checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
+        }
+
+        if (mixinClassName.contains("ReloadShadersOnDimensionChangeMixinYarn")) {
+            return checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
         }
 
         // Apply other mixins by default

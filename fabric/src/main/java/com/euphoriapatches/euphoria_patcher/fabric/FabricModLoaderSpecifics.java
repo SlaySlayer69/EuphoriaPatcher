@@ -14,6 +14,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     private final Path shaderpacksPath;
     private final Path configDirectory;
+    private static Boolean useYarnMappings = null; // null = not yet determined
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -45,25 +46,94 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        debugLog("Getting current dimension");
-        MinecraftClient client = MinecraftClient.getInstance();
-
-        if (client == null || client.world == null) {
-            debugLog("Client or world is null, defaulting to 'overworld'");
-            return "overworld"; // Default if world isn't loaded
+        // Use cached result if available
+        if (useYarnMappings != null) {
+            if (useYarnMappings) {
+                return getCurrentDimensionYarn();
+            } else {
+                return getCurrentDimensionReflection();
+            }
         }
-        String currentDimensionId;
+
+        // First time - try Yarn first
         try {
-            // Get current dimension ID
-            Identifier dimensionId = client.world.getRegistryKey().getValue();
-            currentDimensionId = dimensionId.toString();
-            debugLog("Current dimension ID: " + currentDimensionId);
-        } catch (Exception e) {
-            debugLog("Error getting dimension: " + e.getMessage());
-            currentDimensionId = "minecraft:overworld";
+            String result = getCurrentDimensionYarn();
+            useYarnMappings = true;
+            debugLog("Using Yarn mappings");
+            return result;
+        } catch (Throwable t) {
+            debugLog("Yarn method failed, trying reflection: " + t.getMessage());
+            try {
+                String result = getCurrentDimensionReflection();
+                useYarnMappings = false;
+                debugLog("Using reflection");
+                return result;
+            } catch (Throwable t2) {
+                debugLog("Reflection method also failed: " + t2.getMessage());
+                return "overworld";
+            }
         }
+    }
 
-        return Dimensions.getCurrentDimension(currentDimensionId);
+    private String getCurrentDimensionYarn() {
+        debugLog("Getting current dimension (Yarn)");
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+
+            if (client == null || client.world == null) {
+                debugLog("Client or world is null, defaulting to 'overworld'");
+                return "overworld";
+            }
+
+            Identifier dimensionId = client.world.getRegistryKey().getValue();
+            String currentDimensionId = dimensionId.toString();
+            debugLog("Current dimension ID: " + currentDimensionId);
+
+            return Dimensions.getCurrentDimension(currentDimensionId);
+        } catch (Exception e) {
+            debugLog("Error in Yarn method: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getCurrentDimensionReflection() {
+        debugLog("Getting current dimension (Reflection for net.minecraft.client.Minecraft)");
+
+        try {
+            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+            Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
+
+            if (mcInstance == null) {
+                debugLog("Minecraft instance is null, defaulting to 'overworld'");
+                return "overworld";
+            }
+
+            Object level = mcClass.getField("level").get(mcInstance);
+            if (level == null) {
+                debugLog("Level is null, defaulting to 'overworld'");
+                return "overworld";
+            }
+
+            Class<?> levelClass = level.getClass();
+            Object dimension = levelClass.getMethod("dimension").invoke(level);
+            String dimensionString = dimension.toString();
+            debugLog("Dimension toString(): " + dimensionString);
+
+            // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
+            String currentDimensionId;
+            if (dimensionString.contains("/")) {
+                currentDimensionId = dimensionString.substring(dimensionString.indexOf("/") + 1)
+                        .replace("]", "").trim();
+            } else {
+                currentDimensionId = "minecraft:overworld";
+            }
+
+            debugLog("Current dimension ID (parsed): " + currentDimensionId);
+            return Dimensions.getCurrentDimension(currentDimensionId);
+        } catch (Exception e) {
+            debugLog("Error in reflection method: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private void debugLog(String message) {

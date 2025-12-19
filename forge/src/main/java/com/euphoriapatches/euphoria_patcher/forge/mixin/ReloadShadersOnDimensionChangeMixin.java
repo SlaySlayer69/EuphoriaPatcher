@@ -19,6 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ReloadShadersOnDimensionChangeMixin {
     @Unique
     private static String euphoriaPatcher$lastDimension = null;
+    @Unique
+    private static String euphoriaPatcher$getInstanceMethod = null; // Cached method name
 
     @Unique
     private static void euphoriaPatcher$debugLog(String message) {
@@ -61,10 +63,33 @@ public class ReloadShadersOnDimensionChangeMixin {
 
             // Use IrisReloadManager to handle the reload
             try {
-                Minecraft.getInstance().execute(() -> {
-                    IrisReloadManager.findAndScheduleReload();
-                    euphoriaPatcher$debugLog("Scheduled shader reload after dimension change");
-                });
+                Class<?> minecraftClass = Minecraft.class;
+                Object mcInstance = null;
+
+                // Use cached method if available
+                if (euphoriaPatcher$getInstanceMethod != null) {
+                    mcInstance = minecraftClass.getMethod(euphoriaPatcher$getInstanceMethod).invoke(null);
+                } else {
+                    // First time - find which method works
+                    String[] getInstanceMethods = {"m_91087_", "getInstance"};
+                    for (String methodName : getInstanceMethods) {
+                        try {
+                            mcInstance = minecraftClass.getMethod(methodName).invoke(null);
+                            euphoriaPatcher$getInstanceMethod = methodName; // Cache for next time
+                            euphoriaPatcher$debugLog("Cached getInstance method: " + methodName);
+                            break;
+                        } catch (NoSuchMethodException e) {
+                            // Try next method
+                        }
+                    }
+                }
+
+                if (mcInstance != null) {
+                    minecraftClass.getMethod("execute", Runnable.class).invoke(mcInstance, (Runnable) () -> {
+                        IrisReloadManager.findAndScheduleReload();
+                        euphoriaPatcher$debugLog("Scheduled shader reload after dimension change");
+                    });
+                }
             } catch (Exception e) {
                 EuphoriaPatcher.log(2, 0, "Error scheduling shader reload: " + e.getMessage());
             }
