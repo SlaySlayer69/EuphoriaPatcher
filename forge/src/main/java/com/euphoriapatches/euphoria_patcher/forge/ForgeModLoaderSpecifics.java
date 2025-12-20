@@ -10,11 +10,13 @@ import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.nio.file.Path;
 
+
 public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     private final Path shaderpacksPath;
     private final Path configDirectory;
-    private static Boolean useObfuscatedMappings = null; // null = not yet determined
+    // 0 = unknown, 1 = obfuscated, 2 = modern, 3 = pre-1.16.5
+    private static int mappingBranch = 0;
 
     public ForgeModLoaderSpecifics() {
         this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
@@ -47,30 +49,38 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public String getCurrentDimension() {
         // Use cached result if available
-        if (useObfuscatedMappings != null) {
-            if (useObfuscatedMappings) {
-                return getCurrentDimensionObfuscated();
-            } else {
-                return getCurrentDimensionModern();
-            }
+        if (mappingBranch == 1) {
+            return getCurrentDimensionObfuscated();
+        } else if (mappingBranch == 2) {
+            return getCurrentDimensionModern();
+        } else if (mappingBranch == 3) {
+            return getCurrentDimensionObfuscatedPre11605();
         }
 
         // First time - try obfuscated first
         try {
             String result = getCurrentDimensionObfuscated();
-            useObfuscatedMappings = true;
+            mappingBranch = 1;
             debugLog("Using obfuscated mappings");
             return result;
         } catch (Throwable t) {
             debugLog("Obfuscated method failed, trying modern: " + t.getMessage());
             try {
                 String result = getCurrentDimensionModern();
-                useObfuscatedMappings = false;
+                mappingBranch = 2;
                 debugLog("Using modern mappings");
                 return result;
             } catch (Throwable t2) {
-                debugLog("Modern method also failed: " + t2.getMessage());
-                return "overworld";
+                try {
+                    debugLog("Modern method also failed, trying obfuscated pre-1.16.5: " + t2.getMessage());
+                    String result = getCurrentDimensionObfuscatedPre11605();
+                    mappingBranch = 3;
+                    debugLog("Using obfuscated pre-1.16.5 mappings");
+                    return result;
+                } catch (Throwable t3) {
+                    debugLog("ObfuscatedPre11605 method also failed: " + t2.getMessage());
+                    return "overworld";
+                }
             }
         }
     }
@@ -83,6 +93,10 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             Class<?> minecraftClass = Minecraft.class;
             Object minecraft = minecraftClass.getMethod("m_91087_").invoke(null);
             debugLog("Got Minecraft instance using m_91087_");
+
+            if (minecraft == null) {
+                return "overworld";
+            }
 
             // Get level field using obfuscated name
             Object level = minecraft.getClass().getField("f_91073_").get(minecraft);
@@ -119,6 +133,10 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
             debugLog("Got Minecraft instance using getInstance");
 
+            if (minecraft == null) {
+                return "overworld";
+            }
+
             // Get level field using modern name
             Object level = minecraft.getClass().getField("level").get(minecraft);
             debugLog("Got level field");
@@ -148,6 +166,45 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in modern method: " + e.getClass().getName() + " - " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+     private String getCurrentDimensionObfuscatedPre11605() {
+        debugLog("Getting current dimension (obfuscated pre-1.16.5)");
+
+        try {
+            // Get Minecraft instance using obfuscated method
+            Class<?> minecraftClass = Minecraft.class;
+            Object minecraft = minecraftClass.getMethod("func_71410_x").invoke(null);
+            debugLog("Got Minecraft instance using func_71410_x");
+
+            if (minecraft == null) {
+                return "overworld";
+            }
+
+            // Get world field using obfuscated name
+            Object world = minecraft.getClass().getField("field_71441_e").get(minecraft);
+            debugLog("Got world field field_71441_e " + world.toString());
+
+            if (world == null) {
+                return "overworld";
+            }
+
+            // Get dimension key using obfuscated method (1.16.5: func_234923_W_ = getDimensionKey)
+            Object dimensionKey = world.getClass().getMethod("func_234923_W_").invoke(world);
+            debugLog("Got dimension key using func_234923_W_ " + dimensionKey.toString());
+
+            // Get location from dimension key (1.16.5: func_240901_a_ = getLocation)
+            Object location = dimensionKey.getClass().getMethod("func_240901_a_").invoke(dimensionKey);
+            debugLog("Got location using func_240901_a_ " + location.toString());
+
+            String currentDimensionId = location.toString();
+            debugLog("Dimension ID: " + currentDimensionId);
+
+            return Dimensions.getCurrentDimension(currentDimensionId);
+        } catch (Exception e) {
+            debugLog("Error in obfuscated pre-1.16.5 method: " + e.getClass().getName() + " - " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

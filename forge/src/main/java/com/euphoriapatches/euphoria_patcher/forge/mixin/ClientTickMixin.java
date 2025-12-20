@@ -19,7 +19,8 @@ public class ClientTickMixin {
                     "runTick",
                     "runTick()V",
                     "m_91398_()V",
-                    "func_195542_b(Z)V"
+                    "func_195542_b(Z)V",
+                    "func_238201_a_(ZLnet/minecraft/profiler/LongTickDetector;)V"
             },
             at = @At("HEAD"),
             require = 0, remap = false)

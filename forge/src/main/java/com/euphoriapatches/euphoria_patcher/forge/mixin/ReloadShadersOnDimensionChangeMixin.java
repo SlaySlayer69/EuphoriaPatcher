@@ -71,7 +71,7 @@ public class ReloadShadersOnDimensionChangeMixin {
                     mcInstance = minecraftClass.getMethod(euphoriaPatcher$getInstanceMethod).invoke(null);
                 } else {
                     // First time - find which method works
-                    String[] getInstanceMethods = {"m_91087_", "getInstance"};
+                    String[] getInstanceMethods = {"m_91087_", "getInstance", "func_71410_x"};
                     for (String methodName : getInstanceMethods) {
                         try {
                             mcInstance = minecraftClass.getMethod(methodName).invoke(null);
