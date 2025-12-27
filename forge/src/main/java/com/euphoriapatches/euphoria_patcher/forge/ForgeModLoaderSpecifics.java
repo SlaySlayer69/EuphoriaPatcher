@@ -29,6 +29,11 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public String getInstanceName() {
+        return ModLoaderSpecifics.FORGE;
+    }
+
+    @Override
     public Path getConfigDirectory() {
         return configDirectory;
     }
@@ -48,7 +53,9 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        // Use cached result if available
+        if (mappingBranch == 0) discoverMappingBranch();
+
+        // Use cached result
         if (mappingBranch == 1) {
             return getCurrentDimensionObfuscated();
         } else if (mappingBranch == 2) {
@@ -56,32 +63,158 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         } else if (mappingBranch == 3) {
             return getCurrentDimensionObfuscatedPre11605();
         }
+        return "overworld";
+    }
 
-        // First time - try obfuscated first
+    @Override
+    public boolean setClipboard(String str) {
+        if (mappingBranch == 0) discoverMappingBranch();
+
+        // Use cached result
+        if (mappingBranch == 1) {
+            return setClipboardObfuscated(str);
+        } else if (mappingBranch == 2) {
+            return setClipboardModern(str);
+        } else if (mappingBranch == 3) {
+            return setClipboardObfuscatedPre11605(str);
+        }
+
+        return false;
+    }
+
+    private boolean setClipboardObfuscated(String str) {
         try {
-            String result = getCurrentDimensionObfuscated();
+            Class<?> minecraftClass = Minecraft.class;
+            Object minecraft = minecraftClass.getMethod("m_91087_").invoke(null);
+
+            if (minecraft == null) {
+                debugLog("Minecraft instance is null, cannot set clipboard");
+                return false;
+            }
+
+            Object window = minecraftClass.getMethod("m_91268_").invoke(minecraft);
+            debugLog("Accessed window via m_91268_ method");
+
+            if (window == null) {
+                debugLog("Window is null, cannot set clipboard");
+                return false;
+            }
+
+            Class<?> windowClass = window.getClass();
+            long windowHandle = (long) windowClass.getMethod("m_85439_").invoke(window);
+                debugLog("Accessed window handle via m_85439_ method");
+
+            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            return true;
+        } catch (Exception e) {
+            debugLog("Error setting clipboard (obfuscated): " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean setClipboardModern(String str) {
+        try {
+            Class<?> minecraftClass = Minecraft.class;
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+
+            if (minecraft == null) {
+                debugLog("Minecraft instance is null, cannot set clipboard");
+                return false;
+            }
+
+            Object window = minecraftClass.getMethod("getWindow").invoke(minecraft);
+
+            if (window == null) {
+                debugLog("Window is null, cannot set clipboard");
+                return false;
+            }
+
+            Class<?> windowClass = window.getClass();
+            long windowHandle;
+            try {
+                windowHandle = (long) windowClass.getMethod("handle").invoke(window);
+            } catch (NoSuchMethodException e1) {
+                windowHandle = (long) windowClass.getMethod("getWindow").invoke(window);
+            }
+
+            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            return true;
+        } catch (Exception e) {
+            debugLog("Error setting clipboard (modern): " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean setClipboardObfuscatedPre11605(String str) {
+        try {
+            Class<?> minecraftClass = Minecraft.class;
+            Object minecraft = minecraftClass.getMethod("func_71410_x").invoke(null);
+
+            if (minecraft == null) {
+                debugLog("Minecraft instance is null, cannot set clipboard");
+                return false;
+            }
+
+            Object window = minecraftClass.getMethod("func_228018_at_").invoke(minecraft);
+            debugLog("Accessed window via func_228018_at_ method");
+
+            if (window == null) {
+                debugLog("Window is null, cannot set clipboard");
+                return false;
+            }
+
+            Class<?> windowClass = window.getClass();
+            long windowHandle = (long) windowClass.getMethod("func_198092_i").invoke(window);
+            debugLog("Accessed window handle via func_198092_i method");
+
+            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            return true;
+        } catch (Exception e) {
+            debugLog("Error setting clipboard (pre-1.16.5): " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Discovers which mapping branch is being used and caches the result.
+     * Tries obfuscated, then modern, then pre-1.16.5.
+     */
+    private void discoverMappingBranch() {
+        if (mappingBranch != 0) {
+            return; // Already discovered
+        }
+
+        // Try obfuscated first
+        try {
+            Class<?> minecraftClass = Minecraft.class;
+            minecraftClass.getMethod("m_91087_").invoke(null);
             mappingBranch = 1;
             debugLog("Using obfuscated mappings");
-            return result;
+            return;
         } catch (Throwable t) {
             debugLog("Obfuscated method failed, trying modern: " + t.getMessage());
-            try {
-                String result = getCurrentDimensionModern();
-                mappingBranch = 2;
-                debugLog("Using modern mappings");
-                return result;
-            } catch (Throwable t2) {
-                try {
-                    debugLog("Modern method also failed, trying obfuscated pre-1.16.5: " + t2.getMessage());
-                    String result = getCurrentDimensionObfuscatedPre11605();
-                    mappingBranch = 3;
-                    debugLog("Using obfuscated pre-1.16.5 mappings");
-                    return result;
-                } catch (Throwable t3) {
-                    debugLog("ObfuscatedPre11605 method also failed: " + t2.getMessage());
-                    return "overworld";
-                }
-            }
+        }
+
+        // Try modern
+        try {
+            Class<?> minecraftClass = Minecraft.class;
+            minecraftClass.getMethod("getInstance").invoke(null);
+            mappingBranch = 2;
+            debugLog("Using modern mappings");
+            return;
+        } catch (Throwable t) {
+            debugLog("Modern method failed, trying pre-1.16.5: " + t.getMessage());
+        }
+
+        // Try pre-1.16.5
+        try {
+            Class<?> minecraftClass = Minecraft.class;
+            minecraftClass.getMethod("func_71410_x").invoke(null);
+            mappingBranch = 3;
+            debugLog("Using obfuscated pre-1.16.5 mappings");
+            return;
+        } catch (Throwable t) {
+            debugLog("Pre-1.16.5 method also failed: " + t.getMessage());
         }
     }
 
@@ -120,7 +253,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in obfuscated method: " + e.getClass().getName() + " - " + e.getMessage());
-            throw new RuntimeException(e);
+            return "overworld";
         }
     }
 
@@ -166,7 +299,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in modern method: " + e.getClass().getName() + " - " + e.getMessage());
-            throw new RuntimeException(e);
+            return "overworld";
         }
     }
 
@@ -205,7 +338,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in obfuscated pre-1.16.5 method: " + e.getClass().getName() + " - " + e.getMessage());
-            throw new RuntimeException(e);
+            return "overworld";
         }
     }
 

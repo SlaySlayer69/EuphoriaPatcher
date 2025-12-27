@@ -24,6 +24,11 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public String getInstanceName() {
+        return ModLoaderSpecifics.FORGE_LEGACY;
+    }
+
+    @Override
     public Path getConfigDirectory() {
         return configDirectory;
     }
@@ -45,6 +50,11 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public String getCurrentDimension() {
         return "overworld";
+    }
+
+    @Override
+    public boolean setClipboard(String str) {
+        return false;
     }
 
     private void debugLog(String message) {

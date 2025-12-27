@@ -27,6 +27,11 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public String getInstanceName() {
+        return ModLoaderSpecifics.NEOFORGE;
+    }
+
+    @Override
     public Path getConfigDirectory() {
         return configDirectory;
     }
@@ -81,6 +86,31 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Unexpected error getting current dimension: " + t.getMessage());
             return "overworld";
         }
+    }
+
+    @Override
+    public boolean setClipboard(String str) {
+        try {
+            Minecraft minecraft = Minecraft.getInstance();
+            Object window = minecraft.getWindow();
+            long windowHandle;
+
+            Class<?> windowClass = window.getClass();
+            try {
+                // Try handle() first (newer versions)
+                windowHandle = (long) windowClass.getMethod("handle").invoke(window);
+                debugLog("Using handle() method to get window handle");
+            } catch (NoSuchMethodException e1) { // Fallback to getWindow()
+                windowHandle = (long) windowClass.getMethod("getWindow").invoke(window);
+                debugLog("Using getWindow() method to get window handle");
+            }
+
+            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            return true;
+        } catch (Exception e) {
+            debugLog("Error setting clipboard: " + e.getMessage());
+        }
+        return false;
     }
 
     private void debugLog(String message) {

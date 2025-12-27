@@ -113,6 +113,11 @@ public class DevPatchGenerator {
     private static void initializeDummyModLoaderSpecifics() {
         ModLoaderSpecifics.setInstance(new ModLoaderSpecifics() {
             @Override
+            public String getInstanceName() {
+                return "PatchGenerator";
+            }
+
+            @Override
             public Path getShaderpacksPath() {
                 return SHADERPACKS_DIR;
             }
@@ -130,6 +135,11 @@ public class DevPatchGenerator {
             @Override
             public String getCurrentDimension() {
                 return "overworld";
+            }
+
+            @Override
+            public boolean setClipboard(String str) {
+                return false;
             }
         });
     }

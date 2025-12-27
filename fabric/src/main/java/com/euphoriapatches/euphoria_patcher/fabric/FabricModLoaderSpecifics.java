@@ -27,6 +27,11 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public String getInstanceName() {
+        return ModLoaderSpecifics.FABRIC;
+    }
+
+    @Override
     public Path getConfigDirectory() {
         return configDirectory;
     }
@@ -46,32 +51,99 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        // Use cached result if available
-        if (useYarnMappings != null) {
-            if (useYarnMappings) {
-                return getCurrentDimensionYarn();
-            } else {
-                return getCurrentDimensionReflection();
-            }
+        if (useYarnMappings == null) discoverMappingBranch();
+
+        // Use cached result
+        if (useYarnMappings != null && useYarnMappings) {
+            return getCurrentDimensionYarn();
+        } else if (useYarnMappings != null && !useYarnMappings) {
+            return getCurrentDimensionReflection();
         }
 
-        // First time - try Yarn first
+        return "overworld";
+    }
+
+    @Override
+    public boolean setClipboard(String str) {
+        if (useYarnMappings == null) discoverMappingBranch();
+
         try {
-            String result = getCurrentDimensionYarn();
-            useYarnMappings = true;
-            debugLog("Using Yarn mappings");
-            return result;
+            long windowHandle;
+            if (useYarnMappings) {
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client == null || client.getWindow() == null) {
+                    debugLog("Client or window is null, cannot set clipboard");
+                    return false;
+                }
+                windowHandle = client.getWindow().getHandle();
+            } else {
+                // Reflection: get window handle from net.minecraft.client.Minecraft
+                Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+                Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
+                if (mcInstance == null) {
+                    debugLog("Minecraft instance is null, cannot set clipboard");
+                    return false;
+                }
+
+                Object window = mcClass.getMethod("getWindow").invoke(mcInstance);
+                if (window == null) {
+                    debugLog("Window is null, cannot set clipboard");
+                    return false;
+                }
+
+                // Try to get the window handle
+                Class<?> windowClass = window.getClass();
+                debugLog("Window class: " + windowClass.getName());
+                try {
+                    windowHandle = (long) windowClass.getMethod("handle").invoke(window);
+                    debugLog("Accessed window handle via handle() method");
+                } catch (NoSuchMethodException e1) {
+                    debugLog("handle() method not found");
+                    return false;
+                }
+
+            }
+
+            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            return true;
+        } catch (Exception e) {
+            debugLog("Error setting clipboard: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Discovers which mapping type is being used (Yarn vs Reflection) and caches the result.
+     * Tries Yarn first, then falls back to reflection.
+     */
+    private void discoverMappingBranch() {
+        if (useYarnMappings != null) {
+            return; // Already discovered
+        }
+
+        // Try Yarn first
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null) {
+                useYarnMappings = true;
+                debugLog("Using Yarn mappings");
+                return;
+            }
         } catch (Throwable t) {
             debugLog("Yarn method failed, trying reflection: " + t.getMessage());
-            try {
-                String result = getCurrentDimensionReflection();
+        }
+
+        // Try reflection
+        try {
+            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+            Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
+            if (mcInstance != null) {
                 useYarnMappings = false;
                 debugLog("Using reflection");
-                return result;
-            } catch (Throwable t2) {
-                debugLog("Reflection method also failed: " + t2.getMessage());
-                return "overworld";
+                return;
             }
+        } catch (Throwable t) {
+            debugLog("Reflection method also failed: " + t.getMessage());
         }
     }
 
@@ -92,7 +164,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in Yarn method: " + e.getMessage());
-            throw new RuntimeException(e);
+            return "overworld";
         }
     }
 
@@ -132,7 +204,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             return Dimensions.getCurrentDimension(currentDimensionId);
         } catch (Exception e) {
             debugLog("Error in reflection method: " + e.getMessage());
-            throw new RuntimeException(e);
+            return "overworld";
         }
     }
 

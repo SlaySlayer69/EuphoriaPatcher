@@ -24,6 +24,11 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public String getInstanceName() {
+        return ModLoaderSpecifics.FORGE_1_7_10;
+    }
+
+    @Override
     public Path getConfigDirectory() {
         return configDirectory;
     }
@@ -36,6 +41,11 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public String getCurrentDimension() {
         return "overworld";
+    }
+
+    @Override
+    public boolean setClipboard(String str) {
+        return false;
     }
 
     private void debugLog(String message) {
