@@ -3,6 +3,7 @@
 uniform int frameCounter;
 uniform float frameTimeCounter;
 uniform sampler2D gcolor;
+uniform int hideGUI;
 
 varying vec2 texcoord;
 uniform float viewWidth;
@@ -17,6 +18,8 @@ const int colortex2Format = RGBA16F;
 */
 
 const bool colortex2Clear = false;
+
+const float textScale = 1500.0;
 
 float GetLuminance(vec3 color) {
     return dot(color, vec3(0.299, 0.587, 0.114));
@@ -56,9 +59,34 @@ void applyVerticalScreenDisplacement(inout vec2 texCoordM, inout float verticalO
 }
 
 #include "/textRenderer.glsl"
+
+// Convert screen coordinates (0-1 range) to text coordinate system
+vec2 screenToTextCoord(vec2 screenCoord, int textSize) {
+    float textSpaceWidth = textScale * viewWidth / viewHeight / textSize;
+    float textSpaceHeight = textScale / textSize;
+    return vec2(screenCoord.x * textSpaceWidth, screenCoord.y * textSpaceHeight);
+}
+
+// Convert screen coordinates and center text horizontally (textLength is number of characters)
+vec2 screenToTextCoordCentered(vec2 screenCoord, int textSize, int textLength) {
+    vec2 textCoord = screenToTextCoord(screenCoord, textSize);
+    // Subtract half the text width to center it (each char is ~6 units wide including spacing)
+    textCoord.x -= textLength * 3.0;
+    return textCoord;
+}
+
+float getHotbarSafeY(float normalizedOffset) {
+    float heightScale = 1080.0 / viewHeight;
+    float heightAdjustment = (heightScale - 1.0) * 0.03;
+
+    float aspectDelta = aspectRatio - 1.777; // 16:9 aspect ratio
+    float aspectAdjustment = aspectDelta * 0.008;
+
+    return 1.0 - normalizedOffset - heightAdjustment + aspectAdjustment;
+}
+
 void beginTextM(int textSize, vec2 offset) {
-    float scale = 1500;
-    beginText(ivec2(vec2(scale * viewWidth / viewHeight, scale) * texcoord) / textSize, ivec2(0 + offset.x, scale / textSize - offset.y));
+    beginText(ivec2(vec2(textScale * viewWidth / viewHeight, textScale) * texcoord) / textSize, ivec2(0 + offset.x, textScale / textSize - offset.y));
     text.bgCol = vec4(0.0, 0.0, 1.0, 0.8);
 	text.fgCol = vec4(1.0, 0.0, 0.0, 1.0);
 }
@@ -75,11 +103,10 @@ vec3 errorOverlay(vec2 texCoordBorder) {
 
     applyVerticalScreenDisplacement(displacedCoord, verticalIndicator, 1.0, 1.0, 1.0, false);
 
-    // Convert the offset to screen space for text positioning
-    int verticalTextOffset = int(displacedCoord.y * 15); // Adjust multiplier to match your text scale
+    int verticalTextOffset = int(displacedCoord.y * 15);
     verticalTextOffset += int(displacedCoord.x * 4.0);
 
-    beginTextM(15, vec2(144 + verticalTextOffset, 90));
+	beginTextM(15, screenToTextCoord(vec2(0.81 + verticalTextOffset * 0.005, 0.91), 15));
 		text.fgCol = vec4(1.0, 0.0, 0.0, 0.85);
 		text.bgCol = vec4(0.0, 0.0, 0.0, 0.0);
         printString((_E, _R, _R, _O, _R));
@@ -91,6 +118,8 @@ void main() {
 	vec3 color = texture2D(gcolor, texcoord).rgb;
 	float screenSize = viewHeight + viewWidth;
 	float previousScreenSize = texture2D(colortex2, ivec2(viewWidth - 1, 0)).r;
+	float guiHidden = float(hideGUI);
+	float previousGUIHidden = texture2D(colortex2, ivec2(0, viewHeight - 1)).r;
 
 	color.rgb = mix(color.rgb, vec3(0.0), 0.55);
 	color.rgb = mix(color.rgb, vec3(GetLuminance(color)), 0.5);
@@ -101,7 +130,14 @@ void main() {
 	vec2 offset = vec2(3, 2);
 	int verticalOffset = 2;
 
-	if (frameCounter == 1 || abs(screenSize - previousScreenSize) > 10.0) {
+	// Only update the error text when necessary to save performance
+	if (frameCounter == 1 || abs(screenSize - previousScreenSize) > 10.0 || abs(guiHidden - previousGUIHidden) > 0.5) {
+
+		if (guiHidden < 0.5) {
+			beginTextM(4, screenToTextCoordCentered(vec2(0.5, getHotbarSafeY(0.085)), 4, 24));
+				printString((_P, _r, _e, _s, _s, _space, _F, _1, _space, _t, _o, _space, _h, _i, _d, _e , _space, _t, _h, _e, _space, _G, _U, _I, _dot));
+			endText(textColor);
+		}
 
 		beginTextM(4, offset);
 			printString((_E, _u, _p, _h, _o, _r, _i, _a, _space, _P, _a, _t, _c, _h, _e, _s, _space, _E, _r, _r, _o, _r, _space, _S, _h, _a, _d, _e, _r, _colon));
@@ -145,16 +181,25 @@ void main() {
 		// For the include, every new line is 1 pixels down of offset.y += 1;
 		// Means for every printString(); +1 to offset.y
 
+		// The text background mask is stored in blue channel, the green check prevents white text from being counted as background
 		textBackground = textColor.b > 0.2 && textColor.g < 0.1 ? 1.0 : 0.0;
 		if (textBackground > 0.5) textColor = vec3(0.0);
-	} else {
+	} else { // use stored values from previous frame
 		vec4 texture2 = texture2D(colortex2, texcoord);
-		textColor = vec3(ivec2(texcoord * vec2(viewWidth, viewHeight)) == ivec2(viewWidth - 1, 0) ? 0.0 : texture2.r, texture2.g, texture2.b);
+		ivec2 pixel = ivec2(texcoord * vec2(viewWidth, viewHeight));
+		if (pixel.y == 0 && pixel.x == viewWidth - 1) { // set to 0 to mask out the data being set to the screen pixel color
+			textColor.r = 0.0;
+		} else if (pixel.x == 0 && pixel.y == viewHeight - 1) {
+			textColor.r = 0.0;
+		} else {
+			textColor.r = texture2.r;
+		}
+		textColor.gb = texture2.gb;
 		textBackground = texture2.a;
 	}
 
-	color.rgb = mix(color.rgb, vec3(0.0), textBackground * 0.4);
-	color.rgb = mix(color.rgb, textColor * 100, length(textColor));
+	color.rgb = mix(color.rgb, vec3(0.0), textBackground * 0.4); // darken screen behind text background
+	color.rgb = mix(color.rgb, textColor * 100, length(textColor)); // here we apply the above mask to prevent data pixels from affecting the screen color
 
 	vec4 watermarkColor = drawPixelArt(ivec2(100, 29), vec2(0.05), texcoord.xy, 0.8, colortex1);
 	color.rgb = mix(color.rgb, watermarkColor.rgb, watermarkColor.a);
@@ -170,7 +215,14 @@ void main() {
 	vec3 shaderErrorColor = errorOverlay(texcoord);
 	color.rgb = mix(color.rgb, shaderErrorColor * 100, length(shaderErrorColor));
 
+	if (ivec2(texcoord * vec2(viewWidth, viewHeight)) == ivec2(viewWidth - 1, 0)) {
+		textColor.r = screenSize;
+	} else if (ivec2(texcoord * vec2(viewWidth, viewHeight)) == ivec2(0, viewHeight - 1)) {
+		textColor.r = guiHidden;
+	}
+
+
 /* DRAWBUFFERS:02 */
 	gl_FragData[0] = vec4(color, 1.0);
-	gl_FragData[1] = vec4(ivec2(texcoord * vec2(viewWidth, viewHeight)) == ivec2(viewWidth - 1, 0) ? screenSize : textColor.r, textColor.g, textColor.b, textBackground);
+	gl_FragData[1] = vec4(textColor.rgb, textBackground);
 }
