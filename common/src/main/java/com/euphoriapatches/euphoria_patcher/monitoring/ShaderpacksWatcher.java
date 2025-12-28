@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.monitoring;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.logging.ErrorShaderGenerator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.services.ShaderNamingService;
@@ -16,6 +17,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static com.euphoriapatches.euphoria_patcher.util.ShaderValidationErrorHandler.copyLinkMessage;
 
 public class ShaderpacksWatcher {
     private final Path shaderpacks;
@@ -460,7 +463,7 @@ public class ShaderpacksWatcher {
     private boolean isPotentialShaderPack(Path path) {
         String fileName = path.getFileName().toString();
 
-        if (fileName.contains("_0EuphoriaPatches_ErrorShader")) {
+        if (fileName.contains(ErrorShaderGenerator.ERROR_SHADER_FOLDER)) {
             debugLog("Skipping error shader from processing: " + fileName);
             return false;
         }
@@ -528,7 +531,7 @@ public class ShaderpacksWatcher {
                                 EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION +
                                 ". It may be an incorrect version or modified.");
                         EuphoriaPatcher.log(3, "Please download the correct and official version from " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-                        EuphoriaPatcher.log(3, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+                        copyLinkMessage();
 
                     }
 

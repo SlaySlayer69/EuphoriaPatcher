@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class ErrorShaderGenerator {
 
-    private static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches_ErrorShader";
+    public static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches_ErrorShader";
     private static final String ERROR_TEXTS_FILE = "shaders/errorTexts.glsl";
     private static final int MAX_LINE_LENGTH = 90;
 
@@ -125,14 +125,14 @@ public class ErrorShaderGenerator {
     /**
      * Checks if the error shader is currently active
      */
-    private static boolean isErrorShaderActive() {
+    public static boolean isErrorShaderActive() {
         Path currentShaderPath = ShaderLoader.getCurrentShaderpackPath();
         if (currentShaderPath == null) {
             return false;
         }
 
         String shaderName = currentShaderPath.getFileName().toString();
-        return shaderName.equals("_0EuphoriaPatches_ErrorShader");
+        return shaderName.equals(ERROR_SHADER_FOLDER);
     }
 
     /**

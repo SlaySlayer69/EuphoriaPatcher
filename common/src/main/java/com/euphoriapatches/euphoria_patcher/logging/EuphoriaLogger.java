@@ -2,6 +2,7 @@ package com.euphoriapatches.euphoria_patcher.logging;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.SodiumConsole;
+import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,9 @@ public class EuphoriaLogger {
     private boolean errorShaderScheduled = false;
     private static final int ERROR_COLLECTION_DELAY_MS = 5000; // 5 seconds
     private final Object errorCollectionLock = new Object();
+
+    // URL extraction for clipboard functionality
+    private String lastErrorURL = null;
 
 
     public EuphoriaLogger() {
@@ -86,7 +90,7 @@ public class EuphoriaLogger {
                 } else {
                     System.out.println("[WARN] " + loggingMessage);
                 }
-                if(messageFadeTimer > 0) {
+                if (messageFadeTimer > 0) {
                     appendToErrorLogFile("[WARNING] " + loggingMessage);
                     collectErrorMessage(loggingMessage);
                 }
@@ -97,9 +101,18 @@ public class EuphoriaLogger {
                 } else {
                     System.err.println("[ERROR] " + loggingMessage);
                 }
-                if(messageFadeTimer > 0) {
+                if (messageFadeTimer > 0) {
                     appendToErrorLogFile("[ERROR] " + loggingMessage);
                     collectErrorMessage(loggingMessage);
+
+                    // Extract URL if present
+                    String url = extractURL(message);
+                    if (url != null) {
+                        synchronized (errorCollectionLock) {
+                            lastErrorURL = url;
+                            debugLog("Stored error URL for clipboard: " + lastErrorURL);
+                        }
+                    }
                 }
                 break;
             default:
@@ -177,26 +190,42 @@ public class EuphoriaLogger {
                         debugLog("Timer firing: messages=" + errorMessages.size() +
                                  ", lastProcessed=" + lastProcessedErrorCount);
 
+                        // Generate shader if we have new errors
                         if (hasErrors && errorMessages.size() > lastProcessedErrorCount) {
-                            // Only regenerate if we have new errors
                             debugLog("Generating shader with " + errorMessages.size() + " messages");
                             ErrorShaderGenerator.generateErrorShader(errorMessages);
                             lastProcessedErrorCount = errorMessages.size();
+                        }
 
-                            // We're done with this scheduled task
-                            errorShaderScheduled = false;
+                        // Check if error shader is active and copy URL to clipboard if available
+                        if (ErrorShaderGenerator.isErrorShaderActive() && lastErrorURL != null) {
+                            debugLog("Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
+                            boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
+                            if (success) {
+                                debugLog("Successfully copied URL to clipboard");
+                            } else {
+                                debugLog("Failed to copy URL to clipboard");
 
-                            // IMPORTANT: Only reschedule if we expect more errors
-                            if (errorMessages.size() % 5 == 0) { // Arbitrary check - reschedule periodically
-                                debugLog("Rescheduling timer for potential future errors");
-                                scheduleErrorShaderGeneration();
+                                // Define message once and add to error shader only once
+                                // Note: errorMessages contains the "EuphoriaPatcher: " prefix that log() adds
+                                String failureMessage = "EuphoriaPatcher: Failed to copy error URL to clipboard. Please copy it manually from " +
+                                        ERROR_LOG_FILE_NAME + " in your shaderpacks folder.";
+
+                                if (!errorMessages.contains(failureMessage)) {
+                                    // Strip the prefix when logging since log() will add it back
+                                    log(3, 8, failureMessage.substring("EuphoriaPatcher: ".length()));
+                                    ErrorShaderGenerator.generateErrorShader(errorMessages);
+                                    lastProcessedErrorCount = errorMessages.size();
+                                }
                             }
                         } else {
-                            // Even if no new errors, we should keep checking periodically
-                            debugLog("No new errors detected, rescheduling anyway");
-                            errorShaderScheduled = false;
-                            scheduleErrorShaderGeneration();
+                            debugLog("Error shader not active or no URL to copy (active=" +
+                                     ErrorShaderGenerator.isErrorShaderActive() + ", url=" + lastErrorURL + ")");
                         }
+
+                        // Always reschedule to keep checking periodically
+                        errorShaderScheduled = false;
+                        scheduleErrorShaderGeneration();
                     }
                 }
             }, ERROR_COLLECTION_DELAY_MS);
@@ -275,7 +304,7 @@ public class EuphoriaLogger {
                 }
 
                 // Also delete error shader if it exists
-                Path errorShaderPath = EuphoriaPatcher.shaderpacks.resolve("_0EuphoriaPatches_ErrorShader");
+                Path errorShaderPath = EuphoriaPatcher.shaderpacks.resolve(ErrorShaderGenerator.ERROR_SHADER_FOLDER);
                 if (Files.exists(errorShaderPath)) {
                     FileUtils.deleteDirectory(errorShaderPath.toFile());
                     log(0, "Deleted error shader as installation was successful");
@@ -296,5 +325,24 @@ public class EuphoriaLogger {
         if (EuphoriaPatcher.doDebugLogging) {
             EuphoriaPatcher.log(0, message);
         }
+    }
+
+    /**
+     * Extracts a URL from an error message if present
+     * @param message The message to extract URL from
+     * @return The extracted URL or null if no URL found
+     */
+    private String extractURL(String message) {
+        // Simple URL pattern matching for http:// and https://
+        String[] words = message.split("\\s+");
+        for (String word : words) {
+            if (word.startsWith("http://") || word.startsWith("https://")) {
+                // Clean up any trailing punctuation
+                String url = word.replaceAll("[,;:.)!]+$", "");
+                debugLog("Extracted URL from error message: " + url);
+                return url;
+            }
+        }
+        return null;
     }
 }

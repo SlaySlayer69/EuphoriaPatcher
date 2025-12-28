@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import static com.euphoriapatches.euphoria_patcher.util.ShaderValidationErrorHandler.copyLinkMessage;
+
 public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
@@ -420,7 +422,7 @@ public class EuphoriaPatcher {
         }
 
         log(3, 8, "Download from: " + COMP_DOWNLOAD_URL);
-        log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        copyLinkMessage();
 
         // Start watching for the shader to be added
         startShaderpacksWatcher();

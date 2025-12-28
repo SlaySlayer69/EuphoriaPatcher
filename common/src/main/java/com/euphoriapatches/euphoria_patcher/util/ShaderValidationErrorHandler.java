@@ -47,12 +47,13 @@ public class ShaderValidationErrorHandler {
             EuphoriaPatcher.log(3, 8, "");
             EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
             EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
+            copyLinkMessage();
         } else {
             EuphoriaPatcher.log(3, 8, "");
             EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports version " + detectedVersion);
             EuphoriaPatcher.log(3, 8, "SOLUTION 2: Download the compatible shader version " + EuphoriaPatcher.VERSION);
             EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-            EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+            copyLinkMessage();
         }
     }
 
@@ -67,7 +68,7 @@ public class ShaderValidationErrorHandler {
         EuphoriaPatcher.log(3, 8, "");
         EuphoriaPatcher.log(3, 8, "SOLUTION: Re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-        EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        copyLinkMessage();
 
     }
 
@@ -81,7 +82,7 @@ public class ShaderValidationErrorHandler {
         EuphoriaPatcher.log(3, 8, "");
         EuphoriaPatcher.log(3, 8, "SOLUTION: Download the correct shader version " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-        EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        copyLinkMessage();
     }
 
     /**
@@ -94,7 +95,7 @@ public class ShaderValidationErrorHandler {
         EuphoriaPatcher.log(3, 8, "");
         EuphoriaPatcher.log(3, 8, "SOLUTION: Download the official " + EuphoriaPatcher.BRAND_NAME + " release version: " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-        EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        copyLinkMessage();
 
         startWatcherAndTrackFile(fileName);
     }
@@ -111,9 +112,17 @@ public class ShaderValidationErrorHandler {
         EuphoriaPatcher.log(3, 8, "");
         EuphoriaPatcher.log(3, 8, "SOLUTION: Download the original unmodified " + EuphoriaPatcher.BRAND_NAME + " shader");
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-        EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        copyLinkMessage();
 
         startWatcherAndTrackFile(fileName);
+    }
+
+    public static void copyLinkMessage(){
+        if (ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FORGE_1_7_10) || ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FORGE_LEGACY)) {
+            EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
+        } else {
+            EuphoriaPatcher.log(3, 8, "The download link has been copied to your clipboard. Paste it in your browser.");
+        }
     }
 
     /**
