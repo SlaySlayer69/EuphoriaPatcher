@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
 public class IrisDefineHelper {
     private static int injectCount = 0;
     private static boolean injectedOnce = false;
+    public static boolean isIrisRunning = false;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[IrisDefineHelper] " + message);
@@ -27,6 +28,7 @@ public class IrisDefineHelper {
         try {
             injectCount++;
             debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
+            isIrisRunning = true;
 
             if (EuphoriaPatcher.isSpacEagle()) {
                 defineKey.accept(standardDefines, "SPACEAGLE17");

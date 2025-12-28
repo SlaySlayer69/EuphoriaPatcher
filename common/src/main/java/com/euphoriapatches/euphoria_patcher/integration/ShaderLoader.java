@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.integration.iris.IrisDefineHelper;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
@@ -87,6 +88,11 @@ public class ShaderLoader {
         }
 
         return null;
+    }
+
+    public static boolean isIrisRunning() {
+        debugLog("Iris is running: " + IrisDefineHelper.isIrisRunning);
+        return IrisDefineHelper.isIrisRunning;
     }
 
     /**

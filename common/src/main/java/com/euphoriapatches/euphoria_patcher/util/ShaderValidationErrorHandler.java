@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 
@@ -120,7 +121,7 @@ public class ShaderValidationErrorHandler {
     public static void copyLinkMessage(){
         if (ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FORGE_1_7_10) || ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FORGE_LEGACY)) {
             EuphoriaPatcher.log(3, 8, "Copy the download link from " + EuphoriaLogger.ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
-        } else {
+        } else if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE)) {
             EuphoriaPatcher.log(3, 8, "The download link has been copied to your clipboard. Paste it in your browser.");
         }
     }

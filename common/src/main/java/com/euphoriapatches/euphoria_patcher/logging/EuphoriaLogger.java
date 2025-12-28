@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.logging;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.integration.SodiumConsole;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import org.apache.commons.io.FileUtils;
@@ -23,7 +24,7 @@ public class EuphoriaLogger {
 
     static {
         try {
-            logger = LogManager.getLogger("euphoriaPatches");
+            logger = LogManager.getLogger("euphoria_patcher");
         } catch (NoClassDefFoundError | Exception e) {
             // Log4j not available (e.g., running DevPatchGenerator)
             log4jAvailable = false;
@@ -42,15 +43,22 @@ public class EuphoriaLogger {
     private boolean hasErrors = false;
     private Timer errorShaderTimer = null;
     private boolean errorShaderScheduled = false;
-    private static final int ERROR_COLLECTION_DELAY_MS = 5000; // 5 seconds
+    private static final int ERROR_COLLECTION_DELAY_MS = 4000; // 4 seconds
     private final Object errorCollectionLock = new Object();
 
     // URL extraction for clipboard functionality
     private String lastErrorURL = null;
+    private boolean doErrorClipboardCopy = false;
+    private boolean errorURLAlreadyCopied = false;
 
 
     public EuphoriaLogger() {
         this.isSodiumInstalled = false;
+
+        this.doErrorClipboardCopy = ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FABRIC) ||
+                                    ModLoaderSpecifics.isInstance(ModLoaderSpecifics.NEOFORGE) ||
+                                    ModLoaderSpecifics.isInstance(ModLoaderSpecifics.FORGE);
+
     }
 
     /**
@@ -104,13 +112,13 @@ public class EuphoriaLogger {
                 if (messageFadeTimer > 0) {
                     appendToErrorLogFile("[ERROR] " + loggingMessage);
                     collectErrorMessage(loggingMessage);
-
-                    // Extract URL if present
-                    String url = extractURL(message);
-                    if (url != null) {
-                        synchronized (errorCollectionLock) {
-                            lastErrorURL = url;
-                            debugLog("Stored error URL for clipboard: " + lastErrorURL);
+                    if (doErrorClipboardCopy) {
+                        String url = extractURL(message); // Extract URL if present
+                        if (url != null) {
+                            synchronized (errorCollectionLock) {
+                                lastErrorURL = url;
+                                debugLog("Stored error URL for clipboard: " + lastErrorURL);
+                            }
                         }
                     }
                 }
@@ -197,30 +205,31 @@ public class EuphoriaLogger {
                             lastProcessedErrorCount = errorMessages.size();
                         }
 
-                        // Check if error shader is active and copy URL to clipboard if available
-                        if (ErrorShaderGenerator.isErrorShaderActive() && lastErrorURL != null) {
-                            debugLog("Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
-                            boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
-                            if (success) {
-                                debugLog("Successfully copied URL to clipboard");
-                            } else {
-                                debugLog("Failed to copy URL to clipboard");
+                        // Only attempt clipboard copy on supported mod loaders
+                        if (doErrorClipboardCopy) {
+                            // Check if error shader is active and copy URL to clipboard if available
+                            if (ErrorShaderGenerator.isErrorShaderActive() &&
+                            lastErrorURL != null &&
+                            !errorURLAlreadyCopied &&
+                            ShaderLoader.isIrisRunning()) {
+                                debugLog("Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
+                                boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
+                                if (success) {
+                                    debugLog("Successfully copied URL to clipboard");
+                                    log(3, 8, "The download link has been copied to your clipboard. Paste it in your browser.");
+                                } else {
+                                    debugLog("Failed to copy URL to clipboard");
+                                    log(3, 8, "Failed to copy error URL to clipboard. " +
+                                        "Please copy it manually from " + ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
 
-                                // Define message once and add to error shader only once
-                                // Note: errorMessages contains the "EuphoriaPatcher: " prefix that log() adds
-                                String failureMessage = "EuphoriaPatcher: Failed to copy error URL to clipboard. Please copy it manually from " +
-                                        ERROR_LOG_FILE_NAME + " in your shaderpacks folder.";
-
-                                if (!errorMessages.contains(failureMessage)) {
-                                    // Strip the prefix when logging since log() will add it back
-                                    log(3, 8, failureMessage.substring("EuphoriaPatcher: ".length()));
-                                    ErrorShaderGenerator.generateErrorShader(errorMessages);
-                                    lastProcessedErrorCount = errorMessages.size();
                                 }
+                                ErrorShaderGenerator.generateErrorShader(errorMessages);
+                                lastProcessedErrorCount = errorMessages.size();
+                                errorURLAlreadyCopied = true;
+                            } else {
+                                debugLog("Error shader not active or no URL to copy (active=" +
+                                        ErrorShaderGenerator.isErrorShaderActive() + ", url=" + lastErrorURL + ", alreadyCopied=" + errorURLAlreadyCopied + ")");
                             }
-                        } else {
-                            debugLog("Error shader not active or no URL to copy (active=" +
-                                     ErrorShaderGenerator.isErrorShaderActive() + ", url=" + lastErrorURL + ")");
                         }
 
                         // Always reschedule to keep checking periodically
