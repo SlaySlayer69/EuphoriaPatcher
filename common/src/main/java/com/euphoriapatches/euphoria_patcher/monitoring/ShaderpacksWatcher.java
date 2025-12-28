@@ -209,6 +209,16 @@ public class ShaderpacksWatcher {
                                     continue;
                                 }
 
+                                // Check if this is a newer dev version FIRST before any other logic
+                                ShaderDetector detector = getShaderDetector();
+                                if (detector != null && detector.isNewerDevVersion(fullPath)) {
+                                    debugLog("Dev version detected, processing and shutting down watcher: " + fileNameStr);
+                                    EuphoriaPatcher.log(0, "Detected newer dev version: " + fileNameStr);
+                                    patcher.processNewShaderpack(fullPath);
+                                    // Dev version found - stop watching entirely
+                                    return;
+                                }
+
                                 if (!isPotentialShaderPack(fullPath)) {
                                     debugLog("Not a potential shader pack: " + fileNameStr);
                                     continue;
@@ -308,6 +318,16 @@ public class ShaderpacksWatcher {
                 String fileName = path.getFileName().toString();
                 scannedCount++;
                 debugLog("Scanning file: " + fileName);
+
+                // Check if this is a newer dev version FIRST before any other logic
+                ShaderDetector detector = getShaderDetector();
+                if (detector != null && detector.isNewerDevVersion(path)) {
+                    debugLog("Dev version detected during scan, processing and shutting down watcher: " + fileName);
+                    EuphoriaPatcher.log(0, "Detected newer dev version during scan: " + fileName);
+                    patcher.processNewShaderpack(path);
+                    // Dev version found - stop scanning entirely
+                    return;
+                }
 
                 if (!isPotentialShaderPack(path)) {
                     debugLog("Not a potential shader pack: " + fileName);

@@ -116,6 +116,7 @@ public class EuphoriaLogger {
                         String url = extractURL(message); // Extract URL if present
                         if (url != null) {
                             synchronized (errorCollectionLock) {
+                                errorURLAlreadyCopied = false; // Reset to allow new copy
                                 lastErrorURL = url;
                                 debugLog("Stored error URL for clipboard: " + lastErrorURL);
                             }

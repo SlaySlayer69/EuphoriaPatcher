@@ -417,6 +417,66 @@ public class ShaderDetector {
     }
 
     /**
+     * Check if a given path represents a newer dev version
+     * Supports two formats:
+     * 1. Comp.*EuphoriaPatches_(version)-dev(number).zip
+     * 2. EuphoriaPatches_earlyDev_(yyyy-mm-dd).zip
+     * @param path The path to check
+     * @param info Optional ShaderInfo to update if a newer dev version is found (can be null)
+     * @return true if this is a newer dev version
+     */
+    public boolean isNewerDevVersion(Path path, ShaderInfo info) {
+        if (!Files.isRegularFile(path)) {
+            return false;
+        }
+
+        String fileName = path.getFileName().toString();
+        Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
+        Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
+
+        String currentVersion = patchVersion.replace("_", "");
+        String buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
+        Integer currentBuildDate = parseBuildDate(buildDateStr);
+
+        // Check numbered dev version
+        if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion)) {
+            if (info != null) {
+                info.isAlreadyInstalled = true;
+                info.installedDir = path;
+                String devVersion = fileName.replaceAll(".*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip", "$1");
+                log(0, "Your dev version: " + devVersion + " vs current public release version: " + currentVersion);
+                log(0, "Your dev version is more recent than the last public release. Enjoy!");
+                log(0, "Thanks for the support! <3");
+            }
+            return true;
+        }
+
+        // Check early dev version
+        if (checkEarlyDevVersion(fileName, earlyDevPattern, currentBuildDate)) {
+            if (info != null) {
+                info.isAlreadyInstalled = true;
+                info.installedDir = path;
+                String devDateStr = fileName.replaceAll(".*EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip", "$1");
+                log(0, "Your earlyDev version date: " + devDateStr + " vs current build date: " + buildDateStr);
+                log(0, "Your earlyDev version is more recent than the last public release. Enjoy!");
+                log(0, "Thanks for the support! <3");
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Convenience method to check if a path is a newer dev version without updating ShaderInfo
+     * @param path The path to check
+     * @return true if this is a newer dev version
+     */
+    public boolean isNewerDevVersion(Path path) {
+        return isNewerDevVersion(path, null);
+    }
+
+    /**
      * Check for newer dev versions of pre-patched shaders
      * Supports two formats:
      * 1. Comp.*EuphoriaPatches_(version)-dev(number).zip
@@ -424,26 +484,14 @@ public class ShaderDetector {
      */
     private boolean checkForNewerDevVersion(ShaderInfo info) {
         try {
-            Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
-            Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
-
-            String currentVersion = patchVersion.replace("_", "");
-            String buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
-            Integer currentBuildDate = parseBuildDate(buildDateStr);
-
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
                 for (Path path : stream) {
                     if (!Files.isRegularFile(path)) {
                         continue;
                     }
 
-                    String fileName = path.getFileName().toString();
-
-                    if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion, info, path)) {
-                        return true;
-                    }
-
-                    if (checkEarlyDevVersion(fileName, earlyDevPattern, currentBuildDate, buildDateStr, info, path)) {
+                    // Use the consolidated isNewerDevVersion method
+                    if (isNewerDevVersion(path, info)) {
                         return true;
                     }
                 }
@@ -454,7 +502,7 @@ public class ShaderDetector {
         return false;
     }
 
-    private Integer parseBuildDate(String buildDateStr) {
+    public Integer parseBuildDate(String buildDateStr) {
         if (buildDateStr != null && !buildDateStr.equals("year-month-day")) {
             try {
                 Integer date = Integer.parseInt(buildDateStr.replace("-", ""));
@@ -467,7 +515,11 @@ public class ShaderDetector {
         return null;
     }
 
-    private boolean checkNumberedDevVersion(String fileName, Pattern pattern, String currentVersion, ShaderInfo info, Path path) {
+    /**
+     * Check if filename matches numbered dev version pattern and is newer
+     * @return true if this is a newer numbered dev version
+     */
+    private boolean checkNumberedDevVersion(String fileName, Pattern pattern, String currentVersion) {
         Matcher matcher = pattern.matcher(fileName);
         if (matcher.matches()) {
             String devVersion = matcher.group(1);
@@ -477,12 +529,6 @@ public class ShaderDetector {
 
             if (comparison > 0) {
                 debugLog("Dev version " + devVersion + " is newer than current patch version " + currentVersion);
-                info.isAlreadyInstalled = true;
-                info.installedDir = path;
-
-                log(0, "Your dev version: " + devVersion + " vs current public release version: " + currentVersion);
-                log(0, "Your dev version is more recent than the last public release. Enjoy!");
-                log(0, "Thanks for the support! <3");
                 return true;
             } else {
                 debugLog("Dev version " + devVersion + " is older or equal to current patch version " + currentVersion);
@@ -491,7 +537,11 @@ public class ShaderDetector {
         return false;
     }
 
-    private boolean checkEarlyDevVersion(String fileName, Pattern pattern, Integer currentBuildDate, String buildDateStr, ShaderInfo info, Path path) {
+    /**
+     * Check if filename matches early dev version pattern and is newer
+     * @return true if this is a newer early dev version
+     */
+    private boolean checkEarlyDevVersion(String fileName, Pattern pattern, Integer currentBuildDate) {
         Matcher matcher = pattern.matcher(fileName);
         if (matcher.matches() && currentBuildDate != null) {
             String devDateStr = matcher.group(1);
@@ -503,12 +553,6 @@ public class ShaderDetector {
 
                 if (devDate > currentBuildDate) {
                     debugLog("EarlyDev date " + devDateStr + " is newer than current build date");
-                    info.isAlreadyInstalled = true;
-                    info.installedDir = path;
-
-                    log(0, "Your earlyDev version date: " + devDateStr + " vs current build date: " + buildDateStr);
-                    log(0, "Your earlyDev version is more recent than the last public release. Enjoy!");
-                    log(0, "Thanks for the support! <3");
                     return true;
                 } else {
                     debugLog("EarlyDev date " + devDateStr + " is older or equal to current build date");

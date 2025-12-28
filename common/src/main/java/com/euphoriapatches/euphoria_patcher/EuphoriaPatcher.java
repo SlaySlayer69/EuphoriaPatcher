@@ -460,14 +460,24 @@ public class EuphoriaPatcher {
         try {
             log(0, "Processing newly detected shader pack: " + baseFile.getFileName());
 
-            // Create temporary directory
-            Path temp = ArchiveOperations.createTempDirectory();
-            if (temp == null) return false;
-
             // Create shader info object
             ShaderInfo shaderInfo = new ShaderInfo();
             shaderInfo.baseFile = baseFile;
             String name = baseFile.getFileName().toString();
+
+            // Check if this is a newer dev version first - if so, just accept it
+            if (shaderDetector.isNewerDevVersion(baseFile, shaderInfo)) {
+                debugLog("Accepted newer dev version: " + baseFile.getFileName());
+
+                stopShaderpacksWatcher();
+                thankYouMessage(baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, true);
+                return true;
+            }
+
+            // Not a dev version, proceed with normal patching
+            // Create temporary directory
+            Path temp = ArchiveOperations.createTempDirectory();
+            if (temp == null) return false;
 
             // Determine style from filename or common.glsl
             if (name.contains("Reimagined")) {
