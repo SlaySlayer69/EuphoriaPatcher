@@ -38,7 +38,7 @@ tasks.register('validateChangelog') {
         def compVersion = versionProps.getProperty('mod_version').split("-")[1]
 
         if (!changelogFile.exists()) {
-            changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n- Updated to Complementary Shaders ${compVersion} + Euphoria Patches ${baseVersion} - This is a minor update"
+            changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n- Updated to Complementary Shaders ${compVersion} + Euphoria Patches [inser version here]"
             throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
         }
 

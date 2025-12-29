@@ -17,9 +17,9 @@ public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.modrinth.com/v2/project/" + PROJECT_ID + "/version";
     private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
     private static String NEW_MOD_VERSION = null;
-    private static String LATEST_CHANGELOG = null;
     private static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
+    private static String RECOMMENDED_PATCH_VERSION = null;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UpdateChecker] " + message);
@@ -49,46 +49,247 @@ public class UpdateChecker {
     }
 
     /**
-    * Returns the latest changelog if an update check has been performed.
-    * If no update check has been performed yet, it triggers one.
-    * @return The latest changelog as a String
-    */
-    public static String getLatestChangelog() {
-        checkForUpdates();
-        return LATEST_CHANGELOG;
+     * Determines if the user should update based on the type of update available.
+     * @return true if an important update is available or a recommended patch update exists, false otherwise
+     */
+    public static boolean shouldUserUpdate() {
+        return isImportantUpdate() || isPatchUpdateRecommended();
     }
 
     /**
-     * Determines if the latest update is a major update based on the changelog content.
-     * @return true if the update is major, false if minor or undetermined
+     * Determines if the latest update is an important update by comparing major.minor version numbers.
+     * An important update occurs when the major (X) or minor (Y) version number in X.Y.Z increases.
+     * @return true if the update is important (X or Y increased), false if only patch version changed
      */
-    public static boolean isMajorUpdate() {
-        checkForUpdates();
-        debugLog("Checking if update is major...");
+    public static boolean isImportantUpdate() {
+        debugLog("Checking if update is important...");
 
-        if (LATEST_CHANGELOG == null || LATEST_CHANGELOG.isEmpty()) {
-            debugLog("No changelog available, assuming minor update");
+        if (!isUpdateAvailable()) {
+            debugLog("No new version available, not an important update");
             return false;
         }
 
-        // Split changelog into lines
-        String[] lines = LATEST_CHANGELOG.split("\n");
-
-        for (String line : lines) {
-            debugLog("Checking line: " + line.trim());
-
-            // Check if line contains the pattern and "This is a minor update"
-            if (line.toLowerCase().contains("updated to complementary shaders") &&
-                line.toLowerCase().contains("euphoria patches") &&
-                line.toLowerCase().contains("this is a minor update")) {
-
-                debugLog("Found minor update indicator in changelog - this is NOT a major update");
+        try {
+            // Parse current version (X.Y.Z)
+            String[] currentParts = MOD_VERSION.split("\\.");
+            if (currentParts.length < 2) {
+                debugLog("Invalid current version format: " + MOD_VERSION);
                 return false;
             }
+            int currentMajor = Integer.parseInt(currentParts[0]); // X
+            int currentMinor = Integer.parseInt(currentParts[1]); // Y
+
+            // Parse new version (X.Y.Z)
+            String[] newParts = NEW_MOD_VERSION.split("\\.");
+            if (newParts.length < 2) {
+                debugLog("Invalid new version format: " + NEW_MOD_VERSION);
+                return false;
+            }
+            int newMajor = Integer.parseInt(newParts[0]); // X
+            int newMinor = Integer.parseInt(newParts[1]); // Y
+
+            debugLog("Current version: " + currentMajor + "." + currentMinor + ", New version: " + newMajor + "." + newMinor);
+
+            // Check if major or minor version increased
+            boolean isImportant = (newMajor > currentMajor) || (newMajor == currentMajor && newMinor > currentMinor);
+
+            if (isImportant) {
+                debugLog("Important update detected: " + MOD_VERSION + " -> " + NEW_MOD_VERSION);
+            } else {
+                debugLog("Minor (patch) update detected: " + MOD_VERSION + " -> " + NEW_MOD_VERSION);
+            }
+
+            return isImportant;
+        } catch (NumberFormatException e) {
+            debugLog("Error parsing version numbers: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Determines if a recommended patch update is available in the current patch cycle.
+     * Returns true if there's a recommended patch version (X.Y.Z) within the same X.Y cycle
+     * that is newer than the current version.
+     * @return true if a recommended patch update is available in the same major.minor version
+     */
+    public static boolean isPatchUpdateRecommended() {
+        debugLog("Checking if patch update is recommended...");
+
+        if (!isUpdateAvailable()) {
+            debugLog("No new version available, patch update not recommended");
+            return false;
         }
 
-        debugLog("No minor update indicator found in changelog - this is a major update");
-        return true;
+        try {
+            // Parse current version (X.Y.Z)
+            String[] currentParts = MOD_VERSION.split("\\.");
+            if (currentParts.length < 3) {
+                debugLog("Invalid current version format: " + MOD_VERSION);
+                return false;
+            }
+            int currentMajor = Integer.parseInt(currentParts[0]);
+            int currentMinor = Integer.parseInt(currentParts[1]);
+            int currentPatch = Integer.parseInt(currentParts[2]);
+
+            // Parse new version (X.Y.Z)
+            String[] newParts = NEW_MOD_VERSION.split("\\.");
+            if (newParts.length < 3) {
+                debugLog("Invalid new version format: " + NEW_MOD_VERSION);
+                return false;
+            }
+            int newMajor = Integer.parseInt(newParts[0]);
+            int newMinor = Integer.parseInt(newParts[1]);
+
+            // Check if we're in the same major.minor version cycle
+            if (currentMajor != newMajor || currentMinor != newMinor) {
+                debugLog("Not in the same patch cycle: current " + currentMajor + "." + currentMinor +
+                         ", new " + newMajor + "." + newMinor);
+                return false;
+            }
+
+            debugLog("In the same patch cycle: " + currentMajor + "." + currentMinor);
+
+            // Fetch recommended patch version if not already done
+            if (RECOMMENDED_PATCH_VERSION == null) {
+                RECOMMENDED_PATCH_VERSION = fetchRecommendedPatchVersion(currentMajor, currentMinor);
+                if (RECOMMENDED_PATCH_VERSION == null) {
+                    RECOMMENDED_PATCH_VERSION = ""; // Use empty string to indicate "fetched but nothing found"
+                }
+            }
+
+            if (RECOMMENDED_PATCH_VERSION.isEmpty()) {
+                debugLog("No recommended patch version found in current cycle");
+                return false;
+            }
+
+            // Check if current version is older than the recommended patch version
+            String[] recParts = RECOMMENDED_PATCH_VERSION.split("\\.");
+            if (recParts.length >= 3) {
+                int recPatch = Integer.parseInt(recParts[2]);
+                if (currentPatch < recPatch) {
+                    debugLog("Recommended patch update found: " + RECOMMENDED_PATCH_VERSION + " (current: " + MOD_VERSION + ")");
+                    return true;
+                }
+            }
+
+            debugLog("Current version is up to date with recommended patches");
+            return false;
+
+        } catch (NumberFormatException e) {
+            debugLog("Error parsing version numbers: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Fetches the latest recommended patch version in the current patch cycle.
+     * Since versions are ordered newest to oldest, returns the first version with the recommended flag.
+     * @param major The major version number (X in X.Y.Z)
+     * @param minor The minor version number (Y in X.Y.Z)
+     * @return The latest recommended patch version in format "X.Y.Z", or null if none found
+     */
+    private static String fetchRecommendedPatchVersion(int major, int minor) {
+        debugLog("Fetching recommended patch version for " + major + "." + minor + ".x");
+
+        try {
+            URL url = new URL(UPDATE_URL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != 200) {
+                debugLog("Failed to fetch versions for recommended patch check. Response code: " + responseCode);
+                return null;
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                JsonElement jsonElement = new JsonParser().parse(reader);
+                JsonArray versions = jsonElement.getAsJsonArray();
+
+                debugLog("Analyzing " + versions.size() + " versions for recommended patches");
+
+                String lastCheckedVersion = null;
+
+                // Iterate through all versions (newest to oldest)
+                for (int i = 0; i < versions.size(); i++) {
+                    JsonObject version = versions.get(i).getAsJsonObject();
+                    String fullVersionNumber = version.get("version_number").getAsString();
+                    String mainVersion = extractMainVersion(fullVersionNumber);
+
+                    // Skip if we already checked this version (different mod loaders)
+                    if (mainVersion.equals(lastCheckedVersion)) {
+                        continue;
+                    }
+                    lastCheckedVersion = mainVersion;
+
+                    // Parse version
+                    String[] versionParts = mainVersion.split("\\.");
+                    if (versionParts.length < 3) {
+                        continue;
+                    }
+
+                    try {
+                        int vMajor = Integer.parseInt(versionParts[0]);
+                        int vMinor = Integer.parseInt(versionParts[1]);
+
+                        // Check if this version is in the current patch cycle
+                        if (vMajor != major || vMinor != minor) {
+                            // Stop when we go below the current patch cycle
+                            if (vMajor < major || (vMajor == major && vMinor < minor)) {
+                                debugLog("Reached versions below current patch cycle, stopping");
+                                break;
+                            }
+                            continue;
+                        }
+
+                        debugLog("Checking version " + mainVersion + " in current patch cycle");
+
+                        // Check if this version has the recommended flag
+                        if (version.has("changelog")) {
+                            String changelog = version.get("changelog").getAsString();
+                            if (isRecommendedUpdate(changelog)) {
+                                debugLog("Found recommended patch version: " + mainVersion);
+                                return mainVersion; // Early return with the first (latest) recommended version
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        debugLog("Error parsing version " + mainVersion + ": " + e.getMessage());
+                    }
+                }
+
+            } finally {
+                connection.disconnect();
+            }
+        } catch (Exception e) {
+            debugLog("Error fetching recommended patch version: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if a changelog contains the recommended update marker.
+     * @param changelog The changelog text to check
+     * @return true if the changelog indicates a recommended update
+     */
+    private static boolean isRecommendedUpdate(String changelog) {
+        if (changelog == null || changelog.isEmpty()) {
+            return false;
+        }
+
+        String[] lines = changelog.split("\n");
+        for (String line : lines) {
+            String lowerLine = line.toLowerCase();
+            if (lowerLine.contains("updated to complementary shaders") &&
+                lowerLine.contains("euphoria patches") &&
+                lowerLine.contains("update recommended")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -179,15 +380,6 @@ public class UpdateChecker {
                 JsonObject latestVersion = versions.get(0).getAsJsonObject();
                 String fullVersionNumber = latestVersion.get("version_number").getAsString();
                 debugLog("Full version number from Modrinth: " + fullVersionNumber);
-
-                // Extract and store changelog
-                if (latestVersion.has("changelog")) {
-                    LATEST_CHANGELOG = latestVersion.get("changelog").getAsString();
-                    debugLog("Changelog fetched successfully!");
-                    debugLog("Fetched Changelog is:\n" + LATEST_CHANGELOG);
-                } else {
-                    debugLog("No changelog available for latest version");
-                }
 
                 String mainVersion = extractMainVersion(fullVersionNumber);
                 debugLog("Extracted main version: " + mainVersion);
