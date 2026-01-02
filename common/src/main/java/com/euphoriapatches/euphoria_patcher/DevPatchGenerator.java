@@ -72,6 +72,13 @@ public class DevPatchGenerator {
         System.out.println("Shaderpacks folder: " + BLUE + SHADERPACKS_DIR + RESET);
         System.out.println();
 
+        // Clean up old shader zip files
+        try {
+            cleanupOldShaderZips();
+        } catch (IOException e) {
+            System.err.println(YELLOW + "Warning: Could not clean up old shader zips: " + e.getMessage() + RESET);
+        }
+
         try {
             // Find base and patched shaders
             ShaderPair shaderPair = findShaders();
@@ -142,6 +149,37 @@ public class DevPatchGenerator {
                 return false;
             }
         });
+    }
+
+    /**
+     * Cleans up old shader zip files that don't match the current VERSION
+     */
+    private static void cleanupOldShaderZips() throws IOException {
+        ensureDirectoryExists(SHADERPACKS_DIR);
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(SHADERPACKS_DIR)) {
+            for (Path path : stream) {
+                String name = path.getFileName().toString();
+
+                // Only consider zip files
+                if (!name.endsWith(".zip")) {
+                    continue;
+                }
+
+                if (name.startsWith(BRAND_NAME)) {
+                    // If it doesn't contain the current VERSION, delete it
+                    if (!name.contains(VERSION)) {
+                        System.out.println(YELLOW + "Deleting outdated shader zip: " + BLUE + name + RESET);
+                        try {
+                            Files.delete(path);
+                            System.out.println(GREEN + "✓ Deleted: " + name + RESET);
+                        } catch (IOException e) {
+                            System.err.println(RED + "Failed to delete " + name + ": " + e.getMessage() + RESET);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
