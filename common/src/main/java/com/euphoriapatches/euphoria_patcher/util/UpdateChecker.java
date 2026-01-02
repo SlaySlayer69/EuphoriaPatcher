@@ -20,6 +20,8 @@ public class UpdateChecker {
     private static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
     private static String RECOMMENDED_PATCH_VERSION = null;
+    private static Boolean CACHED_IS_IMPORTANT_UPDATE = null;
+    private static Boolean CACHED_IS_PATCH_UPDATE_RECOMMENDED = null;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UpdateChecker] " + message);
@@ -62,10 +64,17 @@ public class UpdateChecker {
      * @return true if the update is important (X or Y increased), false if only patch version changed
      */
     public static boolean isImportantUpdate() {
+        // Return cached result if already computed
+        if (CACHED_IS_IMPORTANT_UPDATE != null) {
+            debugLog("Using cached important update result: " + CACHED_IS_IMPORTANT_UPDATE);
+            return CACHED_IS_IMPORTANT_UPDATE;
+        }
+
         debugLog("Checking if update is important...");
 
         if (!isUpdateAvailable()) {
             debugLog("No new version available, not an important update");
+            CACHED_IS_IMPORTANT_UPDATE = false;
             return false;
         }
 
@@ -74,6 +83,7 @@ public class UpdateChecker {
             String[] currentParts = MOD_VERSION.split("\\.");
             if (currentParts.length < 2) {
                 debugLog("Invalid current version format: " + MOD_VERSION);
+                CACHED_IS_IMPORTANT_UPDATE = false;
                 return false;
             }
             int currentMajor = Integer.parseInt(currentParts[0]); // X
@@ -83,6 +93,7 @@ public class UpdateChecker {
             String[] newParts = NEW_MOD_VERSION.split("\\.");
             if (newParts.length < 2) {
                 debugLog("Invalid new version format: " + NEW_MOD_VERSION);
+                CACHED_IS_IMPORTANT_UPDATE = false;
                 return false;
             }
             int newMajor = Integer.parseInt(newParts[0]); // X
@@ -99,9 +110,11 @@ public class UpdateChecker {
                 debugLog("Minor (patch) update detected: " + MOD_VERSION + " -> " + NEW_MOD_VERSION);
             }
 
+            CACHED_IS_IMPORTANT_UPDATE = isImportant;
             return isImportant;
         } catch (NumberFormatException e) {
             debugLog("Error parsing version numbers: " + e.getMessage());
+            CACHED_IS_IMPORTANT_UPDATE = false;
             return false;
         }
     }
@@ -113,10 +126,17 @@ public class UpdateChecker {
      * @return true if a recommended patch update is available in the same major.minor version
      */
     public static boolean isPatchUpdateRecommended() {
+        // Return cached result if already computed
+        if (CACHED_IS_PATCH_UPDATE_RECOMMENDED != null) {
+            debugLog("Using cached patch update recommendation result: " + CACHED_IS_PATCH_UPDATE_RECOMMENDED);
+            return CACHED_IS_PATCH_UPDATE_RECOMMENDED;
+        }
+
         debugLog("Checking if patch update is recommended...");
 
         if (!isUpdateAvailable()) {
             debugLog("No new version available, patch update not recommended");
+            CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
             return false;
         }
 
@@ -125,6 +145,7 @@ public class UpdateChecker {
             String[] currentParts = MOD_VERSION.split("\\.");
             if (currentParts.length < 3) {
                 debugLog("Invalid current version format: " + MOD_VERSION);
+                CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
                 return false;
             }
             int currentMajor = Integer.parseInt(currentParts[0]);
@@ -135,6 +156,7 @@ public class UpdateChecker {
             String[] newParts = NEW_MOD_VERSION.split("\\.");
             if (newParts.length < 3) {
                 debugLog("Invalid new version format: " + NEW_MOD_VERSION);
+                CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
                 return false;
             }
             int newMajor = Integer.parseInt(newParts[0]);
@@ -144,6 +166,7 @@ public class UpdateChecker {
             if (currentMajor != newMajor || currentMinor != newMinor) {
                 debugLog("Not in the same patch cycle: current " + currentMajor + "." + currentMinor +
                          ", new " + newMajor + "." + newMinor);
+                CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
                 return false;
             }
 
@@ -159,6 +182,7 @@ public class UpdateChecker {
 
             if (RECOMMENDED_PATCH_VERSION.isEmpty()) {
                 debugLog("No recommended patch version found in current cycle");
+                CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
                 return false;
             }
 
@@ -168,15 +192,18 @@ public class UpdateChecker {
                 int recPatch = Integer.parseInt(recParts[2]);
                 if (currentPatch < recPatch) {
                     debugLog("Recommended patch update found: " + RECOMMENDED_PATCH_VERSION + " (current: " + MOD_VERSION + ")");
+                    CACHED_IS_PATCH_UPDATE_RECOMMENDED = true;
                     return true;
                 }
             }
 
             debugLog("Current version is up to date with recommended patches");
+            CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
             return false;
 
         } catch (NumberFormatException e) {
             debugLog("Error parsing version numbers: " + e.getMessage());
+            CACHED_IS_PATCH_UPDATE_RECOMMENDED = false;
             return false;
         }
     }
