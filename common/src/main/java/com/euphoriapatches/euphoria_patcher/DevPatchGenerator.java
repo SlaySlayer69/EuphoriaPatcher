@@ -351,6 +351,25 @@ public class DevPatchGenerator {
             Path patchedExtracted = tempDir.resolve("patched-extracted");
             extractOrCopyShader(shaderPair.patchedShader, patchedExtracted);
 
+            // Verify version in patched shader
+            System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
+            String patchedVersion = readVersionFromPackJson(patchedExtracted);
+            String expectedVersion = PATCH_VERSION.replace("_", "");
+
+            if (patchedVersion == null) {
+                System.err.println(RED + "ERROR: Could not read version from patched shader's pack.json!" + RESET);
+                throw new RuntimeException("Missing version in patched shader's pack.json at " + patchedExtracted.resolve("shaders/pack.json"));
+            }
+
+            if (!patchedVersion.equals(expectedVersion)) {
+                System.err.println(RED + "ERROR: Version mismatch in patched shader!" + RESET);
+                System.err.println("Expected version: " + expectedVersion);
+                System.err.println("Found version: " + patchedVersion);
+                throw new RuntimeException("Patched shader version mismatch. Expected: " + expectedVersion + ", Found: " + patchedVersion);
+            }
+
+            System.out.println(GREEN + "✓ Version verified: " + patchedVersion + RESET);
+
             // Archive base shader to TAR
             System.out.println(YELLOW + "Creating TAR archive of base shader..." + RESET);
             Path baseArchived = tempDir.resolve(shaderPair.baseShader.getFileName().toString().replace(".zip", ".tar"));
@@ -452,7 +471,7 @@ public class DevPatchGenerator {
                 String fileName = entry.getFileName().toString();
 
                 // Skip excluded files and directories
-                if (fileName.equals(".git") || fileName.equals(".github") || fileName.endsWith(".zip")) {
+                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip")) {
                     System.out.println("    " + YELLOW + "Skipping: " + fileName + RESET);
                     continue;
                 }
