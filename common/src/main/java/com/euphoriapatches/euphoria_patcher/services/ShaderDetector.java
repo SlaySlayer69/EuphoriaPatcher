@@ -33,6 +33,9 @@ public class ShaderDetector {
     private int filesScannedCounter = 0;
     private int totalFilesToScan = 0;
 
+    private String buildDateStr = null;
+    private Integer currentBuildDate = null;
+
     public ShaderDetector(String brandName, String patchName, String version, String patchVersion,
                          String commonLocation, String shaderMyFileLocation, Path shaderpacks) {
         this.brandName = brandName;
@@ -435,8 +438,12 @@ public class ShaderDetector {
         Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
 
         String currentVersion = patchVersion.replace("_", "");
-        String buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
-        Integer currentBuildDate = parseBuildDate(buildDateStr);
+
+        // Initialize build date information only once
+        if (buildDateStr == null) {
+            buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
+            currentBuildDate = parseBuildDate(buildDateStr);
+        }
 
         // Check numbered dev version
         if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion)) {

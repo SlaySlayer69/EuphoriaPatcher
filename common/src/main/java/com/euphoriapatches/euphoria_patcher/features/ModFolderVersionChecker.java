@@ -32,6 +32,12 @@ public class ModFolderVersionChecker {
             debugLog("No EuphoriaPatcher mod files found in directory");
             return false;
         }
+
+        if (modFiles.length == 1) {
+            debugLog("Only one EuphoriaPatcher mod file found (current version), no check needed");
+            return false;
+        }
+
         debugLog("Found " + modFiles.length + " EuphoriaPatcher mod file(s)");
 
         Arrays.sort(modFiles, Comparator.comparing(File::getName).reversed());
