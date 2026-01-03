@@ -37,7 +37,7 @@ public class ShaderValidationErrorHandler {
      * Handles detection of a newer shader version than the mod supports
      */
     private static void handleNewerVersionDetected(String fileName, String originalFileName, ShaderVersionComparator versionComparator) {
-        String detectedVersion = versionComparator.getVersionStringFromFileName(fileName);
+        String detectedVersion = versionComparator.getComplementaryVersionFromFileName(fileName);
 
         EuphoriaPatcher.log(3, 8, "=== VERSION MISMATCH ===");
         EuphoriaPatcher.log(3, 8, "Found shader: " + originalFileName + " (version " + detectedVersion + ")");

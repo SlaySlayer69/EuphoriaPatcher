@@ -404,7 +404,7 @@ public class EuphoriaPatcher {
         IS_BASE_MESSAGE_SHOWN = true;
 
         // Try to find the highest older version
-        Path highestOlderVersion = versionComparator.findHighestOlderVersion();
+        Path highestOlderVersion = versionComparator.findHighestOlderComplementaryVersion();
 
         log(3, 8, "=== SHADER NOT FOUND ===");
         log(3, 8, "Required: " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));

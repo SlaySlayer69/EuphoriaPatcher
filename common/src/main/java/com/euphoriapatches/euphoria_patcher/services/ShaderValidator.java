@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ShaderValidator {
 
+    private static Boolean oshiAvailableCache = null;
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderValidator] " + message);
     }
@@ -22,6 +24,10 @@ public class ShaderValidator {
      * Checks if OSHI library is available at runtime
      */
     private static boolean isOshiAvailable() {
+        if (oshiAvailableCache != null) {
+            return oshiAvailableCache;
+        }
+
         try {
             Class<?> systemInfoClass = Class.forName("oshi.SystemInfo");
 
@@ -74,9 +80,11 @@ public class ShaderValidator {
                 }
             }
 
+            oshiAvailableCache = true;
             return true;
         } catch (ClassNotFoundException e) {
             debugLog("OSHI library not found: " + e.getMessage());
+            oshiAvailableCache = false;
             return false;
         }
     }

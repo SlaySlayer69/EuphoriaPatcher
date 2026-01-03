@@ -17,6 +17,10 @@ public class UpdateShaderConfig {
     private static final String EUPHORIA_IDENTIFIER = "AAA_THIS_IS_A_EUPHORIA_PATCHES_SETTINGS_FILE=true";
     private static final String VERSION_IDENTIFIER_PREFIX = "AAB_FOR_EUPHORIA_PATCHES_VERSION_";
     private static final String VERSION_IDENTIFIER_SUFFIX = "=true";
+    private static final Pattern EUPHORIA_FILE_PATTERN = Pattern.compile(
+        "(?:Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches))",
+        Pattern.CASE_INSENSITIVE
+    );
 
     private static final java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
@@ -89,19 +93,13 @@ public class UpdateShaderConfig {
             List<Path> filesToUpdate = new ArrayList<>();
             List<Boolean> addVersionFlags = new ArrayList<>();
 
-            // Use existing pattern - modified to match just file identification parts
-            Pattern euphoriaFilePattern = Pattern.compile(
-                "(?:Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches))",
-                Pattern.CASE_INSENSITIVE
-            );
-
             try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
                     path -> Files.isRegularFile(path) && path.toString().endsWith(".txt"))) {
 
                 for (Path configFile : configStream) {
                     String fileName = configFile.getFileName().toString();
                     // Check if matches any Euphoria Patches pattern
-                    if (euphoriaFilePattern.matcher(fileName).find()) {
+                    if (EUPHORIA_FILE_PATTERN.matcher(fileName).find()) {
                         boolean addVersionIdentifier = fileName.contains(EuphoriaPatcher.PATCH_VERSION);
                         filesToUpdate.add(configFile);
                         addVersionFlags.add(addVersionIdentifier);

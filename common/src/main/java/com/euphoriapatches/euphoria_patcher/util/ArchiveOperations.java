@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 
 public class ArchiveOperations {
 
+    private static ShaderVersionComparator cachedVersionComparator = null;
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ArchiveOperations] " + message);
     }
@@ -21,8 +23,11 @@ public class ArchiveOperations {
      * Get version comparator instance from EuphoriaPatcher
      */
     private static ShaderVersionComparator getVersionComparator() {
-        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
-        return instance != null ? instance.getVersionComparator() : null;
+        if (cachedVersionComparator == null) {
+            EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+            cachedVersionComparator = instance != null ? instance.getVersionComparator() : null;
+        }
+        return cachedVersionComparator;
     }
 
     public static Path extract(Path source, Path targetDir, String operationName) {

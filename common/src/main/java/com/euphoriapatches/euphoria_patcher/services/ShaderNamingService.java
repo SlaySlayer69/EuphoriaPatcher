@@ -9,11 +9,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 /**
  * Handles shader naming operations including renaming and creating alternative names
  */
 public class ShaderNamingService {
+    // Pattern to remove copy suffixes like (1), (2), Copy, etc.
+    private static final Pattern CLEAN_BASE_NAME_PATTERN = Pattern.compile("(?i)(?:[\\s_-]+(?:\\(copy\\)|copy|\\(\\d+\\)|\\d+))+$");
+
     private final String brandName;
     private final String patchName;
     private final String version;
@@ -42,7 +46,7 @@ public class ShaderNamingService {
     public String cleanBaseName(String baseName) {
         if (baseName == null) return null;
         debugLog("Before Cleaning base name: " + baseName);
-        String cleaned = baseName.replaceAll("(?i)(?:[\\s_-]+(?:\\(copy\\)|copy|\\(\\d+\\)|\\d+))+$", ""); // Remove copy suffixes like (1), (2), Copy, etc.
+        String cleaned = CLEAN_BASE_NAME_PATTERN.matcher(baseName).replaceAll("");
         cleaned = cleaned.replaceAll("\\s+", " ").trim(); // Remove any duplicate spaces that might result from the cleaning
         debugLog("Cleaned base name: " + cleaned);
         return cleaned;

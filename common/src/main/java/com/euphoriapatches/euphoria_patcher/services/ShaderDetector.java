@@ -33,8 +33,8 @@ public class ShaderDetector {
     private int filesScannedCounter = 0;
     private int totalFilesToScan = 0;
 
-    private String buildDateStr = null;
-    private Integer currentBuildDate = null;
+    private final String buildDateStr;
+    private final Integer currentBuildDate;
 
     public ShaderDetector(String brandName, String patchName, String version, String patchVersion,
                          String commonLocation, String shaderMyFileLocation, Path shaderpacks) {
@@ -48,6 +48,9 @@ public class ShaderDetector {
         // Circular dependency will be resolved by setter
         this.namingService = null;
         this.shaderValidator = new ShaderValidator();
+
+        this.buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
+        this.currentBuildDate = parseBuildDate(buildDateStr);
     }
 
     /**
@@ -206,25 +209,27 @@ public class ShaderDetector {
     public boolean isBrandNameShader(Path path, boolean isFile) {
         String name = path.getFileName().toString();
 
-        // Basic conditions
-        boolean hasBrandName = name.startsWith(brandName);
-        boolean notPatched = !name.contains(patchName);
-        boolean hasExactVersion = name.contains(version);
-        boolean notModifiedByOthers = !name.contains(" + ");
+        debugLog("is " + name + " a brand name shader?");
+
+        // Early exit for file type mismatch
+        if (isFile) {
+            if (!name.endsWith(".zip")) return false;
+        } else {
+            if (!Files.isDirectory(path)) return false;
+        }
+
+        // Basic conditions - check cheapest first
+        if (!name.startsWith(brandName)) return false;
+        if (name.contains(patchName)) return false;
+        if (!name.contains(version)) return false;
+        if (name.contains(" + ")) return false;
 
         // Exclude development or pre-release versions
-        boolean isNotDevVersion = !name.contains("_dev");
-        boolean isNotPreVersion = !name.contains("_pre");
+        if (name.contains("_dev")) return false;
+        if (name.contains("_pre")) return false;
 
-        boolean matchesPattern = hasBrandName && notPatched && hasExactVersion &&
-                                notModifiedByOthers &&
-                                isNotDevVersion && isNotPreVersion;
-
-        if (isFile) {
-            return matchesPattern && name.endsWith(".zip");
-        } else {
-            return matchesPattern && Files.isDirectory(path);
-        }
+        debugLog("Yes! " + name + " matches brand name shader pattern");
+        return true;
     }
 
     /**
@@ -439,12 +444,6 @@ public class ShaderDetector {
 
         String currentVersion = patchVersion.replace("_", "");
 
-        // Initialize build date information only once
-        if (buildDateStr == null) {
-            buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
-            currentBuildDate = parseBuildDate(buildDateStr);
-        }
-
         // Check numbered dev version
         if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion)) {
             if (info != null) {
@@ -583,23 +582,24 @@ public class ShaderDetector {
             String nameLower = path.getFileName().toString().toLowerCase(Locale.ROOT);
 
             List<String> popularPatterns = Arrays.asList(
-                    ".*bsl_v\\d\\..*",
+                    ".*bsl_v\\d+\\..*",
                     ".*sildur's.*",
                     ".*spooklementary.*",
                     ".*pixelcraftshaders_.*",
                     "ep_earlyDev_\\d+.*",
-                    "outdated complementary.*_r\\d.*ep.*",
-                    "comp\\d.*ep_\\d+.*",
-                    ".*photon_v\\d.*",
+                    "outdated complementary.*_r\\d+.*ep.*",
+                    "comp\\d+.*ep_\\d+.*",
+                    ".*photon_v\\d+.*",
                     ".*hysteria-shaders.*",
-                    "rethinking-voxels_r\\d.*",
-                    "solas shader v\\d.*",
+                    "rethinking-voxels_r\\d+.*",
+                    "solas shader v\\d+.*",
                     "superdupervanilla.*",
                     "insanity-shader.*",
-                    ".*(bliss_v\\d|bliss-shader).*",
+                    ".*(bliss_v\\d+|bliss-shader).*",
                     ".*\\b(continuum)\\b.*",
                     ".*(chocapic|chocapic13).*",
-                    ".*astra.*lex.*"
+                    ".*astra.*lex.*",
+                    "euphoriapatches_earlydev_.*"
             );
 
             for (String regex : popularPatterns) {

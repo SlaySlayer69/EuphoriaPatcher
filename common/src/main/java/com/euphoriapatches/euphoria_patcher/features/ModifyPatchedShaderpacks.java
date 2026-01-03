@@ -10,9 +10,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 public class ModifyPatchedShaderpacks {
+
+    private static final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ModifyPatchedShaderpacks] " + message);
@@ -104,14 +109,15 @@ public class ModifyPatchedShaderpacks {
         List<String> lines = Files.readAllLines(filePath);
         boolean modified = false;
 
-        // Prepare all regex patterns
-        List<java.util.regex.Pattern> patterns = new ArrayList<>();
+        // Prepare all regex patterns (with caching)
+        List<Pattern> patterns = new ArrayList<>();
         boolean[] patternMatched = new boolean[regexAndReplacements.length / 2]; // Track which patterns were matched
         int totalPatterns = regexAndReplacements.length / 2;
         int matchedPatterns = 0;
 
         for (int i = 0; i < regexAndReplacements.length; i += 2) {
-            patterns.add(java.util.regex.Pattern.compile(regexAndReplacements[i]));
+            String regex = regexAndReplacements[i];
+            patterns.add(patternCache.computeIfAbsent(regex, Pattern::compile));
         }
 
         // Process each line
@@ -123,7 +129,7 @@ public class ModifyPatchedShaderpacks {
                 // Skip patterns we've already matched
                 if (patternMatched[i]) continue;
 
-                java.util.regex.Pattern pattern = patterns.get(i);
+                Pattern pattern = patterns.get(i);
                 String replacement = regexAndReplacements[i * 2 + 1];
 
                 if (pattern.matcher(line).find()) {

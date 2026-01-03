@@ -501,7 +501,7 @@ public class ShaderLoader {
             // Convert the extracted version to integer
             if (extractedVersion != null) {
                 try {
-                    int versionInt = ShaderVersionComparator.convertShaderVersionToInt(extractedVersion);
+                    int versionInt = ShaderVersionComparator.convertVersionNumberToInt(extractedVersion);
                     debugLog("Converted shader loader version to integer: " + versionInt);
                     cachedShaderLoaderVersion = versionInt;
                     return cachedShaderLoaderVersion;
