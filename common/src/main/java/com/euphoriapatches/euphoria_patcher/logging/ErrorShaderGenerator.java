@@ -126,12 +126,8 @@ public class ErrorShaderGenerator {
      * Checks if the error shader is currently active
      */
     public static boolean isErrorShaderActive() {
-        Path currentShaderPath = ShaderLoader.getCurrentShaderpackPath();
-        if (currentShaderPath == null) {
-            return false;
-        }
-
-        String shaderName = currentShaderPath.getFileName().toString();
+        String shaderName = ShaderLoader.getCurrentShaderpackName();
+        if (shaderName == null) return false;
         return shaderName.equals(ERROR_SHADER_FOLDER);
     }
 

@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
@@ -44,6 +46,10 @@ public class ShaderLoader {
     private static String cachedShaderLoader = null;
     private static String cachedMCVersion = null;
     private static Integer cachedShaderLoaderVersion = null;
+    private static Path shaderLoaderConfigPath = null;
+    private static final Map<String, Path> shaderpackPathCache = new HashMap<>();
+    private static Path cachedCurrentShaderpackPath = null;
+    private static long lastConfigModifiedTime = 0;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderLoader] " + message);
@@ -545,15 +551,73 @@ public class ShaderLoader {
 
     /**
      * Locates the shader loader configuration file
-     * Checks for Iris, Oculus, and OptiFine config files in that order
+     * Checks for Iris, Oculus, OptiFine and Angelica config files in that order
      * @return Path to the shader loader config file, or null if none found
      */
     public static Path getShaderLoaderConfigPath() {
-        Path shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("iris.properties");
-        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
-        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
-        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
-        return shaderLoaderConfig;
+        // Return cached result if available
+        if (shaderLoaderConfigPath != null && Files.exists(shaderLoaderConfigPath)) {
+            debugLog("Using cached shader loader config path: " + shaderLoaderConfigPath);
+            return shaderLoaderConfigPath;
+        }
+
+        Path configPath = null;
+        String shaderLoader = getShaderLoader();
+
+        if (shaderLoader.equals(IRIS)) {
+            configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
+            if (Files.exists(configPath)) {
+                debugLog("Found Iris config at: " + configPath);
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+        } else if (shaderLoader.equals(OCULUS)) {
+            configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
+            if (Files.exists(configPath)) {
+                debugLog("Found Oculus config at: " + configPath);
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+        } else if (shaderLoader.equals(OPTIFINE)) {
+            configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+            if (Files.exists(configPath)) {
+                debugLog("Found OptiFine config at: " + configPath);
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+        } else if (shaderLoader.equals(ANGELICA)) {
+            configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
+            if (Files.exists(configPath)) {
+                debugLog("Found Angelica config at: " + configPath);
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+        } else { // Fallback: check all known config locations
+            configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
+            if (Files.exists(configPath)) {
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+            configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
+            if (Files.exists(configPath)) {
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+            configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+            if (Files.exists(configPath)) {
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+            configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
+            if (Files.exists(configPath)) {
+                shaderLoaderConfigPath = configPath;
+                return shaderLoaderConfigPath;
+            }
+        }
+
+        debugLog("No shader loader config found");
+        shaderLoaderConfigPath = null;
+        return null;
     }
 
     /**
@@ -561,12 +625,26 @@ public class ShaderLoader {
      * @return Path to the current shaderpack directory or zip file, or null if none is selected or an error occurs
      */
     public static Path getCurrentShaderpackPath() {
-        Path shaderLoaderConfig = getShaderLoaderConfigPath();
-        if (shaderLoaderConfig == null) {
+        if (shaderLoaderConfigPath == null) getShaderLoaderConfigPath();
+        if (shaderLoaderConfigPath == null) {
+            debugLog("No shader loader config path available");
             return null;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(shaderLoaderConfig.toFile()))) {
+        // Check if config file has been modified since we last cached
+        try {
+            long currentModifiedTime = Files.getLastModifiedTime(shaderLoaderConfigPath).toMillis();
+            if (cachedCurrentShaderpackPath != null && currentModifiedTime == lastConfigModifiedTime) {
+                debugLog("Using cached current shaderpack path (config unchanged): " + cachedCurrentShaderpackPath);
+                return cachedCurrentShaderpackPath;
+            }
+            lastConfigModifiedTime = currentModifiedTime;
+        } catch (IOException e) {
+            debugLog("Could not check config file modification time: " + e.getMessage());
+            // Continue anyway - will read the file
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(shaderLoaderConfigPath.toFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("shaderPack=")) {
@@ -574,15 +652,34 @@ public class ShaderLoader {
 
                     // Check if no shaderpack is selected (empty or "OFF")
                     if (shaderpackName.isEmpty() || shaderpackName.equalsIgnoreCase("OFF")) {
+                        cachedCurrentShaderpackPath = null;
                         return null;
+                    }
+
+                    // Check cache first
+                    if (shaderpackPathCache.containsKey(shaderpackName)) {
+                        Path cachedPath = shaderpackPathCache.get(shaderpackName);
+                        if (cachedPath != null && Files.exists(cachedPath)) {
+                            debugLog("Using cached shaderpack path for: " + shaderpackName + " from the HashMap");
+                            cachedCurrentShaderpackPath = cachedPath;
+                            return cachedPath;
+                        } else {
+                            // Remove stale cache entry
+                            shaderpackPathCache.remove(shaderpackName);
+                        }
                     }
 
                     // Find the actual shader file by name without relying on direct path resolution
                     try {
-                        return findShaderpackByName(shaderpackName);
+                        Path shaderpackPath = findShaderpackByName(shaderpackName);
+                        // Cache the result (even if null)
+                        shaderpackPathCache.put(shaderpackName, shaderpackPath);
+                        cachedCurrentShaderpackPath = shaderpackPath;
+                        return shaderpackPath;
                     } catch (Exception e) {
                         debugLog("Error finding shaderpack: " + e.getMessage());
                         EuphoriaPatcher.log(2, 0, "Could not find shaderpack: " + shaderpackName + " - " + e.getMessage());
+                        cachedCurrentShaderpackPath = null;
                         return null;
                     }
                 }
@@ -591,6 +688,15 @@ public class ShaderLoader {
             EuphoriaPatcher.log(3, 0, "Error reading shader loader config: " + e.getMessage());
         }
 
+        cachedCurrentShaderpackPath = null;
+        return null;
+    }
+
+    public static String getCurrentShaderpackName() {
+        Path shaderpackPath = getCurrentShaderpackPath();
+        if (shaderpackPath != null) {
+            return shaderpackPath.getFileName().toString();
+        }
         return null;
     }
 
