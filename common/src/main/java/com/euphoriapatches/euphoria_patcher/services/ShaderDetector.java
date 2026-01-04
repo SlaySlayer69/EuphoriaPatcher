@@ -12,6 +12,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -20,6 +21,8 @@ import java.util.stream.Stream;
  * Handles detection of installed shaders and their properties
  */
 public class ShaderDetector {
+    // Static cache to store whether shaders are Euphoria Patches shaders (persists across instances)
+    private static final Map<Path, Boolean> euphoriaShaderCache = new ConcurrentHashMap<>();
     private final String brandName;
     private final String patchName;
     private final String version;
@@ -624,6 +627,52 @@ public class ShaderDetector {
 
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderDetector] " + message);
+    }
+
+    /**
+     * Check if a shader path is an Euphoria Patches shader by looking for the myFile.glsl
+     * Uses static cache to avoid redundant checks across instances
+     * @param shaderPath Path to shader (directory or zip file)
+     * @return true if this is an Euphoria Patches shader
+     */
+    public boolean isEuphoriaPatchesShader(Path shaderPath) {
+        // Check cache first
+        Boolean cached = euphoriaShaderCache.get(shaderPath);
+        if (cached != null) {
+            debugLog("Cache hit for " + shaderPath.getFileName() + ": " + cached);
+            return cached;
+        }
+
+        // Not in cache, perform the check
+        boolean isEuphoriaShader = false;
+        try {
+            if (Files.isDirectory(shaderPath)) {
+                // For directories, simply check if myFile.glsl exists
+                Path myFilePath = shaderPath.resolve(shaderMyFileLocation);
+                isEuphoriaShader = Files.exists(myFilePath);
+                debugLog("Checked directory " + shaderPath.getFileName() + " for myFile: " + isEuphoriaShader);
+            } else if (Files.isRegularFile(shaderPath) && shaderPath.toString().endsWith(".zip")) {
+                // For zip files, check if the file exists inside the archive
+                isEuphoriaShader = ArchiveOperations.fileExistsInZip(shaderPath, shaderMyFileLocation);
+                debugLog("Checked zip " + shaderPath.getFileName() + " for myFile: " + isEuphoriaShader);
+            }
+        } catch (Exception e) {
+            debugLog("Error checking if shader is Euphoria Patches: " + e.getMessage());
+            isEuphoriaShader = false;
+        }
+
+        // Cache the result
+        euphoriaShaderCache.put(shaderPath, isEuphoriaShader);
+        return isEuphoriaShader;
+    }
+
+    /**
+     * Clear the Euphoria Patches shader cache
+     * Useful if shaders are modified/added/removed at runtime
+     */
+    public static void clearCache() {
+        euphoriaShaderCache.clear();
+        EuphoriaLogger.debugLog("[ShaderDetector] Cleared Euphoria Patches shader cache");
     }
 
     /**

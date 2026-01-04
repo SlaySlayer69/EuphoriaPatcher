@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class ArchiveOperations {
 
@@ -105,6 +107,28 @@ public class ArchiveOperations {
             }
         }
         Files.delete(path);
+    }
+
+    /**
+     * Check if a file exists inside a zip archive
+     * @param zipPath Path to the zip file
+     * @param filePathInZip Path to the file inside the zip (e.g., "shaders/myFile.glsl")
+     * @return true if the file exists in the zip
+     */
+    public static boolean fileExistsInZip(Path zipPath, String filePathInZip) {
+        if (!Files.exists(zipPath) || !zipPath.toString().endsWith(".zip")) {
+            return false;
+        }
+
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            ZipEntry entry = zipFile.getEntry(filePathInZip);
+            boolean exists = entry != null && !entry.isDirectory();
+            debugLog("Checked for " + filePathInZip + " in " + zipPath.getFileName() + ": " + exists);
+            return exists;
+        } catch (IOException e) {
+            debugLog("Error checking file in zip: " + e.getMessage());
+            return false;
+        }
     }
 
     public static boolean verifyBaseArchive(Path baseArchived, String originalFileName) {
