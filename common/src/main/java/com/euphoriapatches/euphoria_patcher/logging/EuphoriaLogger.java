@@ -337,6 +337,15 @@ public class EuphoriaLogger {
         }
     }
 
+    public static String getStackTrace(Exception e) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getClass().getName()).append(": ").append(e.getMessage()).append("\n");
+        for (StackTraceElement element : e.getStackTrace()) {
+            sb.append("  at ").append(element.toString()).append("\n");
+        }
+        return sb.toString();
+    }
+
     /**
      * Extracts a URL from an error message if present
      * @param message The message to extract URL from

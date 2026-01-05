@@ -131,6 +131,42 @@ public class ArchiveOperations {
         }
     }
 
+    /**
+     * Read a file's content from a zip archive
+     * @param zipPath Path to the zip file
+     * @param filePathInZip Path to the file inside the zip (e.g., "shaders/pack.json")
+     * @return The file content as a String, or null if the file doesn't exist or an error occurs
+     */
+    public static String readFileFromZip(Path zipPath, String filePathInZip) {
+        if (!Files.exists(zipPath) || !zipPath.toString().endsWith(".zip")) {
+            return null;
+        }
+
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            ZipEntry entry = zipFile.getEntry(filePathInZip);
+            if (entry == null || entry.isDirectory()) {
+                debugLog("File not found in zip: " + filePathInZip);
+                return null;
+            }
+
+            // Read the file content
+            StringBuilder content = new StringBuilder();
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(zipFile.getInputStream(entry)))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    content.append(line).append("\n");
+                }
+            }
+
+            debugLog("Read " + content.length() + " bytes from " + filePathInZip + " in " + zipPath.getFileName());
+            return content.toString();
+        } catch (IOException e) {
+            debugLog("Error reading file from zip: " + e.getMessage());
+            return null;
+        }
+    }
+
     public static boolean verifyBaseArchive(Path baseArchived, String originalFileName) {
         try {
             String fileName = baseArchived.getFileName().toString();

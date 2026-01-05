@@ -7,5 +7,9 @@
     "IrisModernStandardMacrosMixin",
     "IrisLegacyStandardMacrosMixin"
   ],
-  "client": ["ReloadShadersOnDimensionChangeMixin", "ClientTickMixin"]
+  "client": [
+    "ReloadShadersOnDimensionChangeMixin",
+    "ClientTickMixin",
+    "IrisHeaderEntryMixin"
+  ]
 }

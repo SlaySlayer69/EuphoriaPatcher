@@ -4,7 +4,6 @@ import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,6 +22,9 @@ import java.util.stream.Stream;
 public class ShaderDetector {
     // Static cache to store whether shaders are Euphoria Patches shaders (persists across instances)
     private static final Map<Path, Boolean> euphoriaShaderCache = new ConcurrentHashMap<>();
+    // Static cache to store shader versions read from pack.json (persists across instances)
+    // Uses Optional to distinguish between "not checked" (not in map), "no version" (Optional.empty()), and "version found" (Optional.of(version))
+    private static final Map<Path, Optional<String>> versionCache = new ConcurrentHashMap<>();
     private final String brandName;
     private final String patchName;
     private final String version;
@@ -38,6 +40,10 @@ public class ShaderDetector {
 
     private final String buildDateStr;
     private final Integer currentBuildDate;
+
+    private static Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
+    private static Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
+    private static boolean hasAnyDevVersion = false;
 
     public ShaderDetector(String brandName, String patchName, String version, String patchVersion,
                          String commonLocation, String shaderMyFileLocation, Path shaderpacks) {
@@ -427,6 +433,37 @@ public class ShaderDetector {
         }
     }
 
+    public boolean noDevVersionsInstalled() {
+        // Return cached value if already checked
+        if (hasAnyDevVersion) {
+            return false;
+        }
+
+        try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path path : stream) {
+                    if (!Files.isRegularFile(path)) {
+                        continue;
+                    }
+
+                    String fileName = path.getFileName().toString();
+
+                    // Check both patterns
+                    if (numberedDevPattern.matcher(fileName).matches() ||
+                        earlyDevPattern.matcher(fileName).matches()) {
+                        hasAnyDevVersion = true;
+                        debugLog("Found dev version: " + fileName);
+                        return false;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            debugLog("Error checking for dev versions: " + e.getMessage());
+        }
+
+        return true;
+    }
+
     /**
      * Check if a given path represents a newer dev version
      * Supports two formats:
@@ -442,13 +479,12 @@ public class ShaderDetector {
         }
 
         String fileName = path.getFileName().toString();
-        Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
-        Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
 
         String currentVersion = patchVersion.replace("_", "");
 
         // Check numbered dev version
         if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion)) {
+            hasAnyDevVersion = true;
             if (info != null) {
                 info.isAlreadyInstalled = true;
                 info.installedDir = path;
@@ -462,6 +498,7 @@ public class ShaderDetector {
 
         // Check early dev version
         if (checkEarlyDevVersion(fileName, earlyDevPattern, currentBuildDate)) {
+            hasAnyDevVersion = true;
             if (info != null) {
                 info.isAlreadyInstalled = true;
                 info.installedDir = path;
@@ -630,16 +667,16 @@ public class ShaderDetector {
     }
 
     /**
-     * Check if a shader path is an Euphoria Patches shader by looking for the myFile.glsl
+     * Check if a shader path is a Euphoria Patches shader by looking for the myFile.glsl
      * Uses static cache to avoid redundant checks across instances
      * @param shaderPath Path to shader (directory or zip file)
-     * @return true if this is an Euphoria Patches shader
+     * @return true if this is a Euphoria Patches shader
      */
     public boolean isEuphoriaPatchesShader(Path shaderPath) {
         // Check cache first
         Boolean cached = euphoriaShaderCache.get(shaderPath);
         if (cached != null) {
-            debugLog("Cache hit for " + shaderPath.getFileName() + ": " + cached);
+            debugLog("isEuphoriaPatchesShader cache hit for " + shaderPath.getFileName() + ": " + cached);
             return cached;
         }
 
@@ -672,7 +709,84 @@ public class ShaderDetector {
      */
     public static void clearCache() {
         euphoriaShaderCache.clear();
-        EuphoriaLogger.debugLog("[ShaderDetector] Cleared Euphoria Patches shader cache");
+        versionCache.clear();
+        EuphoriaLogger.debugLog("[ShaderDetector] Cleared Euphoria Patches shader cache and version cache");
+    }
+
+    /**
+     * Reads the version from pack.json in a shader directory or zip file
+     * Uses static cache to avoid redundant reads across instances
+     * @param shaderPath Path to shader (directory or zip file)
+     * @return Version string from pack.json, or null if not found
+     */
+    public String readVersionFromPackJson(Path shaderPath) {
+        // Check cache first
+        Optional<String> cached = versionCache.get(shaderPath);
+        if (cached != null) {
+            debugLog("Version cache hit for " + shaderPath.getFileName() + ": " + cached.orElse("null"));
+            return cached.orElse(null);
+        }
+
+        // Not in cache, perform the read
+        String version = null;
+        Path packJsonPath = null;
+
+        try {
+            if (Files.isDirectory(shaderPath)) {
+                // For directories, read directly from pack.json
+                packJsonPath = shaderPath.resolve("shaders/pack.json");
+                if (Files.exists(packJsonPath)) {
+                    version = readVersionFromFile(packJsonPath);
+                    debugLog("Read version from directory " + shaderPath.getFileName() + ": " + version);
+                } else {
+                    debugLog("pack.json not found at " + packJsonPath);
+                }
+            } else if (Files.isRegularFile(shaderPath) && shaderPath.toString().endsWith(".zip")) {
+                // For zip files, read from archive
+                String packJsonContent = ArchiveOperations.readFileFromZip(shaderPath, "shaders/pack.json");
+                if (packJsonContent != null) {
+                    version = parseVersionFromJson(packJsonContent);
+                    debugLog("Read version from zip " + shaderPath.getFileName() + ": " + version);
+                } else {
+                    debugLog("pack.json not found in zip " + shaderPath.getFileName());
+                }
+            }
+        } catch (Exception e) {
+            debugLog("Error reading version from pack.json: " + e.getMessage());
+        }
+
+        // Cache the result (including null)
+        versionCache.put(shaderPath, Optional.ofNullable(version));
+        return version;
+    }
+
+    /**
+     * Reads version string from a pack.json file
+     */
+    private String readVersionFromFile(Path packJsonPath) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(packJsonPath)) {
+            String line;
+            Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
+            while ((line = reader.readLine()) != null) {
+                Matcher matcher = versionPattern.matcher(line);
+                if (matcher.find()) {
+                    return matcher.group(1);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses version string from pack.json content
+     */
+    private String parseVersionFromJson(String jsonContent) {
+        Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
+        Matcher matcher = versionPattern.matcher(jsonContent);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
     /**

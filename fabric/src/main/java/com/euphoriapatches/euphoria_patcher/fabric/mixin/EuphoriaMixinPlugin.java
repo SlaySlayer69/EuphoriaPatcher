@@ -12,6 +12,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
     public static final String MINECRAFT_CLIENT_CLASS = "net.minecraft.client.Minecraft";
     public static final String MINECRAFT_CLIENT_YARN_CLASS = "net.minecraft.class_310";
+    public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -49,6 +50,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("ReloadShadersOnDimensionChangeMixinYarn")) {
             return checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisHeaderEntryMixin")) {
+            return checkClassExists(IRIS_HEADER_ENTRY_CLASS);
         }
 
         // Apply other mixins by default

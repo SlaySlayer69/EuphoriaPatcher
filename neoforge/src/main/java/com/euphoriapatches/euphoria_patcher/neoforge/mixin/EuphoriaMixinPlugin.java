@@ -10,6 +10,7 @@ import java.util.Set;
 public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.gl.shader.StandardMacros";
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
+    public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -29,6 +30,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisModernStandardMacrosMixin")) {
             return checkClassExists(MODERN_IRIS_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisHeaderEntryMixin")) {
+            return checkClassExists(IRIS_HEADER_ENTRY_CLASS);
         }
 
         // Apply other mixins by default

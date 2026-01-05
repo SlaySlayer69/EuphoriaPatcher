@@ -4,6 +4,7 @@
   "plugin": "com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin",
   "mixins": [
     "EuphoriaPatcherMixin",
+    "IrisHeaderEntryMixin",
     "IrisLegacyStandardMacrosMixin",
     "IrisModernStandardMacrosMixin"
   ],

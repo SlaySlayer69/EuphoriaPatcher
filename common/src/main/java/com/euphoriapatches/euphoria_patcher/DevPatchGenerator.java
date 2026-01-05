@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.sigpipe.jbsdiff.ui.FileUI;
+import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.HashUtils;
@@ -16,8 +17,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Standalone patch generator for development purposes.
@@ -305,8 +304,10 @@ public class DevPatchGenerator {
                 if (name.equals("Euphoria-Patches") && Files.isDirectory(path)) {
                     Path gitDir = path.resolve(".git");
                     if (Files.exists(gitDir) && Files.isDirectory(gitDir)) {
-                        // Verify version from pack.json
-                        String detectedVersion = readVersionFromPackJson(path);
+                        // Verify version from pack.json using ShaderDetector
+                        ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
+                            null, null, SHADERPACKS_DIR);
+                        String detectedVersion = detector.readVersionFromPackJson(path);
                         if (detectedVersion != null && detectedVersion.equals(PATCH_VERSION.replace("_", ""))) {
                             System.out.println(GREEN + "Found Euphoria-Patches directory with version " + detectedVersion + RESET);
                             patchedShader = path;
@@ -345,33 +346,6 @@ public class DevPatchGenerator {
     }
 
     /**
-     * Reads the version from pack.json in the Euphoria-Patches directory
-     */
-    private static String readVersionFromPackJson(Path euphoriaDir) {
-        Path packJsonPath = euphoriaDir.resolve("shaders/pack.json");
-        if (!Files.exists(packJsonPath)) {
-            System.err.println(YELLOW + "Warning: pack.json not found at " + packJsonPath + RESET);
-            return null;
-        }
-
-        try (BufferedReader reader = Files.newBufferedReader(packJsonPath)) {
-            // Simple JSON parsing - look for "version": "x.x.x"
-            String line;
-            Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
-            while ((line = reader.readLine()) != null) {
-                Matcher matcher = versionPattern.matcher(line);
-                if (matcher.find()) {
-                    return matcher.group(1);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println(RED + "ERROR: Failed to read pack.json: " + e.getMessage() + RESET);
-        }
-
-        return null;
-    }
-
-    /**
      * Generates the .patch files
      */
     private static void generatePatchFiles(ShaderPair shaderPair) throws Exception {
@@ -391,7 +365,9 @@ public class DevPatchGenerator {
 
             // Verify version in patched shader
             System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
-            String patchedVersion = readVersionFromPackJson(patchedExtracted);
+            ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
+                null, null, SHADERPACKS_DIR);
+            String patchedVersion = detector.readVersionFromPackJson(patchedExtracted);
             String expectedVersion = PATCH_VERSION.replace("_", "");
 
             if (patchedVersion == null) {

@@ -1,7 +1,10 @@
 package com.euphoriapatches.euphoria_patcher.monitoring;
 
+import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -213,6 +216,14 @@ public class PotatoFileMonitor {
     private static boolean performPotatoCheck(Path shaderpackPath) {
         String potatoRelativePath = "shaders/lib/textures/potato.png";
 
+        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        ShaderDetector shaderDetector = instance.getShaderDetector();
+
+        if (!shaderDetector.isEuphoriaPatchesShader(shaderpackPath)) {
+            debugLog("Shaderpack is not recognized as Euphoria Patches shader");
+            return false;
+        }
+
         try {
             // Check if it's a directory
             if (Files.isDirectory(shaderpackPath)) {
@@ -223,16 +234,9 @@ public class PotatoFileMonitor {
             // Check if it's a ZIP file
             if (Files.isRegularFile(shaderpackPath) &&
                 shaderpackPath.toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
-
-                try (ZipFile zipFile = new ZipFile(shaderpackPath.toFile())) {
-                    ZipEntry entry = zipFile.getEntry(potatoRelativePath);
-                    boolean exists = entry != null;
-                    debugLog("ZIP shaderpack: potato.png " + (exists ? "exists" : "does not exist"));
-                    return exists;
-                } catch (IOException e) {
-                    debugLog("Error reading ZIP file: " + e.getMessage());
-                    return false;
-                }
+                boolean exists = ArchiveOperations.fileExistsInZip(shaderpackPath, potatoRelativePath);
+                debugLog("ZIP shaderpack: potato.png " + (exists ? "exists" : "does not exist"));
+                return exists;
             }
 
             debugLog("Shaderpack is neither a directory nor a ZIP file");
