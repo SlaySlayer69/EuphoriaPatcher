@@ -291,8 +291,7 @@ public class EuphoriaPatcher {
         Path shader = findInstalledShaderPath(baseFile, installedDir);
 
         if (shader != null) {
-            applyShaderModifications(shader, styleUnbound, styleReimagined);
-            namingService.createAlternativeShaderNames(shader, false, alternativeShaderNames);
+            applyShaderModifications(shader, styleUnbound, styleReimagined, isAlreadyInstalled);
             displayFinalMessage();
         } else {
             debugLog("No valid shader path found for thank you message");
@@ -313,10 +312,11 @@ public class EuphoriaPatcher {
         return shaderDetector.findPatchedShaderDirectory();
     }
 
-    private void applyShaderModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
+    private void applyShaderModifications(Path shader, boolean styleUnbound, boolean styleReimagined, boolean isAlreadyInstalled) {
         applyUpdateNotification(shader, styleUnbound, styleReimagined);
         applyCompatibilityModifications(shader, styleUnbound, styleReimagined);
         applyDeveloperModifications(shader, styleUnbound, styleReimagined);
+        namingService.createAlternativeShaderNames(shader, isAlreadyInstalled, alternativeShaderNames);
     }
 
     private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {

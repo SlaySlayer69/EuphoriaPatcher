@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedReader;
@@ -130,6 +131,7 @@ public class ShaderNamingService {
      * Create alternative shader names as configured
      */
     public void createAlternativeShaderNames(Path patchedShaderPath, boolean isAlreadyInstalled, String alternativeShaderNames) {
+        debugLog("createAlternativeShaderNames called with isAlreadyInstalled: " + isAlreadyInstalled);
         if (alternativeShaderNames.isEmpty()) {
             debugLog("No alternative shader names configured.");
             return; // No alternative names to create
@@ -216,7 +218,7 @@ public class ShaderNamingService {
                         String fileVersion = firstLine.replace("// Euphoria Patches ", "").trim();
                         String expectedVersion = patchVersion.replace("_", "");
 
-                        if (!fileVersion.equals(expectedVersion)) {
+                        if (VersionComparator.isNewerVersion(expectedVersion, fileVersion)) {
                             debugLog("Found outdated alternative shader \"" + newName + "\" (version " + fileVersion + "), updating to " + expectedVersion);
                             // Delete outdated version
                             ArchiveOperations.deleteRecursively(targetPath);
