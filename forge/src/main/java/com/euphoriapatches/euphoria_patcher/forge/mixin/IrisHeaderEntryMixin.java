@@ -23,7 +23,7 @@ public class IrisHeaderEntryMixin {
     @Unique
     private static String euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
 
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
         try {
             EuphoriaPatcher instance = EuphoriaPatcher.getInstance();

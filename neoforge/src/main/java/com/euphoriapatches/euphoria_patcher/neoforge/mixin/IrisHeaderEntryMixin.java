@@ -7,7 +7,6 @@ import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -30,7 +29,7 @@ public class IrisHeaderEntryMixin {
     @Unique
     private static String euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
 
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
         try {
             EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
@@ -170,7 +169,14 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$openUrl() {
         try {
-            Util.getPlatform().openUri(euphoriaPatcher$EuphoriaURL);
+            Class<?> utilClass;
+            try {
+                utilClass = Class.forName("net.minecraft.Util");
+            } catch (ClassNotFoundException ex) {
+                utilClass = Class.forName("net.minecraft.util.Util");
+            }
+            Object platform = utilClass.getMethod("getPlatform").invoke(null);
+            platform.getClass().getMethod("openUri", String.class).invoke(platform, euphoriaPatcher$EuphoriaURL);
             euphoriaPatcher$debugLog("Successfully opened URL");
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Failed to open URL: " + e.getMessage());
