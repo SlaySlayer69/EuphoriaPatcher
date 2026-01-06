@@ -42,6 +42,13 @@ public class IrisDefineHelper {
             defineKey.accept(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
 
+            if (ModLoaderSpecifics.isCurrentDimensionInMappingsStatic()) {
+                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES");
+                debugLog("Adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define");
+            } else {
+                debugLog("Not adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define - dimension not in dimensions.properties");
+            }
+
             String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase();
             defineKey.accept(standardDefines, currentDimension);
             debugLog("Adding " + currentDimension + " define");

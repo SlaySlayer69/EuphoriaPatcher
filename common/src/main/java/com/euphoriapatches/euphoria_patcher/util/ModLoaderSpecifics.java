@@ -65,9 +65,15 @@ public abstract class ModLoaderSpecifics {
 
     /**
      * Get the current dimension the player is in.
-     * @return dimension string: "overworld", "nether", "end", or "other"
+     * @return dimension string: "overworld", "nether", "end", or "or sanitized dimension ID"
      */
     public abstract String getCurrentDimension();
+
+    /**
+     * Check if the current dimension ID is present in the dimension mappings.
+     * @return true if present, false otherwise
+     */
+    public abstract boolean isCurrentDimensionInMappings();
 
     /**
      * Set the system clipboard to the given string.
@@ -118,10 +124,18 @@ public abstract class ModLoaderSpecifics {
 
     /**
      * Get the current dimension the player is in.
-     * @return dimension string: "overworld", "nether", "end", or "other"
+     * @return dimension string: "overworld", "nether", "end", or "or sanitized dimension ID"
      */
     public static String getCurrentDimensionStatic() {
         return getInstance().getCurrentDimension();
+    }
+
+    /**
+     * Check if the current dimension ID is present in the dimension mappings.
+     * @return true if present, false otherwise
+     */
+    public static boolean isCurrentDimensionInMappingsStatic() {
+        return getInstance().isCurrentDimensionInMappings();
     }
 
     /**

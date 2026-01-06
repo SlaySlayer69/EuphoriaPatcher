@@ -53,17 +53,12 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        if (mappingBranch == 0) discoverMappingBranch();
+        return Dimensions.getCurrentDimension(getCurrentDimensionID());
+    }
 
-        // Use cached result
-        if (mappingBranch == 1) {
-            return getCurrentDimensionObfuscated();
-        } else if (mappingBranch == 2) {
-            return getCurrentDimensionModern();
-        } else if (mappingBranch == 3) {
-            return getCurrentDimensionObfuscatedPre11605();
-        }
-        return "overworld";
+    @Override
+    public boolean isCurrentDimensionInMappings() {
+        return Dimensions.isCurrentDimensionInMappings(getCurrentDimensionID());
     }
 
     @Override
@@ -80,6 +75,20 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         }
 
         return false;
+    }
+
+    private String getCurrentDimensionID() {
+        if (mappingBranch == 0) discoverMappingBranch();
+
+        // Use cached result
+        if (mappingBranch == 1) {
+            return getCurrentDimensionIDObfuscated();
+        } else if (mappingBranch == 2) {
+            return getCurrentDimensionIDModern();
+        } else if (mappingBranch == 3) {
+            return getCurrentDimensionIDObfuscatedPre11605();
+        }
+        return "minecraft:overworld";
     }
 
     private boolean setClipboardObfuscated(String str) {
@@ -218,8 +227,8 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         }
     }
 
-    private String getCurrentDimensionObfuscated() {
-        debugLog("Getting current dimension (obfuscated mappings)");
+    private String getCurrentDimensionIDObfuscated() {
+        debugLog("Getting current dimension ID (obfuscated mappings)");
 
         try {
             // Get Minecraft instance using obfuscated method
@@ -228,7 +237,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got Minecraft instance using m_91087_");
 
             if (minecraft == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get level field using obfuscated name
@@ -236,7 +245,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got level field f_91073_");
 
             if (level == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get dimension key using obfuscated method
@@ -250,15 +259,15 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             String currentDimensionId = location.toString();
             debugLog("Dimension ID: " + currentDimensionId);
 
-            return Dimensions.getCurrentDimension(currentDimensionId);
+            return currentDimensionId;
         } catch (Exception e) {
             debugLog("Error in obfuscated method: " + e.getClass().getName() + " - " + e.getMessage());
-            return "overworld";
+            return "minecraft:overworld";
         }
     }
 
-    private String getCurrentDimensionModern() {
-        debugLog("Getting current dimension (modern mappings)");
+    private String getCurrentDimensionIDModern() {
+        debugLog("Getting current dimension ID (modern mappings)");
 
         try {
             // Get Minecraft instance using modern method
@@ -267,7 +276,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got Minecraft instance using getInstance");
 
             if (minecraft == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get level field using modern name
@@ -275,7 +284,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got level field");
 
             if (level == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get dimension key using modern method
@@ -296,15 +305,15 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             }
 
             debugLog("Current dimension ID (parsed): " + currentDimensionId);
-            return Dimensions.getCurrentDimension(currentDimensionId);
+            return currentDimensionId;
         } catch (Exception e) {
             debugLog("Error in modern method: " + e.getClass().getName() + " - " + e.getMessage());
-            return "overworld";
+            return "minecraft:overworld";
         }
     }
 
-     private String getCurrentDimensionObfuscatedPre11605() {
-        debugLog("Getting current dimension (obfuscated pre-1.16.5)");
+     private String getCurrentDimensionIDObfuscatedPre11605() {
+        debugLog("Getting current dimension ID (obfuscated pre-1.16.5)");
 
         try {
             // Get Minecraft instance using obfuscated method
@@ -313,7 +322,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got Minecraft instance using func_71410_x");
 
             if (minecraft == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get world field using obfuscated name
@@ -321,7 +330,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Got world field field_71441_e " + world.toString());
 
             if (world == null) {
-                return "overworld";
+                return "minecraft:overworld";
             }
 
             // Get dimension key using obfuscated method (1.16.5: func_234923_W_ = getDimensionKey)
@@ -335,10 +344,10 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             String currentDimensionId = location.toString();
             debugLog("Dimension ID: " + currentDimensionId);
 
-            return Dimensions.getCurrentDimension(currentDimensionId);
+            return currentDimensionId;
         } catch (Exception e) {
             debugLog("Error in obfuscated pre-1.16.5 method: " + e.getClass().getName() + " - " + e.getMessage());
-            return "overworld";
+            return "minecraft:overworld";
         }
     }
 

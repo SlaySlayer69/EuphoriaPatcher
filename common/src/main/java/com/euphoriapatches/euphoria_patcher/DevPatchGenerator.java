@@ -144,6 +144,11 @@ public class DevPatchGenerator {
             }
 
             @Override
+            public boolean isCurrentDimensionInMappings() {
+                return true;
+            }
+
+            @Override
             public boolean setClipboard(String str) {
                 return false;
             }

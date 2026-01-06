@@ -44,6 +44,11 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
     }
 
     @Override
+    public boolean isCurrentDimensionInMappings() {
+        return true;
+    }
+
+    @Override
     public boolean setClipboard(String str) {
         return false;
     }

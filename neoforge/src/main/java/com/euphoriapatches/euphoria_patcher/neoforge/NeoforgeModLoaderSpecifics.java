@@ -60,32 +60,12 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        try {
-            debugLog("Getting current dimension");
-            Minecraft minecraft = Minecraft.getInstance();
+        return Dimensions.getCurrentDimension(getCurrentDimensionID());
+    }
 
-            if (minecraft.level == null) {
-                debugLog("Minecraft or level is null, defaulting to 'overworld'");
-                return "overworld";
-            }
-
-            String currentDimensionId;
-            String dimensionString = minecraft.level.dimension().toString();
-            debugLog("Dimension toString(): " + dimensionString);
-            // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
-            if (dimensionString.contains("/")) {
-                currentDimensionId = dimensionString.substring(dimensionString.indexOf("/") + 1)
-                        .replace("]", "").trim();
-            } else {
-                currentDimensionId = "minecraft:overworld";
-            }
-
-            debugLog("Current dimension ID: " + currentDimensionId);
-            return Dimensions.getCurrentDimension(currentDimensionId);
-        } catch (Throwable t) {
-            debugLog("Unexpected error getting current dimension: " + t.getMessage());
-            return "overworld";
-        }
+    @Override
+    public boolean isCurrentDimensionInMappings() {
+        return Dimensions.isCurrentDimensionInMappings(getCurrentDimensionID());
     }
 
     @Override
@@ -111,6 +91,35 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Error setting clipboard: " + e.getMessage());
         }
         return false;
+    }
+
+    private String getCurrentDimensionID() {
+        try {
+            debugLog("Getting current dimension ID");
+            Minecraft minecraft = Minecraft.getInstance();
+
+            if (minecraft.level == null) {
+                debugLog("Minecraft or level is null, defaulting to 'minecraft:overworld'");
+                return "minecraft:overworld";
+            }
+
+            String currentDimensionId;
+            String dimensionString = minecraft.level.dimension().toString();
+            debugLog("Dimension toString(): " + dimensionString);
+            // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
+            if (dimensionString.contains("/")) {
+                currentDimensionId = dimensionString.substring(dimensionString.indexOf("/") + 1)
+                        .replace("]", "").trim();
+            } else {
+                currentDimensionId = "minecraft:overworld";
+            }
+
+            debugLog("Current dimension ID: " + currentDimensionId);
+            return currentDimensionId;
+        } catch (Throwable t) {
+            debugLog("Unexpected error getting current dimension ID: " + t.getMessage());
+            return "minecraft:overworld";
+        }
     }
 
     private void debugLog(String message) {

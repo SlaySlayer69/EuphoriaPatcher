@@ -15,20 +15,35 @@ import java.util.Map;
 public class Dimensions {
     public static final String SHADER_DIMENSION_PROPERTIES_LOCATION = "shaders/dimension.properties";
 
+    // Cache to store dimension ID -> dimension category mappings
+    private static final Map<String, String> dimensionCache = new HashMap<>();
+
+    // Cache to store whether a dimension ID is in mappings
+    private static final Map<String, Boolean> dimensionInMappingsCache = new HashMap<>();
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[Dimensions] " + message);
     }
 
     /**
-     * Gets the dimension category based on dimension ID and shader properties
+     * Gets the dimension category based on dimension ID and shader properties.
+     * Returns mapped categories for recognized dimensions, or a sanitized version
+     * of the dimension ID for unrecognized dimensions (safe for C-style defines).
      *
      * @param currentDimensionId The dimension identifier string
-     * @return String representing the dimension: "overworld", "nether", "end", or "other"
+     * @return String representing the dimension (e.g., "overworld", "nether", "end", or sanitized dimension ID)
      */
     public static String getCurrentDimension(String currentDimensionId) {
         if (currentDimensionId == null) {
             debugLog("Dimension ID is null, defaulting to 'overworld'");
             return "overworld";
+        }
+
+        // Check cache first for early exit
+        if (dimensionCache.containsKey(currentDimensionId)) {
+            String cached = dimensionCache.get(currentDimensionId);
+            debugLog("Found dimension in cache: " + cached);
+            return cached;
         }
 
         // Get current shader pack path
@@ -39,6 +54,8 @@ public class Dimensions {
             debugLog("Active shaderpack: " + shaderpackPath.getFileName());
         }
 
+        String result;
+
         if (shaderpackPath != null) {
             // Parse dimension mappings
             Map<String, String> dimensionMappings = parseDimensionProperties(shaderpackPath);
@@ -46,31 +63,102 @@ public class Dimensions {
 
             // Check if the dimension is directly mapped
             if (dimensionMappings.containsKey(currentDimensionId)) {
-                String mappedCategory = dimensionMappings.get(currentDimensionId);
-                debugLog("Found mapping for current dimension: " + mappedCategory);
-                return mappedCategory;
+                result = dimensionMappings.get(currentDimensionId);
+                debugLog("Found mapping for current dimension: " + result);
+                dimensionCache.put(currentDimensionId, result);
+                return result;
             } else {
                 debugLog("No specific mapping found for dimension: " + currentDimensionId);
             }
         }
 
         // Check if it's a vanilla dimension
-        debugLog("Checking vanilla dimension IDs");
-        switch (currentDimensionId) {
-            case "minecraft:overworld":
-                debugLog("Identified as vanilla overworld");
-                return "overworld";
-            case "minecraft:the_nether":
-                debugLog("Identified as vanilla nether");
-                return "nether";
-            case "minecraft:the_end":
-                debugLog("Identified as vanilla end");
-                return "end";
+        String vanillaCategory = getVanillaDimensionCategory(currentDimensionId);
+        if (vanillaCategory != null) {
+            debugLog("Identified as vanilla " + vanillaCategory);
+            dimensionCache.put(currentDimensionId, vanillaCategory);
+            return vanillaCategory;
         }
 
-        // If no specific mapping is found, return "other"
-        debugLog("No mapping found, returning 'other'");
-        return "other";
+        // Sanitize dimension ID for use as a C-style define
+        result = sanitizeDimensionId(currentDimensionId);
+        debugLog("No mapping found, returning sanitized dimension ID: " + result);
+        dimensionCache.put(currentDimensionId, result);
+        return result;
+    }
+
+    /**
+     * Checks if a dimension ID is recognized in the shader pack mappings or as a vanilla dimension.
+     *
+     * @param currentDimensionId The dimension identifier string
+     * @return true if the dimension is in mappings, false otherwise
+     */
+    public static boolean isCurrentDimensionInMappings(String currentDimensionId) {
+        if (currentDimensionId == null) {
+            return false;
+        }
+
+        // Check cache first for early exit
+        if (dimensionInMappingsCache.containsKey(currentDimensionId)) {
+            debugLog("Dimension in mappings cache hit for: " + currentDimensionId);
+            return dimensionInMappingsCache.get(currentDimensionId);
+        }
+
+        boolean isInMappings;
+
+        // Check vanilla dimensions
+        if (getVanillaDimensionCategory(currentDimensionId) != null) {
+            isInMappings = true;
+            dimensionInMappingsCache.put(currentDimensionId, isInMappings);
+            return isInMappings;
+        }
+
+        // Check shader pack mappings
+        Path shaderpackPath = ShaderLoader.getCurrentShaderpackPath();
+        if (shaderpackPath != null) {
+            Map<String, String> dimensionMappings = parseDimensionProperties(shaderpackPath);
+            isInMappings = dimensionMappings.containsKey(currentDimensionId);
+        } else {
+            isInMappings = false;
+        }
+
+        dimensionInMappingsCache.put(currentDimensionId, isInMappings);
+        return isInMappings;
+    }
+
+    /**
+     * Sanitizes a dimension ID to be safe for use as a C-style define.
+     * Replaces non-alphanumeric characters with underscores.
+     *
+     * @param dimensionId The dimension identifier string
+     * @return Sanitized dimension ID
+     */
+    private static String sanitizeDimensionId(String dimensionId) {
+        // Replace non-alphanumeric characters (including : and .) with underscores for C-style defines
+        return dimensionId.replaceAll("[^a-zA-Z0-9_]", "_");
+    }
+
+    /**
+     * Checks if the given dimension ID is a vanilla dimension and returns its category.
+     *
+     * @param dimensionId The dimension identifier string
+     * @return "overworld", "nether", or "end" if vanilla dimension, null otherwise
+     */
+    private static String getVanillaDimensionCategory(String dimensionId) {
+        if (dimensionId == null) {
+            return null;
+        }
+
+        switch (dimensionId) {
+            case "minecraft:overworld":
+                return "overworld";
+            case "minecraft:the_nether":
+                return "nether";
+            case "minecraft:the_end":
+                return "end";
+            default:
+                return null;
+        }
     }
 
     /**

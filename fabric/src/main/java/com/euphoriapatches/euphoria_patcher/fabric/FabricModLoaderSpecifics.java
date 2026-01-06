@@ -51,16 +51,12 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public String getCurrentDimension() {
-        if (useYarnMappings == null) discoverMappingBranch();
+        return Dimensions.getCurrentDimension(getCurrentDimensionID());
+    }
 
-        // Use cached result
-        if (useYarnMappings != null && useYarnMappings) {
-            return getCurrentDimensionYarn();
-        } else if (useYarnMappings != null && !useYarnMappings) {
-            return getCurrentDimensionReflection();
-        }
-
-        return "overworld";
+    @Override
+    public boolean isCurrentDimensionInMappings() {
+        return Dimensions.isCurrentDimensionInMappings(getCurrentDimensionID());
     }
 
     @Override
@@ -112,6 +108,18 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         return false;
     }
 
+    private String getCurrentDimensionID(){
+        if (useYarnMappings == null) discoverMappingBranch();
+
+        // Use cached result
+        if (useYarnMappings != null && useYarnMappings) {
+            return getCurrentDimensionIDYarn();
+        } else if (useYarnMappings != null && !useYarnMappings) {
+            return getCurrentDimensionIDModern();
+        }
+        return "minecraft:overworld";
+    }
+
     /**
      * Discovers which mapping type is being used (Yarn vs Reflection) and caches the result.
      * Tries Yarn first, then falls back to reflection.
@@ -147,28 +155,28 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         }
     }
 
-    private String getCurrentDimensionYarn() {
+    private String getCurrentDimensionIDYarn() {
         debugLog("Getting current dimension (Yarn)");
         try {
             MinecraftClient client = MinecraftClient.getInstance();
 
             if (client == null || client.world == null) {
-                debugLog("Client or world is null, defaulting to 'overworld'");
-                return "overworld";
+                debugLog("Client or world is null, defaulting to 'minecraft:overworld'");
+                return "minecraft:overworld";
             }
 
             Identifier dimensionId = client.world.getRegistryKey().getValue();
             String currentDimensionId = dimensionId.toString();
             debugLog("Current dimension ID: " + currentDimensionId);
 
-            return Dimensions.getCurrentDimension(currentDimensionId);
+            return currentDimensionId;
         } catch (Exception e) {
             debugLog("Error in Yarn method: " + e.getMessage());
-            return "overworld";
+            return "minecraft:overworld";
         }
     }
 
-    private String getCurrentDimensionReflection() {
+    private String getCurrentDimensionIDModern() {
         debugLog("Getting current dimension (Reflection for net.minecraft.client.Minecraft)");
 
         try {
@@ -176,14 +184,14 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
 
             if (mcInstance == null) {
-                debugLog("Minecraft instance is null, defaulting to 'overworld'");
-                return "overworld";
+                debugLog("Minecraft instance is null, defaulting to 'minecraft:overworld'");
+                return "minecraft:overworld";
             }
 
             Object level = mcClass.getField("level").get(mcInstance);
             if (level == null) {
-                debugLog("Level is null, defaulting to 'overworld'");
-                return "overworld";
+                debugLog("Level is null, defaulting to 'minecraft:overworld'");
+                return "minecraft:overworld";
             }
 
             Class<?> levelClass = level.getClass();
@@ -201,10 +209,10 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             }
 
             debugLog("Current dimension ID (parsed): " + currentDimensionId);
-            return Dimensions.getCurrentDimension(currentDimensionId);
+            return currentDimensionId;
         } catch (Exception e) {
             debugLog("Error in reflection method: " + e.getMessage());
-            return "overworld";
+            return "minecraft:overworld";
         }
     }
 
