@@ -52,8 +52,12 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
             return checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
         }
 
-        if (mixinClassName.contains("IrisHeaderEntryMixin")) {
-            return checkClassExists(IRIS_HEADER_ENTRY_CLASS);
+        if (mixinClassName.contains("IrisHeaderEntryMixinYarn")) {
+            return checkClassExists(IRIS_HEADER_ENTRY_CLASS) && checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisHeaderEntryMixin") && !mixinClassName.contains("Yarn")) {
+            return checkClassExists(IRIS_HEADER_ENTRY_CLASS) && checkClassExists(MINECRAFT_CLIENT_CLASS);
         }
 
         // Apply other mixins by default

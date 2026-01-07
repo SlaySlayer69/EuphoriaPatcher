@@ -6,13 +6,6 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ConfirmLinkScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,9 +21,6 @@ import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlu
 public class IrisHeaderEntryMixin {
 
     @Unique
-    private static Boolean euphoriaPatcher$useYarnMappings = null;
-
-    @Unique
     private static String euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
@@ -43,9 +33,7 @@ public class IrisHeaderEntryMixin {
             String buttonText = "Support EP";
             int buttonColor = 0; // 1=Red, 2=Green, 3=Blue , 0=Purple
 
-            boolean isUpdateAvailable = UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate() && // Global update check
-                    // Check if EP update is newer than current selected shader pack version
-                    VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
+            boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
             if (isUpdateAvailable) {
                 buttonText = "Update EP!";
                 buttonColor = 2; // Green
@@ -62,13 +50,26 @@ public class IrisHeaderEntryMixin {
         }
     }
 
-    @Unique
-    private void euphoriaPatcher$addEPIrisButton(String buttonText, int buttonColor) {
+    @Inject(method = "renderContent", at = @At("TAIL"), remap = false, require = 0)
+    private void onRenderContent(Object guiGraphics, int mouseX, int mouseY, boolean bl, float tickDelta, CallbackInfo ci) {
         try {
-            if (euphoriaPatcher$useYarnMappings == null) {
-                euphoriaPatcher$discoverMappingType();
+            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
+            Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
+
+            if (utilityButtons == null) {
+                return;
             }
 
+            euphoriaPatcher$renderTooltip(guiGraphics, utilityButtons, resetButton);
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error rendering tooltip: " + e.getMessage());
+            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+        }
+    }
+
+    @Unique
+    private void euphoriaPatcher$addEPIrisButton(String buttonTextLiteral, int buttonColor) {
+        try {
             Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
             Object screen = euphoriaPatcher$getFieldValue(this, "screen");
 
@@ -77,44 +78,7 @@ public class IrisHeaderEntryMixin {
                 return;
             }
 
-            if (euphoriaPatcher$useYarnMappings) {
-                euphoriaPatcher$addEPIrisButtonYarn(utilityButtons, screen, buttonText, buttonColor);
-            } else {
-                euphoriaPatcher$addEPIrisButtonModern(utilityButtons, screen, buttonText, buttonColor);
-            }
-        } catch (Exception e) {
-            euphoriaPatcher$debugLog("Error in addEPIrisButton: " + e.getMessage());
-            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
-        }
-    }
-
-    @Unique
-    private void euphoriaPatcher$addEPIrisButtonYarn(Object utilityButtons, Object screen, String buttonTextLiteral, int buttonColor) throws Exception {
-        Formatting buttonColorFormatting;
-        switch (buttonColor) {
-            case 1:
-                buttonColorFormatting = Formatting.RED;
-                break;
-            case 2:
-                buttonColorFormatting = Formatting.GREEN;
-                break;
-            case 3:
-                buttonColorFormatting = Formatting.BLUE;
-                break;
-            default:
-                buttonColorFormatting = Formatting.LIGHT_PURPLE;
-                break;
-        }
-        MutableText buttonText = Text.literal(buttonTextLiteral).formatted(buttonColorFormatting);
-        MinecraftClient minecraft = MinecraftClient.getInstance();
-        Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClickYarn(minecraft, screen));
-        euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
-        euphoriaPatcher$debugLog("Successfully added Iris EP button (Yarn)");
-    }
-
-    @Unique
-    private void euphoriaPatcher$addEPIrisButtonModern(Object utilityButtons, Object screen, String buttonTextLiteral, int buttonColor) throws Exception {
-        String buttonColorFormatting;
+            String buttonColorFormatting;
         switch (buttonColor) {
             case 1:
                 buttonColorFormatting = "RED";
@@ -139,12 +103,14 @@ public class IrisHeaderEntryMixin {
         Object buttonText = componentClass.getMethod("literal", String.class).invoke(null, buttonTextLiteral);
         buttonText = buttonText.getClass().getMethod("withStyle", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
 
-        Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClickModern(minecraft, screen));
-        euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
-        euphoriaPatcher$debugLog("Successfully added Iris EP button (Modern)");
+            Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClick(minecraft, screen));
+            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
+            euphoriaPatcher$debugLog("Successfully added Iris EP button (Modern)");
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error in addEPIrisButton: " + e.getMessage());
+            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+        }
     }
-
-    @Unique
     private Object euphoriaPatcher$createIrisButton(Object buttonText, Runnable action) throws Exception {
         Class<?> textButtonElementClass = Class.forName("net.irisshaders.iris.gui.element.IrisElementRow$TextButtonElement");
 
@@ -181,28 +147,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$handleSupportEPButtonClickYarn(MinecraftClient minecraft, Object screen) {
-        try {
-            euphoriaPatcher$playButtonClickSound();
-            ConfirmLinkScreen confirmScreen = new ConfirmLinkScreen(
-                confirmed -> {
-                    if (confirmed) {
-                        euphoriaPatcher$openUrlYarn();
-                    }
-                    minecraft.setScreen((Screen) screen);
-                },
-                euphoriaPatcher$EuphoriaURL,
-                true
-            );
-            minecraft.setScreen(confirmScreen);
-        } catch (Exception e) {
-            euphoriaPatcher$debugLog("Error handling button click (Yarn): " + e.getMessage());
-            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
-        }
-    }
-
-    @Unique
-    private void euphoriaPatcher$handleSupportEPButtonClickModern(Object minecraft, Object screen) {
+    private void euphoriaPatcher$handleSupportEPButtonClick(Object minecraft, Object screen) {
         try {
             euphoriaPatcher$playButtonClickSound();
             Class<?> confirmLinkScreenClass = Class.forName("net.minecraft.client.gui.screens.ConfirmLinkScreen");
@@ -231,16 +176,16 @@ public class IrisHeaderEntryMixin {
                     if (args != null && args.length > 0 && args[0] instanceof Boolean) {
                         boolean confirmed = (boolean) args[0];
                         if (confirmed) {
-                            euphoriaPatcher$openUrlModern();
+                            euphoriaPatcher$openUrl();
                         }
-                        euphoriaPatcher$setScreenModern(minecraft, screen);
+                        euphoriaPatcher$setScreen(minecraft, screen);
                     }
                     return null;
                 }
             );
 
             Object confirmScreen = constructor.newInstance(booleanConsumer, euphoriaPatcher$EuphoriaURL, true);
-            euphoriaPatcher$setScreenModern(minecraft, confirmScreen);
+            euphoriaPatcher$setScreen(minecraft, confirmScreen);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error handling button click (Modern): " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
@@ -258,17 +203,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$openUrlYarn() {
-        try {
-            Util.getOperatingSystem().open(euphoriaPatcher$EuphoriaURL);
-            euphoriaPatcher$debugLog("Successfully opened URL (Yarn)");
-        } catch (Exception e) {
-            euphoriaPatcher$debugLog("Failed to open URL (Yarn): " + e.getMessage());
-        }
-    }
-
-    @Unique
-    private void euphoriaPatcher$openUrlModern() {
+    private void euphoriaPatcher$openUrl() {
         try {
             Class<?> utilClass;
             try {
@@ -285,21 +220,98 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$setScreenModern(Object minecraft, Object screen) throws Exception {
+    private void euphoriaPatcher$setScreen(Object minecraft, Object screen) throws Exception {
         Class<?> screenClass = Class.forName("net.minecraft.client.gui.screens.Screen");
         minecraft.getClass().getMethod("setScreen", screenClass).invoke(minecraft, screen);
     }
 
     @Unique
-    private void euphoriaPatcher$discoverMappingType() {
-        try {
-            MinecraftClient.getInstance();
-            euphoriaPatcher$useYarnMappings = true;
-            euphoriaPatcher$debugLog("Using Yarn mappings");
-        } catch (Throwable t) {
-            euphoriaPatcher$useYarnMappings = false;
-            euphoriaPatcher$debugLog("Using Modern (Mojmap) mappings");
+    private void euphoriaPatcher$renderTooltip(Object guiGraphics, Object utilityButtons, Object resetButton) throws Exception {
+        // Get font: Minecraft.getInstance().font
+        Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+        Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+        Object font = minecraft.getClass().getField("font").get(minecraft);
+
+        // Get children from utilityButtons
+        Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
+        Iterable<?> childrenIterable = (Iterable<?>) children;
+
+        Class<?> textButtonElementClass = Class.forName("net.irisshaders.iris.gui.element.IrisElementRow$TextButtonElement");
+
+        for (Object child : childrenIterable) {
+            if (textButtonElementClass.isInstance(child) && child != resetButton) {
+                // Check if hovered
+                boolean isHovered = (boolean) child.getClass().getMethod("isHovered").invoke(child);
+
+                // Check if focused
+                boolean isFocused = false;
+                try {
+                    isFocused = (boolean) child.getClass().getMethod("isFocused").invoke(child);
+                } catch (Exception e) {
+                    // isFocused might not exist, ignore
+                }
+
+                if (isHovered || isFocused) {
+                    // Get tooltip text and color based on update availability
+                    EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+                    ShaderDetector shaderDetector = instance.getShaderDetector();
+                    Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
+                    boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
+
+                    String tooltipString = isUpdateAvailable ? "Update Euphoria Patches!" : "Support Euphoria Patches";
+                    String colorFormatting = isUpdateAvailable ? "GREEN" : "LIGHT_PURPLE";
+
+                    // Create tooltip text: Component.literal(text).withStyle(color)
+                    Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+                    Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
+                    Object colorFormattingEnum = chatFormattingClass.getField(colorFormatting).get(null);
+                    Object tooltipText = componentClass.getMethod("literal", String.class).invoke(null, tooltipString);
+                    tooltipText = tooltipText.getClass().getMethod("withStyle", chatFormattingClass).invoke(tooltipText, colorFormattingEnum);
+
+                    // Get rectangle and calculate tooltip position
+                    Object rect = child.getClass().getMethod("getRectangle").invoke(child);
+                    Class<?> screenDirectionClass = Class.forName("net.minecraft.client.gui.navigation.ScreenDirection");
+                    Object rightDirection = screenDirectionClass.getField("RIGHT").get(null);
+                    int rightBound = (int) rect.getClass().getMethod("getBoundInDirection", screenDirectionClass).invoke(rect, rightDirection);
+
+                    Object position = rect.getClass().getMethod("position").invoke(rect);
+                    int yPos = (int) position.getClass().getMethod("y").invoke(position);
+
+                    int textWidth = (int) font.getClass().getMethod("width", componentClass).invoke(font, tooltipText);
+                    int tooltipX = rightBound - (textWidth + 10);
+                    int tooltipY = yPos - 16;
+
+                    // Make final copies for lambda
+                    final Object finalFont = font;
+                    final Object finalGuiGraphics = guiGraphics;
+                    final Object finalTooltipText = tooltipText;
+                    final int finalTooltipX = tooltipX;
+                    final int finalTooltipY = tooltipY;
+
+                    // Add to render queue
+                    Class<?> shaderPackScreenClass = Class.forName("net.irisshaders.iris.gui.screen.ShaderPackScreen");
+                    Object renderQueue = shaderPackScreenClass.getField("TOP_LAYER_RENDER_QUEUE").get(null);
+                    Class<?> guiUtilClass = Class.forName("net.irisshaders.iris.gui.GuiUtil");
+
+                    Runnable renderTask = () -> {
+                        try {
+                            guiUtilClass.getMethod("drawTextPanel", finalFont.getClass(), finalGuiGraphics.getClass(), componentClass, int.class, int.class)
+                                .invoke(null, finalFont, finalGuiGraphics, finalTooltipText, finalTooltipX, finalTooltipY);
+                        } catch (Exception e) {
+                            euphoriaPatcher$debugLog("Error in render task: " + e.getMessage());
+                        }
+                    };
+                    renderQueue.getClass().getMethod("add", Object.class).invoke(renderQueue, renderTask);
+                }
+                break;
+            }
         }
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$isUpdateAvailable(ShaderDetector shaderDetector, Path currentShaderPackPath) {
+        return UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate() &&
+                VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
     }
 
     @Unique
@@ -323,6 +335,6 @@ public class IrisHeaderEntryMixin {
 
     @Unique
     private void euphoriaPatcher$debugLog(String message) {
-        EuphoriaLogger.debugLog("[IrisHeaderEntryMixin] " + message);
+        EuphoriaLogger.debugLog("[IrisHeaderEntryMixinModern] " + message);
     }
 }

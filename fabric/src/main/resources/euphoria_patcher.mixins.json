@@ -5,13 +5,14 @@
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisHeaderEntryMixin",
+    "IrisHeaderEntryMixinYarn",
     "IrisLegacyStandardMacrosMixin",
     "IrisModernStandardMacrosMixin"
   ],
   "client": [
     "ClientTickMixin",
     "ClientTickMixinYarn",
-    "ReloadShadersOnDimensionChangeMixinYarn",
-    "ReloadShadersOnDimensionChangeMixin"
+    "ReloadShadersOnDimensionChangeMixin",
+    "ReloadShadersOnDimensionChangeMixinYarn"
   ]
 }

@@ -8,6 +8,7 @@ import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -33,9 +34,7 @@ public class IrisHeaderEntryMixin {
             String buttonText = "Support EP";
             int buttonColor = 0; // 1=Red, 2=Green, 3=Blue, 0=Purple
 
-            boolean isUpdateAvailable = UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate() && // Global update check
-                // Check if EP update is newer than current selected shader pack version
-                VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
+            boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
             if (isUpdateAvailable) {
                 buttonText = "Update EP!";
                 buttonColor = 2; // Green
@@ -48,6 +47,28 @@ public class IrisHeaderEntryMixin {
                 euphoriaPatcher$addEPIrisButton(buttonText, buttonColor);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Failed to add Iris EP button: " + e.getMessage());
+            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+        }
+    }
+
+    @Inject(method = "m_6311_", at = @At("TAIL"), remap = false, require = 0)
+    private void onRenderContent(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
+        euphoriaPatcher$renderTooltipImpl(guiGraphics);
+    }
+
+    @Unique
+    private void euphoriaPatcher$renderTooltipImpl(Object guiGraphics) {
+        try {
+            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
+            Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
+
+            if (utilityButtons == null) {
+                return;
+            }
+
+            euphoriaPatcher$renderTooltip(guiGraphics, utilityButtons, resetButton);
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error rendering tooltip: " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
         }
     }
@@ -230,6 +251,116 @@ public class IrisHeaderEntryMixin {
         Class<?> screenClass = Class.forName("net.minecraft.client.gui.screens.Screen");
         // Call Minecraft.setScreen(Screen) -> m_91152_
         minecraft.getClass().getMethod("m_91152_", screenClass).invoke(minecraft, screen);
+    }
+
+    @Unique
+    private void euphoriaPatcher$renderTooltip(Object guiGraphics, Object utilityButtons, Object resetButton) throws Exception {
+        Object minecraft = euphoriaPatcher$getMinecraftInstance();
+        Object font = euphoriaPatcher$getFont(minecraft);
+
+        Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
+        Iterable<?> childrenIterable = (Iterable<?>) children;
+
+        Class<?> textButtonElementClass = Class.forName("net.irisshaders.iris.gui.element.IrisElementRow$TextButtonElement");
+
+        for (Object child : childrenIterable) {
+            if (textButtonElementClass.isInstance(child) && child != resetButton) {
+                // Check if hovered: isHovered() -> isHovered
+                boolean isHovered = (boolean) child.getClass().getMethod("isHovered").invoke(child);
+
+                // Check if focused: isFocused() -> m_93696_
+                boolean isFocused = false;
+                try {
+                    isFocused = (boolean) child.getClass().getMethod("m_93696_").invoke(child);
+                } catch (Exception e) {
+                    // isFocused might not exist, ignore
+                }
+
+                if (isHovered || isFocused) {
+                    // Get tooltip text and color based on update availability
+                    EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+                    ShaderDetector shaderDetector = instance.getShaderDetector();
+                    Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
+                    boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
+
+                    String tooltipString = isUpdateAvailable ? "Update Euphoria Patches!" : "Support Euphoria Patches";
+                    String colorFormatting = isUpdateAvailable ? "GREEN" : "LIGHT_PURPLE";
+
+                    // Create tooltip text: Component.literal(text).withStyle(color)
+                    Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+                    Class<?> mutableComponentClass = Class.forName("net.minecraft.network.chat.MutableComponent");
+                    Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
+                    Object colorFormattingEnum = chatFormattingClass.getField(colorFormatting).get(null);
+                    Object tooltipText = componentClass.getMethod("m_237113_", String.class).invoke(null, tooltipString);
+                    tooltipText = mutableComponentClass.getMethod("m_130940_", chatFormattingClass).invoke(tooltipText, colorFormattingEnum);
+
+                    // Get ScreenRectangle: getRectangle() -> m_264198_
+                    Object rect = child.getClass().getMethod("m_264198_").invoke(child);
+
+                    // Get ScreenDirection.RIGHT: RIGHT
+                    Class<?> screenDirectionClass = Class.forName("net.minecraft.client.gui.navigation.ScreenDirection");
+                    Object rightDirection = screenDirectionClass.getField("RIGHT").get(null);
+
+                    // Get right bound: getBoundInDirection(ScreenDirection) -> m_264095_
+                    int rightBound = (int) rect.getClass().getMethod("m_264095_", screenDirectionClass).invoke(rect, rightDirection);
+
+                    // Get y position: position() -> then y()
+                    Object position = rect.getClass().getMethod("f_263846_").invoke(rect);
+                    int yPos = (int) position.getClass().getMethod("f_263694_").invoke(position);
+
+                    // Font.width(FormattedText) -> m_92852_
+                    Class<?> formattedTextClass = Class.forName("net.minecraft.network.chat.FormattedText");
+                    int textWidth = (int) font.getClass().getMethod("m_92852_", formattedTextClass).invoke(font, tooltipText);
+                    int tooltipX = rightBound - (textWidth + 10);
+                    int tooltipY = yPos - 16;
+
+                    final int finalTooltipX = tooltipX;
+                    final int finalTooltipY = tooltipY;
+                    final Object finalFont = font;
+                    final Object finalGuiGraphics = guiGraphics;
+                    final Object finalTooltipText = tooltipText;
+
+                    Class<?> shaderPackScreenClass = Class.forName("net.irisshaders.iris.gui.screen.ShaderPackScreen");
+                    Object renderQueue = shaderPackScreenClass.getField("TOP_LAYER_RENDER_QUEUE").get(null);
+                    Class<?> guiUtilClass = Class.forName("net.irisshaders.iris.gui.GuiUtil");
+                    Class<?> guiGraphicsClass = Class.forName("net.minecraft.client.gui.GuiGraphics");
+
+                    Runnable renderTask = () -> {
+                        try {
+                            guiUtilClass.getMethod("drawTextPanel", finalFont.getClass(), guiGraphicsClass, componentClass, int.class, int.class)
+                                .invoke(null, finalFont, finalGuiGraphics, finalTooltipText, finalTooltipX, finalTooltipY);
+                        } catch (Exception e) {
+                            euphoriaPatcher$debugLog("Error in render task: " + e.getMessage());
+                        }
+                    };
+                    renderQueue.getClass().getMethod("add", Object.class).invoke(renderQueue, renderTask);
+                }
+                break;
+            }
+        }
+    }
+
+    @Unique
+    private Object euphoriaPatcher$getMinecraftInstance() throws Exception {
+        Class<?> minecraftClass;
+        try {
+            minecraftClass = Class.forName("C_3391_");
+        } catch (ClassNotFoundException e) {
+            minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+        }
+        return minecraftClass.getMethod("m_91087_").invoke(null);
+    }
+
+    @Unique
+    private Object euphoriaPatcher$getFont(Object minecraft) throws Exception {
+        // Minecraft.font -> f_91062_
+        return minecraft.getClass().getField("f_91062_").get(minecraft);
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$isUpdateAvailable(ShaderDetector shaderDetector, Path currentShaderPackPath) {
+        return UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate() &&
+                VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
     }
 
     @Unique
