@@ -264,7 +264,7 @@ public class IrisHeaderEntryMixinYarn {
 
     @Unique
     private boolean euphoriaPatcher$isUpdateAvailable(ShaderDetector shaderDetector, Path currentShaderPackPath) {
-        return UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate() &&
+        return UpdateChecker.shouldUserUpdate() &&
                 VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
     }
 

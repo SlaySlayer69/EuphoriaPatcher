@@ -55,7 +55,7 @@ public class UpdateChecker {
      * @return true if an important update is available or a recommended patch update exists, false otherwise
      */
     public static boolean shouldUserUpdate() {
-        return isImportantUpdate() || isPatchUpdateRecommended();
+        return isUpdateAvailable() && (isImportantUpdate() || isPatchUpdateRecommended());
     }
 
     /**

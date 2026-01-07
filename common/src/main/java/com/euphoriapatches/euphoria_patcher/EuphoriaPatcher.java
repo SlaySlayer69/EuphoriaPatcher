@@ -320,7 +320,7 @@ public class EuphoriaPatcher {
     }
 
     private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
-        if (!(UpdateChecker.isUpdateAvailable() && UpdateChecker.shouldUserUpdate())) {
+        if (!UpdateChecker.shouldUserUpdate()) {
             return;
         }
 
