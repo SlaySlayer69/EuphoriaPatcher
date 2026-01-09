@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.util.ShaderData;
 import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -35,14 +36,13 @@ public class ShaderDetector {
     private final ShaderNamingService namingService;
     private final ShaderValidator shaderValidator;
 
-    private int filesScannedCounter = 0;
     private int totalFilesToScan = 0;
 
     private final String buildDateStr;
     private final Integer currentBuildDate;
 
-    private static Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
-    private static Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
+    private static final Pattern numberedDevPattern = Pattern.compile("Comp.*EuphoriaPatches_(\\d+\\.\\d+\\.\\d+)-dev\\d+\\.zip");
+    private static final Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
     private static boolean hasAnyDevVersion = false;
 
     public ShaderDetector(String brandName, String patchName, String version, String patchVersion,
@@ -71,6 +71,15 @@ public class ShaderDetector {
             // Check if patched shaders already exist
             checkForExistingPatchedShaders(info);
             if (info.isAlreadyInstalled) {
+                // Check if we need to patch an additional style
+                checkForMissingStyle(info);
+                if (!info.isAlreadyInstalled) {
+                    debugLog("Found missing style to patch: " + (info.styleReimagined ? "Unbound" : "Reimagined"));
+                    // Continue with normal patching flow for the missing style
+                    return info;
+                }
+                if (info.styleReimagined && info.styleUnbound) debugLog("Both styles already installed, skipping detection");
+                else debugLog("User does not have the other style base shader installed, skipping detection");
                 return info;
             }
 
@@ -178,12 +187,16 @@ public class ShaderDetector {
                         debugLog("Found potential correct Euphoria Patches version in: " + directory.getFileName());
                         debugLog("File version: " + fileVersion + ", Expected: " + expectedVersion);
 
-                        if (fileVersion.equals(expectedVersion)) {
+                        int comparison = VersionComparator.compareVersionStrings(fileVersion, expectedVersion);
+
+                        if (comparison >= 0) {
                             String dirName = directory.getFileName().toString();
                             if (dirName.equals(("Euphoria-Patches")) || dirName.matches("dev\\d+") || dirName.contains("earlyDev")) {
                                 debugLog("Skipping dev Euphoria-Patches versions");
                                 continue;
                             }
+                            if (comparison == 0) debugLog("Exact version match found");
+                            else debugLog("File version is newer than expected version");
                             debugLog("Version match found - this is a correct Euphoria Patches installation");
 
                             info.isAlreadyInstalled = true;
@@ -285,9 +298,7 @@ public class ShaderDetector {
 
             // Use parallel validation with progress callback
             Path validShader = shaderValidator.validateByByteSizeParallel(allPaths,
-                (scanned, total) -> {
-                    log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far");
-                }
+                (scanned, total) -> log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far")
             );
 
             if (validShader != null) {
@@ -483,7 +494,7 @@ public class ShaderDetector {
         String currentVersion = patchVersion.replace("_", "");
 
         // Check numbered dev version
-        if (checkNumberedDevVersion(fileName, numberedDevPattern, currentVersion)) {
+        if (checkNumberedDevVersion(fileName, currentVersion)) {
             hasAnyDevVersion = true;
             if (info != null) {
                 info.isAlreadyInstalled = true;
@@ -497,7 +508,7 @@ public class ShaderDetector {
         }
 
         // Check early dev version
-        if (checkEarlyDevVersion(fileName, earlyDevPattern, currentBuildDate)) {
+        if (checkEarlyDevVersion(fileName, currentBuildDate)) {
             hasAnyDevVersion = true;
             if (info != null) {
                 info.isAlreadyInstalled = true;
@@ -565,8 +576,8 @@ public class ShaderDetector {
      * Check if filename matches numbered dev version pattern and is newer
      * @return true if this is a newer numbered dev version
      */
-    private boolean checkNumberedDevVersion(String fileName, Pattern pattern, String currentVersion) {
-        Matcher matcher = pattern.matcher(fileName);
+    private boolean checkNumberedDevVersion(String fileName, String currentVersion) {
+        Matcher matcher = ShaderDetector.numberedDevPattern.matcher(fileName);
         if (matcher.matches()) {
             String devVersion = matcher.group(1);
             debugLog("Found numbered dev version file: " + fileName + " with version: " + devVersion);
@@ -587,8 +598,8 @@ public class ShaderDetector {
      * Check if filename matches early dev version pattern and is newer
      * @return true if this is a newer early dev version
      */
-    private boolean checkEarlyDevVersion(String fileName, Pattern pattern, Integer currentBuildDate) {
-        Matcher matcher = pattern.matcher(fileName);
+    private boolean checkEarlyDevVersion(String fileName, Integer currentBuildDate) {
+        Matcher matcher = ShaderDetector.earlyDevPattern.matcher(fileName);
         if (matcher.matches() && currentBuildDate != null) {
             String devDateStr = matcher.group(1);
             debugLog("Found earlyDev file: " + fileName + " with date: " + devDateStr);
@@ -612,7 +623,6 @@ public class ShaderDetector {
 
     // Helper methods
     private void resetFilesScannedCounter() {
-        filesScannedCounter = 0;
         totalFilesToScan = 0;
         debugLog("Reset files scanned counter");
     }
@@ -704,16 +714,6 @@ public class ShaderDetector {
     }
 
     /**
-     * Clear the Euphoria Patches shader cache
-     * Useful if shaders are modified/added/removed at runtime
-     */
-    public static void clearCache() {
-        euphoriaShaderCache.clear();
-        versionCache.clear();
-        EuphoriaLogger.debugLog("[ShaderDetector] Cleared Euphoria Patches shader cache and version cache");
-    }
-
-    /**
      * Reads the version from pack.json in a shader directory or zip file
      * Uses static cache to avoid redundant reads across instances
      * @param shaderPath Path to shader (directory or zip file)
@@ -729,7 +729,7 @@ public class ShaderDetector {
 
         // Not in cache, perform the read
         String version = null;
-        Path packJsonPath = null;
+        Path packJsonPath;
 
         try {
             if (Files.isDirectory(shaderPath)) {
@@ -786,6 +786,100 @@ public class ShaderDetector {
         if (matcher.find()) {
             return matcher.group(1);
         }
+        return null;
+    }
+
+    /**
+     * Check if one style is installed but the other is missing, and if the missing style's base shader exists
+     * If found, updates info to indicate we should patch the missing style
+     */
+    private void checkForMissingStyle(ShaderInfo info) {
+        // If both styles are already installed, nothing to do
+        if (info.styleReimagined && info.styleUnbound) {
+            debugLog("Both styles already installed");
+            return;
+        }
+
+        // Load current installation state from data.json
+        if (!ShaderData.dataFileExists()) {
+            debugLog("No data file exists, cannot check for missing styles");
+            return;
+        }
+
+        ShaderData.ShaderStyleData data = ShaderData.loadShaderStyle();
+
+        // If both are already marked as installed in data, skip
+        if (data.styleReimagined && data.styleUnbound) {
+            debugLog("Both styles marked as installed in data.json");
+            info.styleReimagined = true;
+            info.styleUnbound = true;
+            return;
+        }
+
+        // Determine which style is missing
+        String missingStyle;
+        if (data.styleReimagined) {
+            missingStyle = "Unbound";
+            debugLog("Reimagined is installed, checking for Unbound");
+        } else if (data.styleUnbound) {
+            missingStyle = "Reimagined";
+            debugLog("Unbound is installed, checking for Reimagined");
+        } else {
+            // Neither is installed according to data, proceed with normal detection
+            debugLog("No styles marked as installed in data.json");
+            return;
+        }
+
+        // Look for the missing style's base shader using exact filename matching
+        Path missingStyleShader = findBaseShaderByStyle(missingStyle);
+        if (missingStyleShader != null) {
+            debugLog("Found missing style shader: " + missingStyleShader.getFileName());
+            // Set up info to patch the missing style
+            info.baseFile = missingStyleShader;
+            info.isAlreadyInstalled = false; // Reset so patching continues
+
+            // Set the style flags based on what we found
+            if ("Reimagined".equals(missingStyle)) {
+                info.styleReimagined = true;
+                info.styleUnbound = data.styleUnbound; // Keep existing state
+            } else {
+                info.styleUnbound = true;
+                info.styleReimagined = data.styleReimagined; // Keep existing state
+            }
+        } else {
+            debugLog("Missing style " + missingStyle + " shader not found");
+        }
+    }
+
+    /**
+     * Find a base shader by style using exact filename matching
+     * @param style "Reimagined" or "Unbound"
+     * @return Path to the shader file/directory, or null if not found
+     */
+    private Path findBaseShaderByStyle(String style) {
+        String expectedName = brandName + style + version;
+        debugLog("Looking for base shader: " + expectedName);
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+            for (Path path : stream) {
+                String fileName = path.getFileName().toString();
+
+                // Check for exact match with .zip
+                if (fileName.equals(expectedName + ".zip") && Files.isRegularFile(path)) {
+                    debugLog("Found exact match (zip): " + fileName);
+                    return path;
+                }
+
+                // Check for exact match as directory
+                if (fileName.equals(expectedName) && Files.isDirectory(path)) {
+                    debugLog("Found exact match (directory): " + fileName);
+                    return path;
+                }
+            }
+        } catch (IOException e) {
+            debugLog("Error searching for base shader by style: " + e.getMessage());
+        }
+
         return null;
     }
 

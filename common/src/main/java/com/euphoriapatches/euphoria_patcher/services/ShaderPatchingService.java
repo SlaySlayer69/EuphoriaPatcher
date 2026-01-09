@@ -180,17 +180,29 @@ public class ShaderPatchingService {
         File otherStyleFile = new File(patchedFile.getParent().toFile(),
                 patchedFile.getFileName().toString().replace(currentStyle, otherStyle));
 
-        FileUtils.copyDirectory(patchedFile.toFile(), otherStyleFile);
+        // Only create the other style if it doesn't already exist
+        // This prevents overwriting an existing installation when patching the missing style
+        if (!otherStyleFile.exists()) {
+            debugLog("Creating missing " + otherStyle + " style from newly patched " + currentStyle);
+            FileUtils.copyDirectory(patchedFile.toFile(), otherStyleFile);
 
-        // Apply correct config to each file
-        if (isReimagined) {
-            // Current file is Reimagined, other file is Unbound
-            FileUtils.writeStringToFile(commons, reimaginedConfig, "UTF-8");
-            FileUtils.writeStringToFile(new File(otherStyleFile, commonLocation), unboundConfig, "UTF-8");
+            // Apply correct config to the newly created other style
+            if (isReimagined) {
+                // Current is Reimagined, created Unbound
+                FileUtils.writeStringToFile(new File(otherStyleFile, commonLocation), unboundConfig, "UTF-8");
+            } else {
+                // Current is Unbound, created Reimagined
+                FileUtils.writeStringToFile(new File(otherStyleFile, commonLocation), reimaginedConfig, "UTF-8");
+            }
         } else {
-            // Current file is Unbound, other file is Reimagined
+            debugLog("Other style (" + otherStyle + ") already exists, not overwriting");
+        }
+
+        // Apply correct config to the current style
+        if (isReimagined) {
+            FileUtils.writeStringToFile(commons, reimaginedConfig, "UTF-8");
+        } else {
             FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
-            FileUtils.writeStringToFile(new File(otherStyleFile, commonLocation), reimaginedConfig, "UTF-8");
         }
     }
 

@@ -97,6 +97,12 @@ public class EuphoriaPatcher {
                 return;
             }
         } else {
+            // Load shader style data from persistent storage if styles weren't detected
+            if (!shaderInfo.styleReimagined && !shaderInfo.styleUnbound && ShaderData.dataFileExists()) {
+                ShaderData.ShaderStyleData data = ShaderData.loadShaderStyle();
+                shaderInfo.styleReimagined = data.styleReimagined;
+                shaderInfo.styleUnbound = data.styleUnbound;
+            }
             thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, true);
             return;
         }
@@ -165,6 +171,8 @@ public class EuphoriaPatcher {
 
         if (doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
         if (doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
+
+        ShaderData.saveShaderStyle(shaderInfo.styleReimagined, shaderInfo.styleUnbound);
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, shaderInfo.isAlreadyInstalled);
         return true;
