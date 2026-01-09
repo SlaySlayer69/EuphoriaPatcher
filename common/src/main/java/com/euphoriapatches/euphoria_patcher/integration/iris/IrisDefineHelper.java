@@ -49,7 +49,7 @@ public class IrisDefineHelper {
                 debugLog("Not adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define - dimension not in dimensions.properties");
             }
 
-            String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase();
+            String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase(Locale.ROOT);
             defineKey.accept(standardDefines, currentDimension);
             debugLog("Adding " + currentDimension + " define");
 
