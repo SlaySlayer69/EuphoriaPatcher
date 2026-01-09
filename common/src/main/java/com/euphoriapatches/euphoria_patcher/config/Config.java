@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Config {
     // TOML config location
-    private static final Path CONFIG_DIR = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher");
+    public static final Path CONFIG_DIR = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher");
     private static final Path CONFIG_PATH = CONFIG_DIR.resolve("settings.toml");
     private static final Path OLD_CONFIG_PATH = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher.properties");
 
