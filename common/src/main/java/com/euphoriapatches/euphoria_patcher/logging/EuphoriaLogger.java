@@ -76,14 +76,13 @@ public class EuphoriaLogger {
      */
     public void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
+        if (messageLevel == -1) loggingMessage = "\n \n" + loggingMessage + "\n\n ";
 
         if (isSodiumInstalled && messageFadeTimer > 0) {
             SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
 
         switch (messageLevel) {
-            case -1:
             case 0:
             case 1:
                 if (log4jAvailable && logger != null) {

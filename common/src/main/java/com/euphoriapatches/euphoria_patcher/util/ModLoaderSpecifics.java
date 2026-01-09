@@ -24,7 +24,6 @@ public abstract class ModLoaderSpecifics {
     public static void setInstance(ModLoaderSpecifics impl) {
         instance = impl;
         if (!instanceLogged && impl != null) {
-            System.out.println("[EuphoriaPatcher] ModLoaderSpecifics instance set to: " + impl.getInstanceName());
             instanceLogged = true;
         }
     }
