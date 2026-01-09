@@ -171,25 +171,56 @@ public class EuphoriaPatcher {
     }
 
     public void configStuff() {
-        // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
-        // First parameter is the config name, second is the value
-        // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
-        doPopUpLogging = Boolean.parseBoolean(Config.readWriteConfig("doPopUpLogging", "true", "Option for the sodium message popup logging." +
-                "\nDefault = true"));
-        doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true", "Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
+        // Initialize config system (handles migration on first call)
+        Config.initialize();
+
+        // Set category order - categories will appear in this order in the TOML file
+        // Any categories used but not listed here will appear at the end
+        Config.setConfigCategoryOrder("display", "updates", "maintenance", "debug", "advanced");
+
+        // How to use: Cast to desired data type, then call readWriteConfig with category
+        // Parameters: category, key, defaultValue, description (supports multiline with "\n")
+        // Config will be organized into [category] sections in the TOML file
+
+        // Type is auto-detected from the default value - no casting needed!
+        doPopUpLogging = Config.readWriteConfig("display", "doPopUpLogging", true,
+                "Option for the sodium message popup logging." +
+                "\nDefault = true");
+        doUpdateChecking = Config.readWriteConfig("updates", "doUpdateChecking", true,
+                "Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
                 "\nUses the Modrinth API to fetch update information." +
-                "\nDefault = true"));
-        doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true", "Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
+                "\nDefault = true");
+        doRenameOldShaderFiles = Config.readWriteConfig("maintenance", "doRenameOldShaderFiles", true,
+                "Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +
-                "\nDefault = true"));
-        doDeleteOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doDeleteOldShaderFiles", "false", "Option that automatically deleted outdated Euphoria Patches folders and config files." +
-                "\nDefault = false"));
-        doDisplayShaderInGameMessage = Boolean.parseBoolean(Config.readWriteConfig("doDisplayShaderInGameMessage", "true", "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris or Oculus" +
-                "\nDefault = true"));
+                "\nDefault = true");
+        doDeleteOldShaderFiles = Config.readWriteConfig("maintenance", "doDeleteOldShaderFiles", false,
+                "Option that automatically deletes outdated Euphoria Patches folders and config files." +
+                "\nDefault = false");
+        doDisplayShaderInGameMessage = Config.readWriteConfig("display", "doDisplayShaderInGameMessage", true,
+                "Option that enables or disables the in-game shader messages, for example an update message made by the shader itself. Only works on Iris or Oculus" +
+                "\nDefault = true");
 
-        boolean configDebugLogging = Boolean.parseBoolean(Config.readWriteConfig("doDebugLogging", "false", "Option that enables or disables debug logging." +
-                "\nDefault = false"));
+        alternativeShaderNames = Config.readWriteConfig("advanced", "alternativeShaderNames", "",
+                "Here one can set alternative Shader Names which will also be generated alongside the normal one." +
+                "\nThis is useful if you want multiple different settings you can quickly switch between" +
+                "\nDefault = Empty String, which means no alternative names will be generated." +
+                "\nIn case of multiple names, separate them with a comma" +
+                "\nYou can also use {baseVersion} or {patchVersion} in names to insert the base shader or Euphoria Patches version." +
+                "\nExample: Euphoria Saturated, Comp_{baseVersion} + EP_{patchVersion} Dark Settings, EP High Performance, etc...");
 
+        boolean configDebugLogging = Config.readWriteConfig("debug", "doDebugLogging", false,
+                "Option that enables or disables debug logging. Alternatively, one can also set the JVM argument -DebugEP=true/false which takes priority over this setting." +
+                        "\nDefault = false");
+        handleJVMArgumentDebugLogging(configDebugLogging);
+
+        // Regenerate config to apply proper ordering and ensure header is present
+        Config.regenerateConfig();
+
+        Config.startConfigWatcher();
+    }
+
+    private void handleJVMArgumentDebugLogging(boolean configDebugLogging) {
         // Check for JVM argument -DEPDebug=true/false which takes priority over config
         String jvmDebugArg = System.getProperty("ebugEP");
         if (jvmDebugArg != null) {
@@ -204,15 +235,6 @@ public class EuphoriaPatcher {
         } else {
             doDebugLogging = configDebugLogging;
         }
-
-        alternativeShaderNames = Config.readWriteConfig("alternativeShaderNames", "", "Here one can set alternative Shader Names which will also be generated alongside the normal one." +
-                "\nThis is useful if you want multiple different settings you can quickly switch between" +
-                "\nDefault = Empty String, which means no alternative names will be generated." +
-                "\nIn case of multiple names, separate them with a comma" +
-                "\nYou can also use {baseVersion} or {patchVersion} in names to insert the base shader or Euphoria Patches version." +
-                "\nExample: Euphoria Saturated, Comp_{baseVersion} + EP_{patchVersion} Dark Settings, EP High Performance, etc...");
-
-        Config.startConfigWatcher();
     }
 
     public static void log(int messageLevel, int messageFadeTimer, String message) {

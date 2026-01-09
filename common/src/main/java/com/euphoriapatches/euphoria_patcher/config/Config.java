@@ -4,120 +4,308 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Config {
-    private static final Path CONFIG_PATH = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher.properties");
-    private static final Properties properties = new Properties();
+    // TOML config location
+    private static final Path CONFIG_DIR = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher");
+    private static final Path CONFIG_PATH = CONFIG_DIR.resolve("settings.toml");
+    private static final Path OLD_CONFIG_PATH = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher.properties");
+
+    private static final Map<String, Object> configValues = new LinkedHashMap<>();
+    private static final Map<String, ConfigEntry<?>> configSchema = new LinkedHashMap<>();
+    private static final List<String> categoryOrder = new ArrayList<>();
     private static FileTime lastModified = null;
     private static boolean watcherActive = false;
     private static ScheduledExecutorService scheduler;
+    private static boolean migrationCompleted = false;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[Config] " + message);
     }
 
-    public static void createConfig() {
-        try {
-            Files.createFile(CONFIG_PATH);
-            writeInitialConfig();
-            EuphoriaPatcher.log(0, "Successfully created config file");
-        } catch (IOException e) {
-            EuphoriaPatcher.log(3, 0, "Error creating config file: " + e.getMessage());
+    /**
+     * Migrates old .properties file to new TOML format
+     */
+    private static void migrateOldConfig() {
+        if (migrationCompleted || !Files.exists(OLD_CONFIG_PATH)) {
+            migrationCompleted = true;
+            return;
         }
-    }
+        migrationCompleted = true;
 
-    private static void writeInitialConfig() throws IOException {
-        try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), false)) {
-            writer.write("# This file stores configuration options for the Euphoria Patcher mod\n");
-            writer.write("# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\n");
-            writer.write("# Thank you for using Euphoria Patches - SpacEagle17\n");
-        }
-    }
+        debugLog("Migrating old config file to TOML format");
+        try (InputStream in = Files.newInputStream(OLD_CONFIG_PATH)) {
+            Properties oldProps = new Properties();
+            oldProps.load(in);
 
-    public static void updateVersionLine() {
-        try {
-            List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
-            boolean versionLineFound = false;
-
-            for (int i = 0; i < lines.size(); i++) {
-                if (lines.get(i).startsWith("# Made for version")) {
-                    if (lines.get(i).contains(EuphoriaPatcher.PATCH_VERSION.replace("_", ""))) return;
-                    lines.set(i, "# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
-                    versionLineFound = true;
-                    break;
+            // Transfer values to our map
+            for (String key : oldProps.stringPropertyNames()) {
+                String value = oldProps.getProperty(key);
+                // Preserve boolean type
+                if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+                    configValues.put(key, Boolean.parseBoolean(value));
+                } else {
+                    configValues.put(key, value);
                 }
             }
 
-            if (!versionLineFound) {
-                int headerIndex = lines.indexOf("# This file stores configuration options for the Euphoria Patcher mod");
-                if (headerIndex >= 0) {
-                    lines.add(headerIndex + 1, "# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
-                }
-            }
-
-            Files.write(CONFIG_PATH, lines, StandardCharsets.UTF_8);
-            debugLog("Successfully updated version info in config file");
+            Files.delete(OLD_CONFIG_PATH);
+            EuphoriaPatcher.log(0, "Successfully migrated config to TOML format. Old config deleted.");
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, 0, "Error updating config file with version: " + e.getMessage());
+            EuphoriaPatcher.log(3, 0, "Error migrating old config: " + e.getMessage());
         }
     }
 
-    public static void writeConfig(String option, String value, String description) {
+    /**
+     * Initializes the config system
+     */
+    public static void initialize() {
+        migrateOldConfig();
+        loadConfig();
+    }
+
+    /**
+     * Loads config values from TOML file
+     */
+    private static void loadConfig() {
         try {
+            if (!Files.exists(CONFIG_DIR)) {
+                Files.createDirectories(CONFIG_DIR);
+            }
+
             if (!Files.exists(CONFIG_PATH)) {
-                createConfig();
-            } else {
-                updateVersionLine(); // Always update the version line
+                debugLog("No config file found, will create on first save");
+                return;
             }
-            loadProperties();
-            if(!properties.containsKey(option)) {
-                List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
-                try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), false)) {
-                    // Write existing lines
-                    for (String line : lines) {
-                        writer.write(line + "\n");
+
+            // Simple TOML parser for [category] and key = value
+            String currentCategory = "";
+            for (String line : Files.readAllLines(CONFIG_PATH)) {
+                line = line.trim();
+
+                if (line.isEmpty() || line.startsWith("#")) continue;
+
+                if (line.startsWith("[") && line.endsWith("]")) {
+                    currentCategory = line.substring(1, line.length() - 1);
+                } else if (line.contains("=")) {
+                    int eqIdx = line.indexOf('=');
+                    String key = line.substring(0, eqIdx).trim();
+                    String value = line.substring(eqIdx + 1).trim();
+
+                    // Remove quotes from strings
+                    if (value.startsWith("\"") && value.endsWith("\"")) {
+                        value = value.substring(1, value.length() - 1);
+                        // Unescape - must process backslash first to avoid corrupting other escapes
+                        value = value.replace("\\\\", "\\").replace("\\\"", "\"").replace("\\n", "\n");
                     }
 
-                    // Add new configuration
-                    writer.write("\n"); // Add newline before new entry
-                    if (description != null) {
-                        String[] descLines = description.split("\n");
-                        for (String line : descLines) {
-                            writer.write("# " + line + "\n");
-                        }
-                    }
-                    writer.write(option + "=" + value + "\n");
-                    debugLog("Successfully wrote to config file: " + option + "=" + value);
+                    String fullKey = currentCategory.isEmpty() ? key : currentCategory + "." + key;
+                    configValues.put(fullKey, parseValue(value));
                 }
             }
-        } catch (IOException e) {
-            EuphoriaPatcher.log(3, 0, "Error writing to config file: " + e.getMessage());
-        }
-    }
 
-    public static String readWriteConfig(String optionName, String defaultValue, String description) {
-        writeConfig(optionName, defaultValue, description);
-        return properties.getProperty(optionName, defaultValue);
-    }
-
-    public static void loadProperties() {
-        try (InputStream in = Files.newInputStream(CONFIG_PATH)) {
-            properties.load(in);
             lastModified = Files.getLastModifiedTime(CONFIG_PATH);
+            debugLog("Config loaded successfully");
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, 0, "Error loading properties: " + e.getMessage());
+            EuphoriaPatcher.log(3, 0, "Error loading config: " + e.getMessage());
         }
     }
 
+    /**
+     * Parses a value string into the correct type
+     */
+    private static Object parseValue(String value) {
+        if ("true".equalsIgnoreCase(value)) return true;
+        if ("false".equalsIgnoreCase(value)) return false;
+        try {
+            if (value.contains(".")) return Double.parseDouble(value);
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    /**
+     * Sets the order in which categories should appear in the config file.
+     * Categories not in this list will be appended at the end in the order they are first used.
+     *
+     * @param categories The ordered list of category names
+     */
+    public static void setConfigCategoryOrder(String... categories) {
+        categoryOrder.clear();
+        categoryOrder.addAll(Arrays.asList(categories));
+        debugLog("Category order set: " + String.join(", ", categories));
+    }
+
+    /**
+     * Reads or writes a config value with the given category, key, default value, and description
+     */
+    public static <T> T readWriteConfig(String category, String key, T defaultValue, String description) {
+        ConfigEntry<T> entry = new ConfigEntry<>(category, key, defaultValue, description);
+
+        // Store in schema for regeneration
+        String schemaKey = category + "." + key;
+        configSchema.put(schemaKey, entry);
+
+        // Check both categorized and root-level keys for migration support
+        String categorizedKey = category + "." + key;
+        Object value = configValues.get(categorizedKey);
+
+        // Fallback to root level if not found (for migration)
+        if (value == null) {
+            value = configValues.get(key);
+            if (value != null) {
+                debugLog("Found legacy value for " + key + ", will be moved to " + categorizedKey + " on regenerate");
+                // Store in categorized location
+                configValues.put(categorizedKey, value);
+            }
+        }
+
+        // Use default if not found
+        if (value == null) {
+            debugLog("Using default value for " + categorizedKey);
+            value = defaultValue;
+            configValues.put(categorizedKey, defaultValue);
+        }
+
+        // Convert to proper type
+        return convertValue(entry, value);
+    }
+
+    /**
+     * Converts value to proper type using ConfigEntry
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T convertValue(ConfigEntry<T> entry, Object value) {
+        switch (entry.getType()) {
+            case BOOLEAN:
+                return (T) entry.getAsBoolean(value);
+            case INTEGER:
+                return (T) entry.getAsInteger(value);
+            case DOUBLE:
+                return (T) entry.getAsDouble(value);
+            case STRING:
+            default:
+                return (T) entry.getAsString(value);
+        }
+    }
+
+    /**
+     * Regenerates the config file with current schema.
+     * Preserves all user values but updates structure and descriptions.
+     * Applies category ordering based on setConfigCategoryOrder.
+     */
+    public static void regenerateConfig() {
+        try {
+            // Collect current values from our map
+            Map<String, Object> allValues = new LinkedHashMap<>(configValues);
+
+            // Write TOML file manually with proper ordering
+            writeTomlFile(allValues);
+
+            // Reload config to sync with the new file
+            loadConfig();
+
+            debugLog("Config file regenerated with proper ordering and header");
+        } catch (Exception e) {
+            EuphoriaPatcher.log(3, 0, "Error regenerating config: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Manually writes the TOML file with proper ordering
+     */
+    private static void writeTomlFile(Map<String, Object> values) throws IOException {
+        List<String> lines = new ArrayList<>();
+
+        // Add header
+        lines.add("# This file stores configuration options for the Euphoria Patcher mod");
+        lines.add("# Made for version " + EuphoriaPatcher.PATCH_VERSION.replace("_", ""));
+        lines.add("# Thank you for using Euphoria Patches - SpacEagle17");
+        lines.add("");
+
+        // Write entries in the correct category order
+        for (int catIndex = 0; catIndex < categoryOrder.size(); catIndex++) {
+            String category = categoryOrder.get(catIndex);
+
+            // Add blank line before category (except first)
+            if (catIndex > 0) {
+                lines.add("");
+            }
+
+            // Add category header
+            lines.add("[" + category + "]");
+
+            // Find all entries for this category
+            boolean firstEntry = true;
+            for (Map.Entry<String, ConfigEntry<?>> entry : configSchema.entrySet()) {
+                ConfigEntry<?> configEntry = entry.getValue();
+                if (configEntry.getCategory().equals(category)) {
+                    // Add blank line between entries (except first in category)
+                    if (!firstEntry) {
+                        lines.add("");
+                    }
+                    firstEntry = false;
+
+                    String fullKey = entry.getKey();
+                    Object value = values.getOrDefault(fullKey, configEntry.getDefaultValue());
+
+                    // Add comment lines
+                    String[] commentLines = formatDescription(configEntry.getDescription()).split("\n");
+
+                    for (String commentLine : commentLines) {
+                        lines.add("\t# " + commentLine);
+                    }
+
+                    // Add value line
+                    String valueStr = formatValue(value);
+                    lines.add("\t" + configEntry.getKey() + " = " + valueStr);
+                }
+            }
+        }
+
+        Files.write(CONFIG_PATH, lines);
+        debugLog("TOML file written with proper ordering");
+    }
+
+    /**
+     * Formats the description for TOML comments
+     */
+    private static String formatDescription(String description) {
+        StringBuilder sb = new StringBuilder();
+        String[] lines = description.split("\\n");
+        for (String line : lines) {
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(line.trim());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Formats a value for TOML output
+     */
+    private static String formatValue(Object value) {
+        if (value instanceof String) {
+            // Escape and quote strings
+            String str = (String) value;
+            str = str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+            return "\"" + str + "\"";
+        } else if (value instanceof Boolean || value instanceof Number) {
+            return value.toString();
+        }
+        return "\"" + value.toString() + "\"";
+    }
+
+    /**
+     * Starts watching the config file for external changes
+     */
     public static void startConfigWatcher() {
         if (watcherActive) return;
 
@@ -133,20 +321,26 @@ public class Config {
                 if (Files.exists(CONFIG_PATH)) {
                     FileTime currentModified = Files.getLastModifiedTime(CONFIG_PATH);
                     if (!currentModified.equals(lastModified)) {
-                        debugLog("Config file changed, reloading settings");
-                        loadProperties();
+                        debugLog("Config file changed externally, reloading");
+                        loadConfig();
                         EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
                         if (instance != null) instance.configStuff();
                     }
                 }
             } catch (IOException ignored) {}
         }, 10, 10, TimeUnit.SECONDS);
+
+        debugLog("Config watcher started");
     }
 
+    /**
+     * Stops the config file watcher
+     */
     public static void stopConfigWatcher() {
         if (watcherActive && scheduler != null) {
             scheduler.shutdown();
             watcherActive = false;
+            debugLog("Config watcher stopped");
         }
     }
 }
