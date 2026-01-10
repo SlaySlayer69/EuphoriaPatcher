@@ -90,7 +90,9 @@ public class IrisDefineHelper {
             UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
 
             if (injectCount == 1) {
-                EuphoriaPatcher.log(0, "Added Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
+                EuphoriaPatcher.log(0, "Added Euphoria Patches defines to " +
+                        shaderLoader.substring(0, 1).toUpperCase(Locale.ROOT) + shaderLoader.substring(1).toLowerCase(Locale.ROOT) +
+                        (isLegacy ? " (Legacy)" : ""));
             }
 
             injectedOnce = true;
