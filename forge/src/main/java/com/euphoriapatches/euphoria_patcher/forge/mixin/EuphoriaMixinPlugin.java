@@ -11,6 +11,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.gl.shader.StandardMacros";
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
     public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
+    public static final String IRIS_ELEMENT_ROW_CLASS = "net.irisshaders.iris.gui.element.IrisElementRow";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -34,6 +35,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisHeaderEntryMixin")) {
             return checkClassExists(IRIS_HEADER_ENTRY_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisElementRowMixin")) {
+            return checkClassExists(IRIS_ELEMENT_ROW_CLASS);
         }
 
         // Apply other mixins by default

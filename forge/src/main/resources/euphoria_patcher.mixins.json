@@ -9,8 +9,9 @@
   ],
   "client": [
     "ClientTickMixin",
+    "IrisHeaderEntryMixin",
     "ReloadShadersOnDimensionChangeMixin",
-    "IrisHeaderEntryMixin"
+    "IrisElementRowMixin"
   ],
   "injectors": {
     "defaultRequire": 0

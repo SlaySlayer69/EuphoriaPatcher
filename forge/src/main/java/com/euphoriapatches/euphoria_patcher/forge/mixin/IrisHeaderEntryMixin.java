@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.nio.file.Path;
@@ -23,6 +24,18 @@ public class IrisHeaderEntryMixin {
 
     @Unique
     private static String euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
+
+    @Unique
+    private int euphoriaPatcher$capturedX;
+
+    @Unique
+    private int euphoriaPatcher$capturedY;
+
+    @Unique
+    private int euphoriaPatcher$capturedEntryWidth;
+
+    @Unique
+    private static final int euphoriaPatcher$buttonWidth = 66;
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
@@ -51,9 +64,49 @@ public class IrisHeaderEntryMixin {
         }
     }
 
+    @Inject(method = "m_6311_", at = @At("HEAD"), remap = false, require = 0)
+    private void captureRenderParams(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
+        this.euphoriaPatcher$capturedX = x;
+        this.euphoriaPatcher$capturedY = y;
+        this.euphoriaPatcher$capturedEntryWidth = entryWidth;
+    }
+
     @Inject(method = "m_6311_", at = @At("TAIL"), remap = false, require = 0)
     private void onRenderContent(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         euphoriaPatcher$renderTooltipImpl(guiGraphics);
+    }
+
+    @Redirect(method = "m_6311_", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;m_280653_(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"), remap = false, require = 0)
+    private void redirectDrawCenteredString(@Coerce Object guiGraphics, @Coerce Object font, @Coerce Object text, int x, int y, int color) {
+        try {
+            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
+            if (utilityButtons != null) {
+                int utilityButtonsWidth = (int) utilityButtons.getClass().getMethod("euphoriaPatcher$getWidth").invoke(utilityButtons);
+                int minX = this.euphoriaPatcher$capturedX + 5;
+                int minY = this.euphoriaPatcher$capturedY + 5;
+                int maxX = ((this.euphoriaPatcher$capturedX + this.euphoriaPatcher$capturedEntryWidth) - 10) - utilityButtonsWidth;
+                int maxY = this.euphoriaPatcher$capturedY + 15;
+                euphoriaPatcher$renderScrollingString(guiGraphics, font, text, x, minX, minY, maxX, maxY, 0xFFFFFF);
+            } else {
+                // Fallback to original if utilityButtons is null
+                Class<?> guiGraphicsClass = Class.forName("net.minecraft.client.gui.GuiGraphics");
+                Class<?> fontClass = Class.forName("net.minecraft.client.gui.Font");
+                Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+                guiGraphicsClass.getMethod("m_280653_", fontClass, componentClass, int.class, int.class, int.class).invoke(guiGraphics, font, text, x, y, color);
+            }
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error in redirectDrawCenteredString: " + e.getMessage());
+            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+            // Fallback to original on error
+            try {
+                Class<?> guiGraphicsClass = Class.forName("net.minecraft.client.gui.GuiGraphics");
+                Class<?> fontClass = Class.forName("net.minecraft.client.gui.Font");
+                Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+                guiGraphicsClass.getMethod("m_280653_", fontClass, componentClass, int.class, int.class, int.class).invoke(guiGraphics, font, text, x, y, color);
+            } catch (Exception fallbackEx) {
+                euphoriaPatcher$debugLog("Fallback also failed: " + fallbackEx.getMessage());
+            }
+        }
     }
 
     @Unique
@@ -120,7 +173,7 @@ public class IrisHeaderEntryMixin {
             buttonText = mutableComponentClass.getMethod("m_130940_", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
 
             Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClick(minecraft, screen));
-            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
+            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, euphoriaPatcher$buttonWidth);
             euphoriaPatcher$debugLog("Successfully added Iris EP button");
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error in addEPIrisButton: " + e.getMessage());
@@ -383,7 +436,55 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$debugLog(String message) {
+    private static void euphoriaPatcher$renderScrollingString(Object guiGraphics, Object font, Object text, int centerX, int minX, int minY, int maxX, int maxY, int color) {
+        try {
+            // Get text width: font.width(text)
+            int textWidth = (int) font.getClass().getMethod("m_92852_", Class.forName("net.minecraft.network.chat.FormattedText")).invoke(font, text);
+            int yPos = (minY + maxY - 9) / 2 + 1;
+            int availableWidth = maxX - minX;
+
+            Class<?> guiGraphicsClass = Class.forName("net.minecraft.client.gui.GuiGraphics");
+            Class<?> fontClass = Class.forName("net.minecraft.client.gui.Font");
+            Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+
+            if (textWidth > availableWidth) {
+                // Text is too wide, scroll it with smooth sine wave animation
+                int scrollRange = textWidth - availableWidth;
+
+                // Get current time: Util.getMillis()
+                Class<?> utilClass = Class.forName("net.minecraft.Util");
+                long currentTimeMillis = (long) utilClass.getMethod("m_137550_").invoke(null);
+                double currentTime = (double) currentTimeMillis / 1000.0;
+
+                double scrollDuration = Math.max((double) scrollRange * 0.5, 3.0);
+                double scrollProgress = Math.sin(Math.PI / 2 * Math.cos(Math.PI * 2 * currentTime / scrollDuration)) / 2.0 + 0.5;
+
+                // Mth.lerp()
+                Class<?> mthClass = Class.forName("net.minecraft.util.Mth");
+                double scrollOffset = (double) mthClass.getMethod("m_14139_", double.class, double.class, double.class).invoke(null, scrollProgress, 0.0, (double) scrollRange);
+
+                // guiGraphics.enableScissor()
+                guiGraphicsClass.getMethod("m_280588_", int.class, int.class, int.class, int.class).invoke(guiGraphics, minX, minY, maxX, maxY);
+
+                // guiGraphics.drawString(font, text, x, y, color)
+                guiGraphicsClass.getMethod("m_280430_", fontClass, componentClass, int.class, int.class, int.class)
+                    .invoke(guiGraphics, font, text, minX - (int) scrollOffset, yPos, color);
+
+                // guiGraphics.disableScissor()
+                guiGraphicsClass.getMethod("m_280618_").invoke(guiGraphics);
+            } else {
+                // Text fits, center it at the specified centerX position using drawCenteredString: m_280653_(Font, Component, int, int, int) -> void
+                guiGraphicsClass.getMethod("m_280653_", fontClass, componentClass, int.class, int.class, int.class)
+                    .invoke(guiGraphics, font, text, centerX, yPos, color);
+            }
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error in renderScrollingString: " + e.getMessage());
+            euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+        }
+    }
+
+    @Unique
+    private static void euphoriaPatcher$debugLog(String message) {
         EuphoriaLogger.debugLog("[IrisHeaderEntryMixin] " + message);
     }
 }
