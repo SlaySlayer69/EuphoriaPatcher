@@ -26,7 +26,7 @@ public class SodiumConsole {
     private static Constructor<?> textConstructor = null;
 
     // Debug flag - can be enabled to show detailed logs
-    private static boolean debugLogging = EuphoriaPatcher.doDebugLogging;
+    private static final boolean debugLogging = EuphoriaPatcher.doDebugLogging;
 
     // Known Sodium package paths - prioritize 1.20.1 paths first
     private static final List<String[]> KNOWN_SODIUM_PATHS = Arrays.asList(
@@ -377,13 +377,11 @@ public class SodiumConsole {
 
             if (newSignature) {
                 // Newest format (1.21+): MessageLevel, String, boolean, double
-                double fadeTimerDouble = messageFadeTimer;
                 boolean isPersistent = messageFadeTimer <= 0;
-                logMessageMethod.invoke(consoleSink, messageLevel, message, isPersistent, fadeTimerDouble);
+                logMessageMethod.invoke(consoleSink, messageLevel, message, isPersistent, (double) messageFadeTimer);
             } else if (useDoubleForFadeTimer) {
                 // Older double format: MessageLevel, Text, double
-                double fadeTimerDouble = messageFadeTimer;
-                logMessageMethod.invoke(consoleSink, messageLevel, createTextComponent(message), fadeTimerDouble);
+                logMessageMethod.invoke(consoleSink, messageLevel, createTextComponent(message), (double) messageFadeTimer);
             } else {
                 // Original format: MessageLevel, Text, int
                 logMessageMethod.invoke(consoleSink, messageLevel, createTextComponent(message), messageFadeTimer);
@@ -403,12 +401,5 @@ public class SodiumConsole {
         } else {
             return severeLevel;
         }
-    }
-
-    /**
-     * Enable debug logging for SodiumConsole
-     */
-    public static void enableDebugLogging() {
-        debugLogging = true;
     }
 }

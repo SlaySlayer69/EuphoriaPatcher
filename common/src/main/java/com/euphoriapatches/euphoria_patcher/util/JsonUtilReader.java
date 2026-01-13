@@ -10,6 +10,7 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,35 +31,43 @@ public class JsonUtilReader {
         loadMessages();
     }
 
+    @SuppressWarnings("deprecation")
     private static void loadMessages() {
         debugLog("Loading messages from " + JSON_FILE_PATH);
-        try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
-             InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
+        try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH)) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+    
+                JsonElement jsonElement = new JsonParser().parse(reader); // Old method used to make it work with Java 8 for old MC versions
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+    
+                for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                    String categoryName = entry.getKey();
+                    List<String> messages = getStrings(entry);
 
-            JsonElement jsonElement = new JsonParser().parse(reader); // Old method used to make it work with Java 8 for old MC versions
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-            for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                String categoryName = entry.getKey();
-                JsonElement value = entry.getValue();
-                List<String> messages = new ArrayList<>();
-
-                if (value.isJsonArray()) {
-                    JsonArray messagesArray = value.getAsJsonArray();
-                    for (JsonElement message : messagesArray) {
-                        messages.add(message.getAsString());
+                    if (!messages.isEmpty()) {
+                        messageCategories.put(categoryName, messages);
                     }
-                } else if (value.isJsonPrimitive()) {
-                    messages.add(value.getAsString());
-                }
-
-                if (!messages.isEmpty()) {
-                    messageCategories.put(categoryName, messages);
                 }
             }
         } catch (Exception e) {
             EuphoriaPatcher.log(3, 0, "Error loading messages: " + e.getMessage());
         }
+    }
+
+    private static List<String> getStrings(Map.Entry<String, JsonElement> entry) {
+        JsonElement value = entry.getValue();
+        List<String> messages = new ArrayList<>();
+
+        if (value.isJsonArray()) {
+            JsonArray messagesArray = value.getAsJsonArray();
+            for (JsonElement message : messagesArray) {
+                messages.add(message.getAsString());
+            }
+        } else if (value.isJsonPrimitive()) {
+            messages.add(value.getAsString());
+        }
+        return messages;
     }
 
     public static String getRandomMessage(String category) {
@@ -80,18 +89,21 @@ public class JsonUtilReader {
      * @param key The key to retrieve
      * @return The string value or null if not found
      */
+    @SuppressWarnings("deprecation")
     public static String getString(String key) {
         debugLog("Getting string value for key: " + key);
-        try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH);
-             InputStreamReader reader = new InputStreamReader(inputStream, "UTF-8")) {
-
-            JsonElement jsonElement = new JsonParser().parse(reader);
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-            if (jsonObject.has(key)) {
-                JsonElement element = jsonObject.get(key);
-                if (element.isJsonPrimitive()) {
-                    return element.getAsString();
+        try (InputStream inputStream = JsonUtilReader.class.getResourceAsStream(JSON_FILE_PATH)) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+    
+                JsonElement jsonElement = new JsonParser().parse(reader);
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+    
+                if (jsonObject.has(key)) {
+                    JsonElement element = jsonObject.get(key);
+                    if (element.isJsonPrimitive()) {
+                        return element.getAsString();
+                    }
                 }
             }
         } catch (Exception e) {

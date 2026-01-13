@@ -216,7 +216,7 @@ public class DevPatchGenerator {
             JsonArray versions = JsonParser.parseString(response.toString()).getAsJsonArray();
 
             // Get the latest version (first in the array)
-            if (versions.size() == 0) {
+            if (versions.isEmpty()) {
                 System.err.println(RED + "ERROR: No versions found on Modrinth!" + RESET);
                 return null;
             }
@@ -276,7 +276,7 @@ public class DevPatchGenerator {
     /**
      * Finds the base and patched shader files
      */
-    private static ShaderPair findShaders() throws IOException {
+    private static ShaderPair findShaders() {
         // Check if directory exists and is not empty
         if (!Files.exists(SHADERPACKS_DIR) || !Files.isDirectory(SHADERPACKS_DIR)) {
             System.err.println(RED + "ERROR: shaderpacks directory not found at: " + SHADERPACKS_DIR + RESET);

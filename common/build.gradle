@@ -21,6 +21,7 @@ dependencies {
 
 	// OSHI for CPU usage monitoring (optional - only used if available at runtime)
 	compileOnly 'com.github.oshi:oshi-core:6.1.6'
+	compileOnly("org.jetbrains:annotations:24.1.0")
 
 	// Minecraft-related dependencies (provided by loader-specific modules)
 	// These are compileOnly because the actual implementation comes from Minecraft/loader

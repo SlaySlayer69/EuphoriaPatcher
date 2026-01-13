@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -103,7 +104,7 @@ public class ShaderValidator {
             Object hardware = systemInfoClass.getMethod("getHardware").invoke(systemInfo);
             Object processor = hardware.getClass().getMethod("getProcessor").invoke(hardware);
 
-            // Get CPU load over a 1 second interval
+            // Get CPU load over a 1-second interval
             long[] prevTicks = (long[]) processor.getClass().getMethod("getSystemCpuLoadTicks").invoke(processor);
             Thread.sleep(1000);
 
@@ -189,7 +190,7 @@ public class ShaderValidator {
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
 
-            public Thread newThread(Runnable r) {
+            public Thread newThread(@NotNull Runnable r) {
                 Thread t = new Thread(r, String.format("ShaderByteSizeFinder-%03d", threadNumber.getAndIncrement()));
                 t.setDaemon(true);
                 return t;

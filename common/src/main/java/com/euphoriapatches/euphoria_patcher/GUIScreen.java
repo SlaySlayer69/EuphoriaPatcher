@@ -154,6 +154,7 @@ public class GUIScreen {
     }
 
     // Dummy method to prevent code minimization tools from removing this class
+    @SuppressWarnings("unused")
     public static void doSomethingRandomToPreventMinimization(int x, int y) {
         int z = x * y;
     }

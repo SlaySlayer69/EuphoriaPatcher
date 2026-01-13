@@ -38,7 +38,7 @@ public class EuphoriaLogger {
     private boolean shouldCreateErrorLog = true;
 
     // For error shader generation
-    private List<String> errorMessages = new ArrayList<>();
+    private final List<String> errorMessages = new ArrayList<>();
     private int lastProcessedErrorCount = 0;
     private boolean hasErrors = false;
     private Timer errorShaderTimer = null;
@@ -48,7 +48,7 @@ public class EuphoriaLogger {
 
     // URL extraction for clipboard functionality
     private String lastErrorURL = null;
-    private boolean doErrorClipboardCopy = false;
+    private final boolean doErrorClipboardCopy;
     private boolean errorURLAlreadyCopied = false;
 
 
@@ -350,6 +350,7 @@ public class EuphoriaLogger {
      * @param message The message to extract URL from
      * @return The extracted URL or null if no URL found
      */
+    @SuppressWarnings("HttpUrlsUsage")
     private String extractURL(String message) {
         // Simple URL pattern matching for http:// and https://
         String[] words = message.split("\\s+");

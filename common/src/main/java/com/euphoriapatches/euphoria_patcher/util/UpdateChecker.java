@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Locale;
 
 public class UpdateChecker {
     private static final String PROJECT_ID = "4H6sumDB";
@@ -215,6 +216,7 @@ public class UpdateChecker {
      * @param minor The minor version number (Y in X.Y.Z)
      * @return The latest recommended patch version in format "X.Y.Z", or null if none found
      */
+    @SuppressWarnings("deprecation")
     private static String fetchRecommendedPatchVersion(int major, int minor) {
         debugLog("Fetching recommended patch version for " + major + "." + minor + ".x");
 
@@ -309,7 +311,7 @@ public class UpdateChecker {
 
         String[] lines = changelog.split("\n");
         for (String line : lines) {
-            String lowerLine = line.toLowerCase();
+            String lowerLine = line.toLowerCase(Locale.ROOT);
             if (lowerLine.contains("updated to complementary shaders") &&
                 lowerLine.contains("euphoria patches") &&
                 lowerLine.contains("update recommended")) {
@@ -367,6 +369,7 @@ public class UpdateChecker {
     }
 
     // Fetch the latest version from the Modrinth API
+    @SuppressWarnings("deprecation")
     private static String fetchLatestVersion() throws Exception {
         debugLog("Fetching latest version from Modrinth API: " + UPDATE_URL);
 

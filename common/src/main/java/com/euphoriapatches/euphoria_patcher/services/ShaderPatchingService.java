@@ -142,7 +142,7 @@ public class ShaderPatchingService {
         } catch (IOException | CompressorException | InvalidHeaderException e) {
             debugLog("Error applying patch file: " + e.getMessage());
             log(3, "Error applying patch file: " + e.getMessage());
-            e.printStackTrace();
+            log(3, EuphoriaLogger.getStackTrace(e));
         }
         return false;
     }

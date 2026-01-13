@@ -40,11 +40,11 @@ public class ShaderData {
 
     /**
      * Save shader style data to the data.json file
+     *
      * @param styleReimagined Whether Reimagined style is used
-     * @param styleUnbound Whether Unbound style is used
-     * @return true if save was successful, false otherwise
+     * @param styleUnbound    Whether Unbound style is used
      */
-    public static boolean saveShaderStyle(boolean styleReimagined, boolean styleUnbound) {
+    public static void saveShaderStyle(boolean styleReimagined, boolean styleUnbound) {
         debugLog("Saving shader style data: Reimagined=" + styleReimagined + ", Unbound=" + styleUnbound);
 
         try {
@@ -62,11 +62,9 @@ public class ShaderData {
                     Files.newOutputStream(DATA_FILE), StandardCharsets.UTF_8)) {
                 GSON.toJson(data, writer);
                 debugLog("Successfully saved shader style data to " + DATA_FILE);
-                return true;
             }
         } catch (IOException e) {
             debugLog("Error saving shader style data: " + e.getMessage());
-            return false;
         }
     }
 

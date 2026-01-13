@@ -11,8 +11,6 @@ import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -298,7 +296,7 @@ public class PotatoFileMonitor {
                         WatchEvent<Path> ev = (WatchEvent<Path>) event;
                         Path filename = ev.context();
 
-                        // Check if the event is for potato.png and we're still monitoring the same pack
+                        // Check if the event is for potato.png, and we're still monitoring the same pack
                         if (filename.toString().equals("potato.png") && monitoredPath.equals(currentShaderpackPath)) {
                             debugLog("Detected potato.png change: " + kind.name());
                             handlePotatoStateChange(shaderpackPath);

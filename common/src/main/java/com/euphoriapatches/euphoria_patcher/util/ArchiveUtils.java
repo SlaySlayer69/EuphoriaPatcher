@@ -99,7 +99,7 @@ public class ArchiveUtils {
             if (e.getCause() != null) {
                 debugLog("Caused by: " + e.getCause().getMessage());
             }
-            e.printStackTrace();
+            EuphoriaPatcher.log(3, EuphoriaLogger.getStackTrace(e));
         }
     }
 

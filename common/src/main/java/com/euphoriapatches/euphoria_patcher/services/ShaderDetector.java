@@ -33,7 +33,6 @@ public class ShaderDetector {
     private final String commonLocation;
     private final String shaderMyFileLocation;
     private final Path shaderpacks;
-    private final ShaderNamingService namingService;
     private final ShaderValidator shaderValidator;
 
     private int totalFilesToScan = 0;
@@ -55,7 +54,6 @@ public class ShaderDetector {
         this.shaderMyFileLocation = shaderMyFileLocation;
         this.shaderpacks = shaderpacks;
         // Circular dependency will be resolved by setter
-        this.namingService = null;
         this.shaderValidator = new ShaderValidator();
 
         this.buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
@@ -627,6 +625,7 @@ public class ShaderDetector {
         debugLog("Reset files scanned counter");
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private boolean isPopularShaderName(Path path) {
         try {
             String nameLower = path.getFileName().toString().toLowerCase(Locale.ROOT);
@@ -885,7 +884,7 @@ public class ShaderDetector {
 
     /**
      * Find the patched shader directory directly
-     * Used when baseFile is null but we need to find the installed shader
+     * Used when baseFile is null, but we need to find the installed shader
      */
     public Path findPatchedShaderDirectory() {
         try {

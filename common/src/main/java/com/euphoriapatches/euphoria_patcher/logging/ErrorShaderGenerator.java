@@ -20,6 +20,7 @@ import java.util.Map;
 /**
  * Generates an error shader that displays error messages in-game
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class ErrorShaderGenerator {
 
     public static final String ERROR_SHADER_FOLDER = "_0EuphoriaPatches_ErrorShader";

@@ -43,9 +43,6 @@ public class ShaderpacksWatcher {
         EuphoriaLogger.debugLog("[ShaderpacksWatcher] " + message);
     }
 
-    // Add this flag to control initial scanning
-    private boolean skipInitialScan = false;
-
     /**
      * Get the ShaderDetector service from the patcher instance
      */
@@ -69,7 +66,7 @@ public class ShaderpacksWatcher {
         this.patcher = patcher;
         this.shaderpacks = EuphoriaPatcher.shaderpacks;
         this.watchService = FileSystems.getDefault().newWatchService();
-        this.skipInitialScan = skipInitialScan;
+        // Add this flag to control initial scanning
         this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "EuphoriaPatches-FileWatcher");
             thread.setDaemon(true);
@@ -225,7 +222,7 @@ public class ShaderpacksWatcher {
                                 }
 
                                 // Check if we need to process this file
-                                boolean shouldProcess = false;
+                                boolean shouldProcess;
 
                                 try {
                                     debugLog("Reading file attributes: " + fileNameStr);
@@ -241,7 +238,7 @@ public class ShaderpacksWatcher {
                                     boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileNameStr);
                                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
 
-                                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " +
+                                    debugLog("File status - new: " + isNewFile + ", invalid byte size: " +
                                              isInvalidByteSize + ", changed: " + hasChanged);
 
                                     shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
@@ -257,7 +254,7 @@ public class ShaderpacksWatcher {
                                         } else if (hasChanged) {
                                             debugLog("Processing changed shader pack: " + fileNameStr);
                                             EuphoriaPatcher.log(0, "Detected changed shader pack: " + fileNameStr);
-                                        } else if (isInvalidByteSize) {
+                                        } else {
                                             debugLog("Re-checking previously invalid shader pack: " + fileNameStr);
                                             EuphoriaPatcher.log(0, "Re-checking previously invalid shader pack: " + fileNameStr);
                                         }
@@ -343,7 +340,7 @@ public class ShaderpacksWatcher {
                     boolean isInvalidByteSize = invalidByteSizeFiles.contains(fileName);
                     boolean hasChanged = oldMetadata != null && oldMetadata.hasChanged(newMetadata);
 
-                    debugLog("File status - new: " + isNewFile + ", invalid bytesize: " +
+                    debugLog("File status - new: " + isNewFile + ", invalid byte size: " +
                              isInvalidByteSize + ", changed: " + hasChanged);
 
                     boolean shouldProcess = isNewFile || isInvalidByteSize || hasChanged;
@@ -359,7 +356,7 @@ public class ShaderpacksWatcher {
                         } else if (hasChanged) {
                             debugLog("Processing changed shader pack: " + fileName);
                             EuphoriaPatcher.log(0, "Found changed shader pack during scan: " + fileName);
-                        } else if (isInvalidByteSize) {
+                        } else {
                             debugLog("Re-checking previously invalid shader pack: " + fileName);
                             EuphoriaPatcher.log(0, "Re-checking previously invalid shader pack during scan: " + fileName);
                         }

@@ -18,7 +18,7 @@ public class UpdateShaderConfig {
     private static final String VERSION_IDENTIFIER_PREFIX = "AAB_FOR_EUPHORIA_PATCHES_VERSION_";
     private static final String VERSION_IDENTIFIER_SUFFIX = "=true";
     private static final Pattern EUPHORIA_FILE_PATTERN = Pattern.compile(
-        "(?:Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches))",
+            "Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches)",
         Pattern.CASE_INSENSITIVE
     );
 
@@ -271,18 +271,9 @@ public class UpdateShaderConfig {
                 }
             }
 
-            // Second line can be version identifier
-            if (foundMainIdentifier) {
-                if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                    // Found version identifier, it's correctly positioned
-                    return true;
-                } else {
-                    // After main identifier, next line should be version or settings
-                    // Either way, we've checked enough to know positioning is correct
-                    return true;
-                }
-            }
+            return true;
         }
+
 
         return foundMainIdentifier; // True only if we found main identifier in the correct position
     }

@@ -1,7 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.features;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.IOException;

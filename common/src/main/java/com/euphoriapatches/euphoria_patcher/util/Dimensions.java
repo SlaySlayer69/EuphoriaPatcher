@@ -104,16 +104,14 @@ public class Dimensions {
             return dimensionInMappingsCache.get(currentDimensionId);
         }
 
-        boolean isInMappings;
-
         // Check vanilla dimensions
         if (getVanillaDimensionCategory(currentDimensionId) != null) {
-            isInMappings = true;
-            dimensionInMappingsCache.put(currentDimensionId, isInMappings);
-            return isInMappings;
+            dimensionInMappingsCache.put(currentDimensionId, true);
+            return true;
         }
 
         // Check shader pack mappings
+        boolean isInMappings;
         Path shaderpackPath = ShaderLoader.getCurrentShaderpackPath();
         if (shaderpackPath != null) {
             Map<String, String> dimensionMappings = parseDimensionProperties(shaderpackPath);

@@ -27,6 +27,7 @@ import java.util.stream.Stream;
  * - Locate and read shader loader configuration files
  * - Get information about the currently selected shaderpack
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class ShaderLoader {
     // Constants for shader types
     public static final String IRIS = "iris";
@@ -117,15 +118,16 @@ public class ShaderLoader {
                     debugLog("Found MODNAME field in " + classObj.getName() + ": " + modName);
 
                     // Check which shader loader it is based on MODNAME
-                    if ("Iris".equals(modName)) {
-                        debugLog("Detected Iris via MODNAME='Iris'");
-                        return IRIS;
-                    } else if ("Oculus".equals(modName)) {
-                        debugLog("Detected Oculus via MODNAME='Oculus'");
-                        return OCULUS;
-                    } else if ("AngelicaShaders".equals(modName)) {
-                        debugLog("Detected Angelica via MODNAME='AngelicaShaders'");
-                        return ANGELICA;
+                    switch (modName) {
+                        case "Iris":
+                            debugLog("Detected Iris via MODNAME='Iris'");
+                            return IRIS;
+                        case "Oculus":
+                            debugLog("Detected Oculus via MODNAME='Oculus'");
+                            return OCULUS;
+                        case "AngelicaShaders":
+                            debugLog("Detected Angelica via MODNAME='AngelicaShaders'");
+                            return ANGELICA;
                     }
                 }
             } catch (NoSuchFieldException e) {
@@ -561,58 +563,64 @@ public class ShaderLoader {
             return shaderLoaderConfigPath;
         }
 
-        Path configPath = null;
+        Path configPath;
         String shaderLoader = getShaderLoader();
 
-        if (shaderLoader.equals(IRIS)) {
-            configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
-            if (Files.exists(configPath)) {
-                debugLog("Found Iris config at: " + configPath);
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-        } else if (shaderLoader.equals(OCULUS)) {
-            configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
-            if (Files.exists(configPath)) {
-                debugLog("Found Oculus config at: " + configPath);
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-        } else if (shaderLoader.equals(OPTIFINE)) {
-            configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
-            if (Files.exists(configPath)) {
-                debugLog("Found OptiFine config at: " + configPath);
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-        } else if (shaderLoader.equals(ANGELICA)) {
-            configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
-            if (Files.exists(configPath)) {
-                debugLog("Found Angelica config at: " + configPath);
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-        } else { // Fallback: check all known config locations
-            configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
-            if (Files.exists(configPath)) {
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-            configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
-            if (Files.exists(configPath)) {
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-            configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
-            if (Files.exists(configPath)) {
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
-            configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
-            if (Files.exists(configPath)) {
-                shaderLoaderConfigPath = configPath;
-                return shaderLoaderConfigPath;
-            }
+        switch (shaderLoader) {
+            case IRIS:
+                configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
+                if (Files.exists(configPath)) {
+                    debugLog("Found Iris config at: " + configPath);
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                break;
+            case OCULUS:
+                configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
+                if (Files.exists(configPath)) {
+                    debugLog("Found Oculus config at: " + configPath);
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                break;
+            case OPTIFINE:
+                configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+                if (Files.exists(configPath)) {
+                    debugLog("Found OptiFine config at: " + configPath);
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                break;
+            case ANGELICA:
+                configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
+                if (Files.exists(configPath)) {
+                    debugLog("Found Angelica config at: " + configPath);
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                break;
+            default:  // Fallback: check all known config locations
+                configPath = EuphoriaPatcher.configDirectory.resolve("iris.properties");
+                if (Files.exists(configPath)) {
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
+                if (Files.exists(configPath)) {
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+                if (Files.exists(configPath)) {
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                configPath = EuphoriaPatcher.configDirectory.resolve("shaders.properties");
+                if (Files.exists(configPath)) {
+                    shaderLoaderConfigPath = configPath;
+                    return shaderLoaderConfigPath;
+                }
+                break;
         }
 
         debugLog("No shader loader config found");

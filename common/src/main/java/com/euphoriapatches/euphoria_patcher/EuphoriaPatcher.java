@@ -228,6 +228,7 @@ public class EuphoriaPatcher {
         Config.startConfigWatcher();
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private void handleJVMArgumentDebugLogging(boolean configDebugLogging) {
         // Check for JVM argument -DEPDebug=true/false which takes priority over config
         String jvmDebugArg = System.getProperty("ebugEP");

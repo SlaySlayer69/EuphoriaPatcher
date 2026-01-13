@@ -14,6 +14,7 @@ public class UpdateShaderLoaderConfig {
         EuphoriaLogger.debugLog("[UpdateShaderLoaderConfig] " + message);
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     public static void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
         debugLog("Starting updateShaderLoaderConfig - Unbound: " + styleUnbound + ", Reimagined: " + styleReimagined);
 
