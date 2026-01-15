@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.util.FileOperations;
 import com.euphoriapatches.euphoria_patcher.util.ShaderData;
 import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
@@ -762,18 +763,9 @@ public class ShaderDetector {
     /**
      * Reads version string from a pack.json file
      */
-    private String readVersionFromFile(Path packJsonPath) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(packJsonPath)) {
-            String line;
-            Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
-            while ((line = reader.readLine()) != null) {
-                Matcher matcher = versionPattern.matcher(line);
-                if (matcher.find()) {
-                    return matcher.group(1);
-                }
-            }
-        }
-        return null;
+    private String readVersionFromFile(Path packJsonPath) {
+        String jsonContent = FileOperations.readFileAsString(packJsonPath);
+        return parseVersionFromJson(jsonContent);
     }
 
     /**
