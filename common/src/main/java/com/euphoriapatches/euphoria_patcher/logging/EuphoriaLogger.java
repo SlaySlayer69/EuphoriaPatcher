@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.logging;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.integration.SodiumConsole;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
@@ -331,7 +332,7 @@ public class EuphoriaLogger {
     }
 
     public static void debugLog(String message) {
-        if (EuphoriaPatcher.doDebugLogging) {
+        if (ConfigHandler.doDebugLogging) {
             EuphoriaPatcher.log(0, message);
         }
     }

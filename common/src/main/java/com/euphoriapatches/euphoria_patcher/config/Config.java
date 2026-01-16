@@ -403,8 +403,7 @@ public class Config {
                     if (!currentModified.equals(lastModified)) {
                         debugLog("Config file changed externally, reloading");
                         loadConfig();
-                        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
-                        if (instance != null) instance.configStuff();
+                        ConfigHandler.configStuff();
                     }
                 }
             } catch (IOException ignored) {}

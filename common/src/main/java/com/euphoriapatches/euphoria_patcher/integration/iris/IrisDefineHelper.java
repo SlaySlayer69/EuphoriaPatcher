@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.iris;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.UpdateShaderConfig;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -76,7 +77,7 @@ public class IrisDefineHelper {
                 debugLog("Cannot check for potato.png - currentShaderpack is null");
             }
 
-            if (UpdateChecker.shouldUserUpdate() && EuphoriaPatcher.doDisplayShaderInGameMessage && !injectedOnce) {
+            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && !injectedOnce) {
                 defineKey.accept(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 
