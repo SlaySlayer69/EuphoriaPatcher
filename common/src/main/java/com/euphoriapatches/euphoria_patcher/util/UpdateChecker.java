@@ -56,7 +56,7 @@ public class UpdateChecker {
      * @return true if an important update is available or a recommended patch update exists, false otherwise
      */
     public static boolean shouldUserUpdate() {
-        return isUpdateAvailable() && (isImportantUpdate() || isPatchUpdateRecommended());
+        return EuphoriaPatcher.updateMode.equals("all") ? isUpdateAvailable() : isUpdateAvailable() && (isImportantUpdate() || isPatchUpdateRecommended());
     }
 
     /**
@@ -325,8 +325,8 @@ public class UpdateChecker {
      * Check for updates by querying the Modrinth API
      */
     public static void checkForUpdates() {
-        if (UPDATE_CHECK_PERFORMED || !EuphoriaPatcher.doUpdateChecking) {
-            debugLog("Update check skipped. Already performed: " + UPDATE_CHECK_PERFORMED + ", Update checking enabled: " + EuphoriaPatcher.doUpdateChecking);
+        if (UPDATE_CHECK_PERFORMED || EuphoriaPatcher.updateMode.equals("none")) {
+            debugLog("Update check skipped. Already performed: " + UPDATE_CHECK_PERFORMED + ", Update checking mode set to: " + EuphoriaPatcher.updateMode);
             return;
         }
         UPDATE_CHECK_PERFORMED = true;

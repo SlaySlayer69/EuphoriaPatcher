@@ -37,7 +37,7 @@ public class EuphoriaPatcher {
 
     // Config Options
     public static boolean doPopUpLogging = true;
-    public static boolean doUpdateChecking = true;
+    public static String updateMode = "important"; // important, all, none
     public static boolean doRenameOldShaderFiles = true;
     public static boolean doDeleteOldShaderFiles = false;
     public static boolean doDisplayShaderInGameMessage = true;
@@ -186,18 +186,34 @@ public class EuphoriaPatcher {
         // Any categories used but not listed here will appear at the end
         Config.setConfigCategoryOrder("display", "updates", "maintenance", "debug", "advanced");
 
-        // How to use: Cast to desired data type, then call readWriteConfig with category
-        // Parameters: category, key, defaultValue, description (supports multiline with "\n")
-        // Config will be organized into [category] sections in the TOML file
+        /*
+        How to use: Cast to desired data type, then call readWriteConfig with category
+        Parameters: category, key, defaultValue, description (supports multiline with "\n")
+        Config will be organized into [category] sections in the TOML file
+
+        Optional Parameters: allowedValues (String array) for string options with limited choices
+        TypeMigration for changing option types while preserving user settings
+        How Does TypeMigration work?
+        If an option's type is changed (e.g., boolean to string), the TypeMigration parameter
+        tells the config system how to convert existing user values to the new type.
+        Example: Config.TypeMigration.map(false, "none") means: if the old boolean value was false,
+        set the new string value to "none". Can be chained for multiple mappings.
+        */
 
         // Type is auto-detected from the default value - no casting needed!
         doPopUpLogging = Config.readWriteConfig("display", "doPopUpLogging", true,
                 "Option for the sodium message popup logging." +
                 "\nDefault = true");
-        doUpdateChecking = Config.readWriteConfig("updates", "doUpdateChecking", true,
-                "Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
+
+        updateMode = Config.readWriteConfig("updates", "doUpdateChecking", "important",
+                "Option which determines what updates the update checker considers." +
+                "\nUpdate checker mode: 'important' (critical or big updates only), 'all' (all updates), 'none' (disabled)." +
                 "\nUses the Modrinth API to fetch update information." +
-                "\nDefault = true");
+                "\nDefault = important",
+                new String[]{"important", "all", "none"},
+                Config.TypeMigration.map(false, "none"),
+                Config.TypeMigration.map(true, "important")).toLowerCase(Locale.ROOT);
+
         doRenameOldShaderFiles = Config.readWriteConfig("maintenance", "doRenameOldShaderFiles", true,
                 "Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +

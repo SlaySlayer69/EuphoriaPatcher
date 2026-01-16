@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("unused")
 public class Config {
     // TOML config location
     public static final Path CONFIG_DIR = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher");
@@ -146,9 +147,28 @@ public class Config {
 
     /**
      * Reads or writes a config value with the given category, key, default value, and description
+     * (without validation or custom migrations)
      */
     public static <T> T readWriteConfig(String category, String key, T defaultValue, String description) {
-        ConfigEntry<T> entry = new ConfigEntry<>(category, key, defaultValue, description);
+        return readWriteConfig(category, key, defaultValue, description, null, (TypeMigration[]) null);
+    }
+
+    /**
+     * Reads or writes a config value with the given category, key, default value, description, and allowed values
+     * (without custom migrations)
+     * @param allowedValues Array of allowed string values (case-insensitive), or null for no validation
+     */
+    public static <T> T readWriteConfig(String category, String key, T defaultValue, String description, String[] allowedValues) {
+        return readWriteConfig(category, key, defaultValue, description, allowedValues, (TypeMigration[]) null);
+    }
+
+    /**
+     * Reads or writes a config value with the given category, key, default value, description, allowed values, and custom type migrations
+     * @param allowedValues Array of allowed string values (case-insensitive), or null for no validation
+     * @param migrations Custom type migration mappings for when the stored type doesn't match the expected type
+     */
+    public static <T> T readWriteConfig(String category, String key, T defaultValue, String description, String[] allowedValues, TypeMigration... migrations) {
+        ConfigEntry<T> entry = new ConfigEntry<>(category, key, defaultValue, description, allowedValues);
 
         // Store in schema for regeneration
         String schemaKey = category + "." + key;
@@ -173,10 +193,70 @@ public class Config {
             debugLog("Using default value for " + categorizedKey);
             value = defaultValue;
             configValues.put(categorizedKey, defaultValue);
+        } else {
+            // Check for type migration
+            value = handleTypeMigration(categorizedKey, value, defaultValue, migrations);
         }
 
         // Convert to proper type
-        return convertValue(entry, value);
+        T result = convertValue(entry, value);
+
+        // Validate if allowed values are specified
+        if (allowedValues != null && allowedValues.length > 0 && result instanceof String) {
+            String strResult = (String) result;
+            boolean isValid = false;
+            String normalizedValue = null;
+            for (String allowed : allowedValues) {
+                if (allowed.equalsIgnoreCase(strResult)) {
+                    isValid = true;
+                    // Normalize to the canonical case from allowedValues
+                    normalizedValue = allowed;
+                    break;
+                }
+            }
+
+            if (isValid) {
+                @SuppressWarnings("unchecked")
+                T typedValue = (T) normalizedValue;
+                result = typedValue;
+                configValues.put(categorizedKey, normalizedValue);
+            } else {
+                debugLog("Invalid value '" + strResult + "' for " + categorizedKey + ", using default: " + defaultValue);
+                result = defaultValue;
+                configValues.put(categorizedKey, defaultValue);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Handles type migration when the stored type doesn't match the expected type
+     */
+    private static Object handleTypeMigration(String key, Object oldValue, Object defaultValue, TypeMigration[] customMigrations) {
+        // No migration needed if types match
+        if (oldValue.getClass().equals(defaultValue.getClass())) {
+            return oldValue;
+        }
+
+        // Try custom migrations
+        if (customMigrations != null) {
+            for (TypeMigration migration : customMigrations) {
+                if (migration.matches(oldValue)) {
+                    Object migratedValue = migration.getNewValue();
+                    EuphoriaPatcher. log(0, "Migrated '" + key + "' from " + oldValue.getClass().getSimpleName() +
+                            " (" + oldValue + ") to " + migratedValue.getClass().getSimpleName() +
+                            " (" + migratedValue + ")");
+                    configValues.put(key, migratedValue);
+                    return migratedValue;
+                }
+            }
+        }
+
+        // No migration found, use default
+        EuphoriaPatcher.log(0, "Type mismatch for '" + key + "': stored type " + oldValue.getClass().getSimpleName() +
+                " does not match expected type " + defaultValue.getClass().getSimpleName() + ", using default");
+        return defaultValue;
     }
 
     /**
@@ -341,6 +421,51 @@ public class Config {
             scheduler.shutdown();
             watcherActive = false;
             debugLog("Config watcher stopped");
+        }
+    }
+
+    /**
+     * Represents a type migration mapping from an old value to a new value.
+     * Used to define custom migration behavior when config value types change.
+     */
+    public static class TypeMigration {
+        private final Object oldValue;
+        private final Object newValue;
+
+        private TypeMigration(Object oldValue, Object newValue) {
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        /**
+         * Creates a migration mapping from oldValue to newValue.
+         * Comparisons are case-insensitive for strings.
+         */
+        public static TypeMigration map(Object oldValue, Object newValue) {
+            return new TypeMigration(oldValue, newValue);
+        }
+
+        public Object getOldValue() {
+            return oldValue;
+        }
+
+        public Object getNewValue() {
+            return newValue;
+        }
+
+        /**
+         * Checks if the given value matches this migration's old value (case-insensitive for strings)
+         */
+        public boolean matches(Object value) {
+            if (oldValue == null) return value == null;
+            if (value == null) return false;
+
+            // Case-insensitive string comparison
+            if (oldValue instanceof String && value instanceof String) {
+                return ((String) oldValue).equalsIgnoreCase((String) value);
+            }
+
+            return oldValue.equals(value);
         }
     }
 }

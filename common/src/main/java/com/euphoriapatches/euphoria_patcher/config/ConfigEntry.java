@@ -10,13 +10,19 @@ public class ConfigEntry<T> {
     private final T defaultValue;
     private final String description;
     private final ConfigType type;
+    private final String[] allowedValues;
 
     public ConfigEntry(String category, String key, T defaultValue, String description) {
+        this(category, key, defaultValue, description, null);
+    }
+
+    public ConfigEntry(String category, String key, T defaultValue, String description, String[] allowedValues) {
         this.category = category;
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;
         this.type = determineType(defaultValue);
+        this.allowedValues = allowedValues;
     }
 
     private ConfigType determineType(Object value) {
@@ -44,6 +50,10 @@ public class ConfigEntry<T> {
 
     public ConfigType getType() {
         return type;
+    }
+
+    public String[] getAllowedValues() {
+        return allowedValues;
     }
 
     public String getAsString(Object value) {
