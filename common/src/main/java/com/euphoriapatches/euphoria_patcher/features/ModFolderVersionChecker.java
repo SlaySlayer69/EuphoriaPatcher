@@ -2,6 +2,7 @@ package com.euphoriapatches.euphoria_patcher.features;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ModsDirectory;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
 import java.io.File;
@@ -24,7 +25,7 @@ public class ModFolderVersionChecker {
         debugLog("Checking for newer mod versions in folder");
         String currentVersion = EuphoriaPatcher.PATCH_VERSION.substring(1); // Remove leading underscore
         debugLog("Current version: " + currentVersion);
-        File folder = EuphoriaPatcher.modDirectory.toFile();
+        File folder = ModsDirectory.get().toFile();
         debugLog("Checking mods directory: " + folder);
         File[] modFiles = folder.listFiles((dir, name) -> name.startsWith(MOD_PREFIX) && name.endsWith(".jar"));
 

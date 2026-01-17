@@ -71,14 +71,18 @@ public class ShaderDetector {
             checkForExistingPatchedShaders(info);
             if (info.isAlreadyInstalled) {
                 // Check if we need to patch an additional style
-                checkForMissingStyle(info);
+                boolean successfulDataRead = checkForMissingStyle(info);
                 if (!info.isAlreadyInstalled) {
                     debugLog("Found missing style to patch: " + (info.styleReimagined ? "Unbound" : "Reimagined"));
                     // Continue with normal patching flow for the missing style
                     return info;
                 }
-                if (info.styleReimagined && info.styleUnbound) debugLog("Both styles already installed, skipping detection");
-                else debugLog("User does not have the other style base shader installed, skipping detection");
+                if (successfulDataRead) {
+                    if (info.styleReimagined && info.styleUnbound) debugLog("Both styles already installed, skipping detection");
+                    else debugLog("User does not have the other style base shader installed, skipping detection");
+                } else {
+                    debugLog("Could not read data.json, skipping detection");
+                }
                 return info;
             }
 
@@ -784,27 +788,32 @@ public class ShaderDetector {
      * Check if one style is installed but the other is missing, and if the missing style's base shader exists
      * If found, updates info to indicate we should patch the missing style
      */
-    private void checkForMissingStyle(ShaderInfo info) {
+    private boolean checkForMissingStyle(ShaderInfo info) {
         // If both styles are already installed, nothing to do
         if (info.styleReimagined && info.styleUnbound) {
             debugLog("Both styles already installed");
-            return;
+            return false;
         }
 
         // Load current installation state from data.json
         if (!ShaderData.dataFileExists()) {
             debugLog("No data file exists, cannot check for missing styles");
-            return;
+            return false;
         }
 
-        ShaderData.ShaderStyleData data = ShaderData.loadShaderStyle();
+        ShaderData.PersistentShaderData data = ShaderData.load();
+
+        if (data.styleReimagined == null || data.styleUnbound == null) {
+            debugLog("Could not load data.json, cannot check for missing styles");
+            return false;
+        }
 
         // If both are already marked as installed in data, skip
         if (data.styleReimagined && data.styleUnbound) {
             debugLog("Both styles marked as installed in data.json");
             info.styleReimagined = true;
             info.styleUnbound = true;
-            return;
+            return true;
         }
 
         // Determine which style is missing
@@ -817,8 +826,9 @@ public class ShaderDetector {
             debugLog("Unbound is installed, checking for Reimagined");
         } else {
             // Neither is installed according to data, proceed with normal detection
+            // Literally HOW. There is no way we can get here unless the world is broken.
             debugLog("No styles marked as installed in data.json");
-            return;
+            return false;
         }
 
         // Look for the missing style's base shader using exact filename matching
@@ -840,6 +850,7 @@ public class ShaderDetector {
         } else {
             debugLog("Missing style " + missingStyle + " shader not found");
         }
+        return true;
     }
 
     /**

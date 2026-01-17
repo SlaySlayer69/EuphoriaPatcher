@@ -21,31 +21,85 @@ public class ShaderData {
     }
 
     /**
-     * Data class to hold shader style information
+     * Validates that the stored mods directory matches the current one.
+     * If the directory differs, deletes the data file to prevent cross-user data usage.
+     * If no directory is stored, saves the current one.
      */
-    public static class ShaderStyleData {
-        public boolean styleReimagined;
-        public boolean styleUnbound;
+    public static void validateModsDirectory() {
+        debugLog("Validating mods directory");
 
-        public ShaderStyleData() {
-            this.styleReimagined = false;
-            this.styleUnbound = false;
+        String currentModsDir = ModsDirectory.get().toString();
+        debugLog("Current mods directory: " + currentModsDir);
+
+        if (!dataFileExists()) {
+            debugLog("Data file does not exist, will create with current mods directory");
+            save(SaveData.of(DataField.MODS_DIRECTORY, currentModsDir));
+            return;
         }
 
-        public ShaderStyleData(boolean styleReimagined, boolean styleUnbound) {
-            this.styleReimagined = styleReimagined;
-            this.styleUnbound = styleUnbound;
+        try (Reader reader = new InputStreamReader(
+                Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
+            PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
+
+            if (data == null || data.modsDirectory == null) {
+                debugLog("No mods directory stored in data file, will save current one");
+                save(SaveData.of(DataField.MODS_DIRECTORY, currentModsDir));
+                return;
+            }
+
+            if (!data.modsDirectory.equals(currentModsDir)) {
+                debugLog("Mods directory mismatch! Stored: " + data.modsDirectory + ", Current: " + currentModsDir);
+                debugLog("Deleting data file to ensure user-specific data");
+                deleteDataFile();
+            } else {
+                debugLog("Mods directory matches, data file is valid for this user");
+            }
+        } catch (IOException e) {
+            debugLog("Error reading data file for validation: " + e.getMessage());
+        } catch (JsonSyntaxException e) {
+            debugLog("Invalid JSON format in data file during validation: " + e.getMessage());
         }
     }
 
     /**
-     * Save shader style data to the data.json file
-     *
-     * @param styleReimagined Whether Reimagined style is used
-     * @param styleUnbound    Whether Unbound style is used
+     * Enum representing fields that can be saved/loaded
      */
-    public static void saveShaderStyle(boolean styleReimagined, boolean styleUnbound) {
-        debugLog("Saving shader style data: Reimagined=" + styleReimagined + ", Unbound=" + styleUnbound);
+    public enum DataField {
+        STYLE_REIMAGINED,
+        STYLE_UNBOUND,
+        MODS_DIRECTORY
+    }
+
+    /**
+     * Helper class to pair a field with its value for saving
+     */
+    public static class SaveData {
+        public final DataField field;
+        public final Object value;
+
+        private SaveData(DataField field, Object value) {
+            this.field = field;
+            this.value = value;
+        }
+
+        public static SaveData of(DataField field, Object value) {
+            return new SaveData(field, value);
+        }
+    }
+
+    /**
+     * Save specific fields to the data.json file. Only updates the specified fields,
+     * preserving other existing data.
+     *
+     * @param updates One or more field updates to save
+     */
+    public static void save(SaveData... updates) {
+        if (updates == null || updates.length == 0) {
+            debugLog("No updates provided to save");
+            return;
+        }
+
+        debugLog("Saving " + updates.length + " field(s) to data file");
 
         try {
             // Ensure config directory exists
@@ -54,50 +108,92 @@ public class ShaderData {
                 debugLog("Created config directory: " + Config.CONFIG_DIR);
             }
 
-            // Create data object
-            ShaderStyleData data = new ShaderStyleData(styleReimagined, styleUnbound);
+            // Load existing JSON or create new object
+            JsonObject jsonObject;
+            if (dataFileExists()) {
+                try (Reader reader = new InputStreamReader(
+                        Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
+                    JsonElement element = GSON.fromJson(reader, JsonElement.class);
+                    jsonObject = (element != null && element.isJsonObject()) ? element.getAsJsonObject() : new JsonObject();
+                }
+            } else {
+                jsonObject = new JsonObject();
+            }
+
+            // Update specified fields only
+            for (SaveData update : updates) {
+                switch (update.field) {
+                    case STYLE_REIMAGINED:
+                        jsonObject.addProperty("styleReimagined", (Boolean) update.value);
+                        debugLog("Updating STYLE_REIMAGINED to " + update.value);
+                        break;
+                    case STYLE_UNBOUND:
+                        jsonObject.addProperty("styleUnbound", (Boolean) update.value);
+                        debugLog("Updating STYLE_UNBOUND to " + update.value);
+                        break;
+                    case MODS_DIRECTORY:
+                        jsonObject.addProperty("modsDirectory", (String) update.value);
+                        debugLog("Updating MODS_DIRECTORY to " + update.value);
+                        break;
+                }
+            }
 
             // Write to file
             try (Writer writer = new OutputStreamWriter(
                     Files.newOutputStream(DATA_FILE), StandardCharsets.UTF_8)) {
-                GSON.toJson(data, writer);
-                debugLog("Successfully saved shader style data to " + DATA_FILE);
+                GSON.toJson(jsonObject, writer);
+                debugLog("Successfully saved data to " + DATA_FILE);
             }
         } catch (IOException e) {
-            debugLog("Error saving shader style data: " + e.getMessage());
+            debugLog("Error saving data: " + e.getMessage());
+        } catch (ClassCastException e) {
+            debugLog("Invalid type for field update: " + e.getMessage());
         }
     }
 
     /**
-     * Load shader style data from the data.json file
-     * @return ShaderStyleData object with loaded data, or default values if file doesn't exist
+     * Convenience method to save both shader styles at once
+     *
+     * @param styleReimagined Whether Reimagined style is used
+     * @param styleUnbound    Whether Unbound style is used
      */
-    public static ShaderStyleData loadShaderStyle() {
-        debugLog("Loading shader style data from " + DATA_FILE);
+    public static void saveShaderStyles(boolean styleReimagined, boolean styleUnbound) {
+        save(
+            SaveData.of(DataField.STYLE_REIMAGINED, styleReimagined),
+            SaveData.of(DataField.STYLE_UNBOUND, styleUnbound)
+        );
+    }
+
+    /**
+     * Load shader data from the data.json file
+     * @return PersistentShaderData object with loaded data, or default values if file doesn't exist
+     */
+    public static PersistentShaderData load() {
+        debugLog("Loading shader data from " + DATA_FILE);
 
         if (!Files.exists(DATA_FILE)) {
             debugLog("Data file does not exist, returning default values");
-            return new ShaderStyleData();
+            return new PersistentShaderData();
         }
 
         try (Reader reader = new InputStreamReader(
                 Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
-            ShaderStyleData data = GSON.fromJson(reader, ShaderStyleData.class);
+            PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
 
             if (data == null) {
                 debugLog("Parsed data is null, returning default values");
-                return new ShaderStyleData();
+                return new PersistentShaderData();
             }
 
-            debugLog("Successfully loaded shader style data: Reimagined=" +
+            debugLog("Successfully loaded shader data: Reimagined=" +
                     data.styleReimagined + ", Unbound=" + data.styleUnbound);
             return data;
         } catch (IOException e) {
-            debugLog("Error loading shader style data: " + e.getMessage());
-            return new ShaderStyleData();
+            debugLog("Error loading shader data: " + e.getMessage());
+            return new PersistentShaderData();
         } catch (JsonSyntaxException e) {
             debugLog("Invalid JSON format in data file: " + e.getMessage());
-            return new ShaderStyleData();
+            return new PersistentShaderData();
         }
     }
 
@@ -111,21 +207,33 @@ public class ShaderData {
 
     /**
      * Delete the data file
-     * @return true if deletion was successful or file didn't exist
      */
-    public static boolean deleteDataFile() {
+    public static void deleteDataFile() {
         debugLog("Deleting data file: " + DATA_FILE);
         try {
             if (Files.exists(DATA_FILE)) {
                 Files.delete(DATA_FILE);
                 debugLog("Successfully deleted data file");
-                return true;
+                return;
             }
             debugLog("Data file does not exist, nothing to delete");
-            return true;
         } catch (IOException e) {
             debugLog("Error deleting data file: " + e.getMessage());
-            return false;
+        }
+    }
+
+    /**
+     * Data class to hold persistent shader information
+     */
+    public static class PersistentShaderData {
+        public Boolean styleReimagined;
+        public Boolean styleUnbound;
+        public String modsDirectory;
+
+        public PersistentShaderData() {
+            this.styleReimagined = null;
+            this.styleUnbound = null;
+            this.modsDirectory = null;
         }
     }
 }

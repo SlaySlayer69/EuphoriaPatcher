@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.integration;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisDefineHelper;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ModsDirectory;
 import com.euphoriapatches.euphoria_patcher.util.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
@@ -221,7 +222,7 @@ public class ShaderLoader {
 
         debugLog("Searching for shader loader file in mods directory");
         try {
-            File modsFolder = new File(String.valueOf(EuphoriaPatcher.modDirectory));
+            File modsFolder = ModsDirectory.get().toFile();
             File[] modFiles = modsFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".jar"));
 
             if (modFiles != null) {
