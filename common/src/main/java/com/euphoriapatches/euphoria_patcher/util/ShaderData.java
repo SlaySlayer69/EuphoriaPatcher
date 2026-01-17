@@ -1,5 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
+import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.google.gson.*;
 import com.euphoriapatches.euphoria_patcher.config.Config;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -21,19 +22,19 @@ public class ShaderData {
     }
 
     /**
-     * Validates that the stored mods directory matches the current one.
+     * Validates that the stored shaderpacks directory matches the current one.
      * If the directory differs, deletes the data file to prevent cross-user data usage.
      * If no directory is stored, saves the current one.
      */
-    public static void validateModsDirectory() {
-        debugLog("Validating mods directory");
+    public static void validateShadersDirectory() {
+        debugLog("Validating shaderpacks directory");
 
-        String currentModsDir = ModsDirectory.get().toString();
-        debugLog("Current mods directory: " + currentModsDir);
+        String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
+        debugLog("Current shaderpacks directory: " + currentShadersDir);
 
         if (!dataFileExists()) {
-            debugLog("Data file does not exist, will create with current mods directory");
-            save(SaveData.of(DataField.MODS_DIRECTORY, currentModsDir));
+            debugLog("Data file does not exist, will create with current shaderpacks directory");
+            save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
             return;
         }
 
@@ -41,18 +42,19 @@ public class ShaderData {
                 Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
             PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
 
-            if (data == null || data.modsDirectory == null) {
-                debugLog("No mods directory stored in data file, will save current one");
-                save(SaveData.of(DataField.MODS_DIRECTORY, currentModsDir));
+            if (data == null || data.shaderDirectory == null) {
+                debugLog("No shaderpacks directory stored in data file, will save current one");
+                save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
                 return;
             }
 
-            if (!data.modsDirectory.equals(currentModsDir)) {
-                debugLog("Mods directory mismatch! Stored: " + data.modsDirectory + ", Current: " + currentModsDir);
+            if (!data.shaderDirectory.equals(currentShadersDir)) {
+                debugLog("Shaderpacks directory mismatch! Stored: " + data.shaderDirectory + ", Current: " + currentShadersDir);
                 debugLog("Deleting data file to ensure user-specific data");
                 deleteDataFile();
+                save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
             } else {
-                debugLog("Mods directory matches, data file is valid for this user");
+                debugLog("Shaderpacks directory matches, data file is valid for this user");
             }
         } catch (IOException e) {
             debugLog("Error reading data file for validation: " + e.getMessage());
@@ -67,7 +69,7 @@ public class ShaderData {
     public enum DataField {
         STYLE_REIMAGINED,
         STYLE_UNBOUND,
-        MODS_DIRECTORY
+        SHADER_DIRECTORY
     }
 
     /**
@@ -131,9 +133,9 @@ public class ShaderData {
                         jsonObject.addProperty("styleUnbound", (Boolean) update.value);
                         debugLog("Updating STYLE_UNBOUND to " + update.value);
                         break;
-                    case MODS_DIRECTORY:
-                        jsonObject.addProperty("modsDirectory", (String) update.value);
-                        debugLog("Updating MODS_DIRECTORY to " + update.value);
+                    case SHADER_DIRECTORY:
+                        jsonObject.addProperty("shaderDirectory", (String) update.value);
+                        debugLog("Updating SHADER_DIRECTORY to " + update.value);
                         break;
                 }
             }
@@ -185,8 +187,6 @@ public class ShaderData {
                 return new PersistentShaderData();
             }
 
-            debugLog("Successfully loaded shader data: Reimagined=" +
-                    data.styleReimagined + ", Unbound=" + data.styleUnbound);
             return data;
         } catch (IOException e) {
             debugLog("Error loading shader data: " + e.getMessage());
@@ -228,12 +228,12 @@ public class ShaderData {
     public static class PersistentShaderData {
         public Boolean styleReimagined;
         public Boolean styleUnbound;
-        public String modsDirectory;
+        public String shaderDirectory;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
             this.styleUnbound = null;
-            this.modsDirectory = null;
+            this.shaderDirectory = null;
         }
     }
 }

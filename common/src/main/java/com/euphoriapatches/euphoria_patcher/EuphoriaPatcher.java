@@ -63,7 +63,7 @@ public class EuphoriaPatcher {
 
         ConfigHandler.configStuff();
 
-        ShaderData.validateModsDirectory();
+        ShaderData.validateShadersDirectory();
 
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
 
