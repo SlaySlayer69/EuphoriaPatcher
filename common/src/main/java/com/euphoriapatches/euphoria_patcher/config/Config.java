@@ -195,7 +195,15 @@ public class Config {
             configValues.put(categorizedKey, defaultValue);
         } else {
             // Check for type migration
-            value = handleTypeMigration(categorizedKey, value, defaultValue, migrations);
+            Object migratedValue = handleTypeMigration(categorizedKey, value, defaultValue, migrations);
+
+            // Update configValues if type was corrected/migrated
+            if (migratedValue != value) {
+                configValues.put(categorizedKey, migratedValue);
+                debugLog("Updated " + categorizedKey + " with migrated value: " + migratedValue);
+            }
+
+            value = migratedValue;
         }
 
         // Convert to proper type
