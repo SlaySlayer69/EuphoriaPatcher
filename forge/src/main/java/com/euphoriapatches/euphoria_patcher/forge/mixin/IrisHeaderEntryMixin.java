@@ -4,6 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.ShaderData;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import org.spongepowered.asm.mixin.*;
@@ -24,6 +25,15 @@ public class IrisHeaderEntryMixin {
 
     @Unique
     private static String euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
+
+    @Unique
+    private long euphoriaPatcher$buttonHoverStartTime = 0;
+
+    @Unique
+    private boolean euphoriaPatcher$isCurrentlyHovering = false;
+
+    @Unique
+    private static boolean euphoriaPatcher$hasShownExtendedTooltip = false;
 
     @Unique
     private int euphoriaPatcher$capturedX;
@@ -52,11 +62,11 @@ public class IrisHeaderEntryMixin {
                 buttonText = "Update EP!";
                 buttonColor = 2; // Green
                 euphoriaPatcher$EuphoriaURL = EuphoriaPatcher.EP_DOWNLOAD_URL;
+            } else {
+                euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
             }
 
-            boolean secondCondition = shaderDetector.noDevVersionsInstalled() || isUpdateAvailable;
-
-            if (shaderDetector.isEuphoriaPatchesShader(ShaderLoader.getCurrentShaderpackPath()) && secondCondition)
+            if (euphoriaPatcher$shouldShowEPButton())
                 euphoriaPatcher$addEPIrisButton(buttonText, buttonColor);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Failed to add Iris EP button: " + e.getMessage());
@@ -74,6 +84,7 @@ public class IrisHeaderEntryMixin {
     @Inject(method = "m_6311_", at = @At("TAIL"), remap = false, require = 0)
     private void onRenderContent(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         euphoriaPatcher$renderTooltipImpl(guiGraphics);
+        euphoriaPatcher$recolorEPButtonWhileShift();
     }
 
     @Redirect(method = "m_6311_", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;m_280653_(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"), remap = false, require = 0)
@@ -106,6 +117,103 @@ public class IrisHeaderEntryMixin {
             } catch (Exception fallbackEx) {
                 euphoriaPatcher$debugLog("Fallback also failed: " + fallbackEx.getMessage());
             }
+        }
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$shouldShowEPButton() {
+        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        ShaderDetector shaderDetector = instance.getShaderDetector();
+        Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
+
+        boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
+
+        ShaderData.PersistentShaderData data = ShaderData.load();
+        boolean userAllowsSupportButton = false;
+        if (data.supportEPButtonVisible == null || data.supportEPButtonVisible) {
+            euphoriaPatcher$debugLog("User has not dismissed EP support button");
+            userAllowsSupportButton = true;
+        } else {
+            euphoriaPatcher$debugLog("User has dismissed EP support button - not adding button");
+        }
+        boolean shouldShowSupportButton = shaderDetector.noDevVersionsInstalled() && userAllowsSupportButton;
+
+        boolean secondCondition = shouldShowSupportButton || isUpdateAvailable;
+
+        return shaderDetector.isEuphoriaPatchesShader(currentShaderPackPath) && secondCondition;
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$isShiftDown() {
+        try {
+            // Screen.hasShiftDown() -> m_96638_
+            Class<?> screenClass = Class.forName("net.minecraft.client.gui.screens.Screen");
+            java.lang.reflect.Method method = screenClass.getMethod("m_96638_");
+            return (boolean) method.invoke(null);
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error detecting shift key: " + e.getMessage());
+        }
+        return false;
+    }
+
+    @Unique
+    private void euphoriaPatcher$recolorEPButtonWhileShift() {
+        try {
+            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
+            Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
+
+            if (utilityButtons == null) {
+                return;
+            }
+
+            // Check if update is available
+            EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+            ShaderDetector shaderDetector = instance.getShaderDetector();
+            Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
+            boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
+
+            boolean shiftDown = euphoriaPatcher$isShiftDown();
+
+            // Create button text with appropriate color
+            Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+            Class<?> mutableComponentClass = Class.forName("net.minecraft.network.chat.MutableComponent");
+            Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
+
+            String buttonTextLiteral;
+            String colorFormatting;
+
+            if (isUpdateAvailable) {
+                // Update available: always green, ignore shift
+                buttonTextLiteral = "Update EP!";
+                colorFormatting = "GREEN";
+            } else if (shiftDown) {
+                // No update, shift held: red
+                buttonTextLiteral = "Support EP";
+                colorFormatting = "RED";
+            } else {
+                // No update, normal: purple
+                buttonTextLiteral = "Support EP";
+                colorFormatting = "LIGHT_PURPLE";
+            }
+
+            Object colorFormattingEnum = chatFormattingClass.getField(colorFormatting).get(null);
+            Object buttonText = componentClass.getMethod("m_237113_", String.class).invoke(null, buttonTextLiteral);
+            buttonText = mutableComponentClass.getMethod("m_130940_", chatFormattingClass).invoke(buttonText, colorFormattingEnum);
+
+            Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
+            Iterable<?> childrenIterable = (Iterable<?>) children;
+            Class<?> textButtonElementClass = Class.forName("net.irisshaders.iris.gui.element.IrisElementRow$TextButtonElement");
+
+            for (Object child : childrenIterable) {
+                if (textButtonElementClass.isInstance(child) && child != resetButton) {
+                    java.lang.reflect.Field textField = child.getClass().getField("text");
+                    textField.setAccessible(true);
+                    textField.set(child, buttonText);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error recoloring EP button: " + e.getMessage());
         }
     }
 
@@ -222,6 +330,13 @@ public class IrisHeaderEntryMixin {
         try {
             euphoriaPatcher$playButtonClickSound();
 
+            // Check if shift is held
+            if (euphoriaPatcher$isShiftDown()) {
+                euphoriaPatcher$debugLog("Pressed Shift while clicking EP button - removing button");
+                ShaderData.save(ShaderData.SaveData.of(ShaderData.DataField.SUPPORT_EP_BUTTON, false));
+                return;
+            }
+
             // Get ConfirmLinkScreen class
             Class<?> confirmLinkScreenClass = Class.forName("net.minecraft.client.gui.screens.ConfirmLinkScreen");
 
@@ -330,14 +445,43 @@ public class IrisHeaderEntryMixin {
                 }
 
                 if (isHovered || isFocused) {
-                    // Get tooltip text and color based on update availability
+                    // Track hover time and set permanent flag when threshold is reached
+                    if (!euphoriaPatcher$hasShownExtendedTooltip) {
+                        long currentTime = System.currentTimeMillis();
+                        if (!euphoriaPatcher$isCurrentlyHovering) {
+                            euphoriaPatcher$buttonHoverStartTime = currentTime;
+                            euphoriaPatcher$isCurrentlyHovering = true;
+                        }
+                        long hoverDuration = currentTime - euphoriaPatcher$buttonHoverStartTime;
+                        if (hoverDuration >= 1500) {
+                            euphoriaPatcher$hasShownExtendedTooltip = true;
+                        }
+                    }
+
+                    // Get tooltip text and color based on shift state and update availability
+                    boolean shiftDown = euphoriaPatcher$isShiftDown();
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
                     ShaderDetector shaderDetector = instance.getShaderDetector();
                     Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
                     boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
 
-                    String tooltipString = isUpdateAvailable ? "Update Euphoria Patches!" : "Support Euphoria Patches";
-                    String colorFormatting = isUpdateAvailable ? "GREEN" : "LIGHT_PURPLE";
+                    String tooltipString;
+                    String colorFormatting;
+
+                    if (isUpdateAvailable) { // Has higher priority over shift key
+                        tooltipString = "Update Euphoria Patches!";
+                        colorFormatting = "GREEN";
+                    } else if (shiftDown) {
+                        tooltipString = "Remove Support Button? Requires re-entering the menu to show effect";
+                        colorFormatting = "RED";
+                    } else {
+                        String removeString = "";
+                        if (euphoriaPatcher$hasShownExtendedTooltip) {
+                            removeString = " (SHIFT Click to Remove)";
+                        }
+                        tooltipString = "Support Euphoria Patches!" + removeString;
+                        colorFormatting = "LIGHT_PURPLE";
+                    }
 
                     // Create tooltip text: Component.literal(text).withStyle(color)
                     Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
@@ -387,6 +531,9 @@ public class IrisHeaderEntryMixin {
                         }
                     };
                     renderQueue.getClass().getMethod("add", Object.class).invoke(renderQueue, renderTask);
+                } else {
+                    // Reset hover tracking (but keep extended tooltip flag)
+                    euphoriaPatcher$isCurrentlyHovering = false;
                 }
                 break;
             }

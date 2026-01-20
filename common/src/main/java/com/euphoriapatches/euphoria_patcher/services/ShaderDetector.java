@@ -447,6 +447,10 @@ public class ShaderDetector {
         }
     }
 
+    /**
+     * Check if the user has any dev versions installed
+     * @return true if no dev versions are installed
+     */
     public boolean noDevVersionsInstalled() {
         // Return cached value if already checked
         if (hasAnyDevVersion) {

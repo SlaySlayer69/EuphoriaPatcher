@@ -17,6 +17,9 @@ public class ShaderData {
     private static final Path DATA_FILE = Config.CONFIG_DIR.resolve("data.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    // Cache for loaded data to avoid repeated disk I/O
+    private static PersistentShaderData cachedData = null;
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderData] " + message);
     }
@@ -69,7 +72,8 @@ public class ShaderData {
     public enum DataField {
         STYLE_REIMAGINED,
         STYLE_UNBOUND,
-        SHADER_DIRECTORY
+        SHADER_DIRECTORY,
+        SUPPORT_EP_BUTTON
     }
 
     /**
@@ -137,6 +141,10 @@ public class ShaderData {
                         jsonObject.addProperty("shaderDirectory", (String) update.value);
                         debugLog("Updating SHADER_DIRECTORY to " + update.value);
                         break;
+                    case SUPPORT_EP_BUTTON:
+                        jsonObject.addProperty("supportEPButtonVisible", (Boolean) update.value);
+                        debugLog("Updating SUPPORT_EP_BUTTON to " + update.value);
+                        break;
                 }
             }
 
@@ -145,6 +153,7 @@ public class ShaderData {
                     Files.newOutputStream(DATA_FILE), StandardCharsets.UTF_8)) {
                 GSON.toJson(jsonObject, writer);
                 debugLog("Successfully saved data to " + DATA_FILE);
+                cachedData = null; // Invalidate cache after save
             }
         } catch (IOException e) {
             debugLog("Error saving data: " + e.getMessage());
@@ -171,11 +180,18 @@ public class ShaderData {
      * @return PersistentShaderData object with loaded data, or default values if file doesn't exist
      */
     public static PersistentShaderData load() {
+        // Return cached data if available
+        if (cachedData != null) {
+            debugLog("Returning cached shader data");
+            return cachedData;
+        }
+
         debugLog("Loading shader data from " + DATA_FILE);
 
         if (!Files.exists(DATA_FILE)) {
             debugLog("Data file does not exist, returning default values");
-            return new PersistentShaderData();
+            cachedData = new PersistentShaderData();
+            return cachedData;
         }
 
         try (Reader reader = new InputStreamReader(
@@ -184,16 +200,20 @@ public class ShaderData {
 
             if (data == null) {
                 debugLog("Parsed data is null, returning default values");
-                return new PersistentShaderData();
+                cachedData = new PersistentShaderData();
+                return cachedData;
             }
 
-            return data;
+            cachedData = data;
+            return cachedData;
         } catch (IOException e) {
             debugLog("Error loading shader data: " + e.getMessage());
-            return new PersistentShaderData();
+            cachedData = new PersistentShaderData();
+            return cachedData;
         } catch (JsonSyntaxException e) {
             debugLog("Invalid JSON format in data file: " + e.getMessage());
-            return new PersistentShaderData();
+            cachedData = new PersistentShaderData();
+            return cachedData;
         }
     }
 
@@ -214,6 +234,7 @@ public class ShaderData {
             if (Files.exists(DATA_FILE)) {
                 Files.delete(DATA_FILE);
                 debugLog("Successfully deleted data file");
+                cachedData = null; // Invalidate cache after delete
                 return;
             }
             debugLog("Data file does not exist, nothing to delete");
@@ -229,11 +250,13 @@ public class ShaderData {
         public Boolean styleReimagined;
         public Boolean styleUnbound;
         public String shaderDirectory;
+        public Boolean supportEPButtonVisible;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
             this.styleUnbound = null;
             this.shaderDirectory = null;
+            this.supportEPButtonVisible = null;
         }
     }
 }
