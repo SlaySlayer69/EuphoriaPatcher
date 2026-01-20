@@ -371,7 +371,7 @@ public class IrisHeaderEntryMixin {
                             euphoriaPatcher$isCurrentlyHovering = true;
                         }
                         long hoverDuration = currentTime - euphoriaPatcher$buttonHoverStartTime;
-                        if (hoverDuration >= 1500) {
+                        if (hoverDuration >= 1517) {
                             euphoriaPatcher$hasShownExtendedTooltip = true;
                         }
                     }
