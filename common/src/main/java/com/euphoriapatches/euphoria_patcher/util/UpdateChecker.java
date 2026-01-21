@@ -222,7 +222,7 @@ public class UpdateChecker {
         debugLog("Fetching recommended patch version for " + major + "." + minor + ".x");
 
         try {
-            URL url = new URL(UPDATE_URL);
+            URL url = new URL(UPDATE_URL + "?include_changelog=true");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
@@ -280,6 +280,7 @@ public class UpdateChecker {
                         // Check if this version has the recommended flag
                         if (version.has("changelog")) {
                             String changelog = version.get("changelog").getAsString();
+                            debugLog("Fetched Changelog is:\n" + changelog);
                             if (isRecommendedUpdate(changelog)) {
                                 debugLog("Found recommended patch version: " + mainVersion);
                                 return mainVersion; // Early return with the first (latest) recommended version
@@ -375,7 +376,7 @@ public class UpdateChecker {
         debugLog("Fetching latest version from Modrinth API: " + UPDATE_URL);
 
         try {
-            URL url = new URL(UPDATE_URL);
+            URL url = new URL(UPDATE_URL + "?include_changelog=false");
             debugLog("URL created successfully");
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
