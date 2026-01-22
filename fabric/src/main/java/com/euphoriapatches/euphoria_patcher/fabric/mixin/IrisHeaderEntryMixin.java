@@ -9,6 +9,7 @@ import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -61,7 +62,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Inject(method = "renderContent", at = @At("TAIL"), remap = false, require = 0)
-    private void onRenderContent(Object guiGraphics, int mouseX, int mouseY, boolean bl, float tickDelta, CallbackInfo ci) {
+    private void onRenderContent(@Coerce Object guiGraphics, int mouseX, int mouseY, boolean bl, float tickDelta, CallbackInfo ci) {
         try {
             Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
             Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
@@ -182,29 +183,29 @@ public class IrisHeaderEntryMixin {
             }
 
             String buttonColorFormatting;
-        switch (buttonColor) {
-            case 1:
-                buttonColorFormatting = "RED";
-                break;
-            case 2:
-                buttonColorFormatting = "GREEN";
-                break;
-            case 3:
-                buttonColorFormatting = "BLUE";
-                break;
-            default:
-                buttonColorFormatting = "LIGHT_PURPLE";
-                break;
-        }
-        Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
-        Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            switch (buttonColor) {
+                case 1:
+                    buttonColorFormatting = "RED";
+                    break;
+                case 2:
+                    buttonColorFormatting = "GREEN";
+                    break;
+                case 3:
+                    buttonColorFormatting = "BLUE";
+                    break;
+                default:
+                    buttonColorFormatting = "LIGHT_PURPLE";
+                    break;
+            }
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
 
-        Class<?> componentClass = Class.forName("net.minecraft.network.chat.MutableComponent");
-        Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
-        Object buttonColorFormattingEnum = chatFormattingClass.getField(buttonColorFormatting).get(null);
+            Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+            Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
+            Object buttonColorFormattingEnum = chatFormattingClass.getField(buttonColorFormatting).get(null);
 
-        Object buttonText = componentClass.getMethod("literal", String.class).invoke(null, buttonTextLiteral);
-        buttonText = buttonText.getClass().getMethod("withStyle", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
+            Object buttonText = componentClass.getMethod("literal", String.class).invoke(null, buttonTextLiteral);
+            buttonText = buttonText.getClass().getMethod("withStyle", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
 
             Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClick(minecraft, screen));
             euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
@@ -214,6 +215,8 @@ public class IrisHeaderEntryMixin {
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
         }
     }
+
+    @Unique
     private Object euphoriaPatcher$createIrisButton(Object buttonText, Runnable action) throws Exception {
         Class<?> textButtonElementClass = Class.forName("net.irisshaders.iris.gui.element.IrisElementRow$TextButtonElement");
 
@@ -403,6 +406,7 @@ public class IrisHeaderEntryMixin {
 
                     // Create tooltip text: Component.literal(text).withStyle(color)
                     Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
+                    Class<?> formattedTextClass = Class.forName("net.minecraft.network.chat.FormattedText");
                     Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
                     Object colorFormattingEnum = chatFormattingClass.getField(colorFormatting).get(null);
                     Object tooltipText = componentClass.getMethod("literal", String.class).invoke(null, tooltipString);
@@ -417,7 +421,7 @@ public class IrisHeaderEntryMixin {
                     Object position = rect.getClass().getMethod("position").invoke(rect);
                     int yPos = (int) position.getClass().getMethod("y").invoke(position);
 
-                    int textWidth = (int) font.getClass().getMethod("width", componentClass).invoke(font, tooltipText);
+                    int textWidth = (int) font.getClass().getMethod("width", formattedTextClass).invoke(font, tooltipText);
                     int tooltipX = rightBound - (textWidth + 10);
                     int tooltipY = yPos - 16;
 
