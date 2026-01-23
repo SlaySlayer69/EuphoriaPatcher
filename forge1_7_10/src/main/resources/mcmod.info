@@ -3,7 +3,7 @@
   "modList": [{
     "modid": "EuphoriaPatcher",
     "name": "Euphoria Patcher",
-    "description": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nReport issues on discord!",
+    "description": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nEnable and Change Euphoria Patches Settings in the shaderpack settings menu\nReport issues on discord!",
     "version": "${version}",
     "mcversion": "1.7.10",
     "url": "https://euphoriapatches.com",
