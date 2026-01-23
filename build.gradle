@@ -39,10 +39,10 @@ tasks.register('validateChangelog') {
 
         if (!changelogFile.exists()) {
             changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n" +
+                    "### Updated to Complementary Shaders ${compVersion} + Euphoria Patches [insert version here]\n" +
                     "\n" +
                     "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube-nocookie.com/embed/INSERT-VIDEO-ID\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>\n" +
-                    "\n" +
-                    "- Updated to Complementary Shaders ${compVersion} + Euphoria Patches [inser version here]"
+                    "\n"
             throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
         }
 
