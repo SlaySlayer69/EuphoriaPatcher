@@ -300,7 +300,7 @@ public class EuphoriaPatcher {
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
 
-            // Change DRAGON_DEATH_EFFECT to !DRAGON_DEATH_EFFECT
+            // Change DRAGON_DEATH_EFFECT=1 to DRAGON_DEATH_EFFECT=0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1DRAGON_DEATH_EFFECT=0$2");
 
