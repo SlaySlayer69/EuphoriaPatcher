@@ -124,10 +124,27 @@ tasks.register('confirmPublish') {
     }
 }
 
+// Task to clean the root build/libs directory
+tasks.register('cleanLibs') {
+    group = 'build'
+    description = 'Cleans the root build/libs directory'
+
+    doLast {
+        def libsDir = file("${rootProject.buildDir}/libs")
+        if (libsDir.exists()) {
+            println "Cleaning ${libsDir.absolutePath}..."
+            libsDir.deleteDir()
+            println "\u001B[32m✓ Root build/libs directory cleaned\u001B[0m"
+        }
+    }
+}
+
 // Define build order: 1.7.10 -> forgeLegacy -> neoforge -> forge -> fabric
 tasks.register('buildAll') {
     group = 'build'
     description = 'Builds all mod loader variants in the correct order'
+
+    dependsOn cleanLibs
 
     if (project.findProject(":forge1_7_10") != null) {
         println "Building Forge 1.7.10 variant..."
@@ -167,6 +184,8 @@ tasks.register('buildAll') {
 tasks.register('publishAll') {
     group = 'publishing'
     description = 'Publishes all mod loader variants in the correct order'
+
+    dependsOn cleanLibs
 
     if (project.findProject(":forge1_7_10") != null) {
         println "Publishing Forge 1.7.10 variant..."
