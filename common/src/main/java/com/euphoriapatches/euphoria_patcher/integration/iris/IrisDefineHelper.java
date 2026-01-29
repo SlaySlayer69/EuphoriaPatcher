@@ -86,6 +86,14 @@ public class IrisDefineHelper {
                     defineKeyValue.accept(standardDefines, new String[]{"NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted});
                     debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
                 }
+            } else {
+                if (injectedOnce) {
+                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected once");
+                } else if (!ConfigHandler.doDisplayShaderInGameMessage) {
+                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - in-game messages disabled");
+                } else {
+                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - no update available");
+                }
             }
 
             UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();

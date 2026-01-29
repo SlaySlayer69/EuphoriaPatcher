@@ -24,7 +24,12 @@ public class ReloadShadersOnDimensionChangeMixinYarn {
     /**
      * This injects at the end of the setWorld method, which is called when changing dimensions
      */
-    @Inject(method = "setWorld", at = @At("RETURN"))
+    @Inject(
+            method = {
+                "setWorld",
+                "method_1481"
+            },
+            at = @At("RETURN"))
     private void onDimensionChange(CallbackInfo ci) {
         euphoriaPatcher$debugLog("### EUPHORIA DIMENSION DETECTION - setWorld called ###");
 
