@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.euphoriapatches.euphoria_patcher.util.ShaderValidationErrorHandler.copyLinkMessage;
+import static com.euphoriapatches.euphoria_patcher.util.ShaderMessageErrorHandler.copyLinkMessage;
 
 public class ShaderpacksWatcher {
     private final Path shaderpacks;

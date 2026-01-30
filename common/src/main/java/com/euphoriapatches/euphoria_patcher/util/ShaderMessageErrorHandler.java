@@ -5,13 +5,110 @@ import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * Handles error messaging and recovery actions when shader validation fails
  */
-public class ShaderValidationErrorHandler {
+public class ShaderMessageErrorHandler {
 
     private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[ShaderValidationErrorHandler] " + message);
+        EuphoriaLogger.debugLog("[ShaderMessageErrorHandler] " + message);
+    }
+
+    /**
+     * Handles the case when no base shader is found during initial detection
+     */
+    public static void handleShaderNotFound(ShaderVersionComparator versionComparator) {
+        debugLog("Handling shader not found scenario");
+
+        // First check if an update is available
+        if (UpdateChecker.isUpdateAvailable()) {
+            EuphoriaPatcher.log(3, 8, "=== SHADER NOT FOUND ===");
+            EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "A newer version of " + EuphoriaPatcher.PATCH_NAME + " is available!");
+            EuphoriaPatcher.log(3, 8, "SOLUTION: Update to version " + UpdateChecker.getNewModVersion() + " which may support newer shaders.");
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
+            copyLinkMessage();
+        } else {
+            // No update available, check shaderpacks folder for other versions
+            Path newerVersion = findNewerComplementaryVersion(versionComparator);
+
+            if (newerVersion != null) {
+                // Newer shader version found in shaderpacks
+                debugLog("Found newer shader version: " + newerVersion.getFileName());
+                String fileName = newerVersion.getFileName().toString();
+                String detectedVersion = versionComparator.getComplementaryVersionFromFileName(fileName);
+
+                EuphoriaPatcher.log(3, 8, "=== VERSION MISMATCH ===");
+                EuphoriaPatcher.log(3, 8, "Found shader: " + fileName + " (version " + detectedVersion + ")");
+                EuphoriaPatcher.log(3, 8, "Required shader: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+                EuphoriaPatcher.log(3, 8, "You have a NEWER shader version than what this mod version supports.");
+                EuphoriaPatcher.log(3, 8, "");
+                EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports version " + detectedVersion);
+                EuphoriaPatcher.log(3, 8, "SOLUTION 2: Manually check if a newer " + EuphoriaPatcher.PATCH_NAME + " version is available.");
+                EuphoriaPatcher.log(3, 8, "SOLUTION 3: Download the compatible shader version " + EuphoriaPatcher.VERSION);
+            } else {
+                // Check for older version
+                Path highestOlderVersion = versionComparator.findHighestOlderComplementaryVersion();
+
+                EuphoriaPatcher.log(3, 8, "=== SHADER NOT FOUND ===");
+                EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+
+                if (highestOlderVersion != null) {
+                    EuphoriaPatcher.log(3, 8, "Found: " + highestOlderVersion.getFileName().toString());
+                    EuphoriaPatcher.log(3, 8, "You have an older version installed.");
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download and install " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                } else {
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "No " + EuphoriaPatcher.BRAND_NAME + " shader found in your shaderpacks folder.");
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                }
+
+            }
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+            copyLinkMessage();
+        }
+
+        // Start watching for the shader to be added
+        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        if (instance != null) {
+            instance.startShaderpacksWatcher();
+        }
+    }
+
+    /**
+     * Finds a newer version of Complementary shader in the shaderpacks folder
+     */
+    private static Path findNewerComplementaryVersion(ShaderVersionComparator versionComparator) {
+        try {
+            Path shaderpacks = EuphoriaPatcher.shaderpacks;
+            if (shaderpacks == null || !Files.exists(shaderpacks)) {
+                return null;
+            }
+
+            try (java.nio.file.DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path path : stream) {
+                    String fileName = path.getFileName().toString();
+                    if (fileName.contains(EuphoriaPatcher.BRAND_NAME) &&
+                        !fileName.contains(EuphoriaPatcher.PATCH_NAME) &&
+                        versionComparator.isNewerShaderVersion(fileName)) {
+                        boolean isFile = Files.isRegularFile(path) && fileName.endsWith(".zip");
+                        boolean isDir = Files.isDirectory(path);
+                        if (isFile || isDir) {
+                            return path;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            debugLog("Error checking for newer shader versions: " + e.getMessage());
+        }
+        return null;
     }
 
     /**

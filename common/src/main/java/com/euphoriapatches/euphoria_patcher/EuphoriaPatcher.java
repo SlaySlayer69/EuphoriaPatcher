@@ -16,8 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import static com.euphoriapatches.euphoria_patcher.util.ShaderValidationErrorHandler.copyLinkMessage;
-
 public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
@@ -37,7 +35,6 @@ public class EuphoriaPatcher {
 
     // Global Variables and Objects
     private static boolean ALREADY_LAUNCHED = false;
-    private static boolean IS_BASE_MESSAGE_SHOWN = false;
     private static EuphoriaPatcher instance;
     private ShaderpacksWatcher shaderpacksWatcher;
     private static EuphoriaLogger loggerInstance;
@@ -85,7 +82,7 @@ public class EuphoriaPatcher {
 
         if (!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null) {
-                installBaseMessage();
+                ShaderMessageErrorHandler.handleShaderNotFound(versionComparator);
                 return;
             }
         } else {
@@ -332,41 +329,11 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void installBaseMessage() {
-        if (IS_BASE_MESSAGE_SHOWN) return;
-        IS_BASE_MESSAGE_SHOWN = true;
-
-        // Try to find the highest older version
-        Path highestOlderVersion = versionComparator.findHighestOlderComplementaryVersion();
-
-        log(3, 8, "=== SHADER NOT FOUND ===");
-        log(3, 8, "Required: " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
-
-        if (highestOlderVersion != null) {
-            log(3, 8, "Found: " + highestOlderVersion.getFileName().toString());
-            log(3, 8, "You have an older version installed.");
-            log(3, 8, "");
-            log(3, 8, "SOLUTION: Download and install " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
-        } else {
-            log(3, 8, "");
-            log(3, 8, "No " + BRAND_NAME + " shader found in your shaderpacks folder.");
-            log(3, 8, "");
-            log(3, 8, "SOLUTION: Download " + BRAND_NAME + "Shaders " + VERSION.replace("_", ""));
-        }
-
-        log(3, 8, "Download from: " + COMP_DOWNLOAD_URL);
-        copyLinkMessage();
-
-        // Start watching for the shader to be added
-        startShaderpacksWatcher();
-    }
-
-    private void startShaderpacksWatcher() {
+    public void startShaderpacksWatcher() {
         if (shaderpacksWatcher != null && shaderpacksWatcher.isRunning()) return;
 
         shaderpacksWatcher = ShaderpacksWatcher.createAndStart(this, true);
         if (shaderpacksWatcher != null) {
-
             log(0, "Watching shaderpacks folder for changes...");
         }
     }
