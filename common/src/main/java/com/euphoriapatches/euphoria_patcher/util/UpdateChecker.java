@@ -17,7 +17,7 @@ import java.util.Locale;
 public class UpdateChecker {
     private static final String PROJECT_ID = "4H6sumDB";
     private static final String UPDATE_URL = "https://api.modrinth.com/v2/project/" + PROJECT_ID + "/version";
-    private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
+    private static final String MOD_VERSION = "1.7.0";//EuphoriaPatcher.PATCH_VERSION.replace("_","");
     private static String NEW_MOD_VERSION = null;
     private static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;

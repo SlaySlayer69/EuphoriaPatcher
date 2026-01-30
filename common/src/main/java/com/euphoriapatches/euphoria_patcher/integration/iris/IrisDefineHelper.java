@@ -16,7 +16,6 @@ import java.util.function.BiConsumer;
 
 public class IrisDefineHelper {
     private static int injectCount = 0;
-    private static boolean injectedOnce = false;
     public static boolean isIrisRunning = false;
 
     private static void debugLog(String message) {
@@ -77,7 +76,7 @@ public class IrisDefineHelper {
                 debugLog("Cannot check for potato.png - currentShaderpack is null");
             }
 
-            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && !injectedOnce) {
+            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= 2) {
                 defineKey.accept(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 
@@ -87,8 +86,8 @@ public class IrisDefineHelper {
                     debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
                 }
             } else {
-                if (injectedOnce) {
-                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected once");
+                if (injectCount > 2) {
+                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected " + injectCount + " times");
                 } else if (!ConfigHandler.doDisplayShaderInGameMessage) {
                     debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - in-game messages disabled");
                 } else {
@@ -104,7 +103,6 @@ public class IrisDefineHelper {
                         (isLegacy ? " (Legacy)" : ""));
             }
 
-            injectedOnce = true;
         } catch (Exception e) {
             debugLog("Exception while adding defines: " + e.getMessage());
         }

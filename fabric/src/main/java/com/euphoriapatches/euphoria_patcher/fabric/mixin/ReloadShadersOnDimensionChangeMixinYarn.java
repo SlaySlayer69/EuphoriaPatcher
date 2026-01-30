@@ -43,20 +43,18 @@ public class ReloadShadersOnDimensionChangeMixinYarn {
             return;
         }
 
-        // Check if dimension changed
-        if (!currentDimension.equals(euphoriaPatcher$lastDimension)) {
-            euphoriaPatcher$debugLog("!!! DIMENSION CHANGED: " + euphoriaPatcher$lastDimension + " -> " + currentDimension + " !!!");
-            euphoriaPatcher$lastDimension = currentDimension;
+        // Always reload on dimension change to clear update notification define
+        euphoriaPatcher$debugLog("!!! DIMENSION CHANGED: " + euphoriaPatcher$lastDimension + " -> " + currentDimension + " !!!");
+        euphoriaPatcher$lastDimension = currentDimension;
 
-            // Use IrisReloadManager to handle the reload
-            try {
-                MinecraftClient.getInstance().execute(() -> {
-                    IrisReloadManager.findAndScheduleReload();
-                    euphoriaPatcher$debugLog("Scheduled shader reload after dimension change");
-                });
-            } catch (Exception e) {
-                EuphoriaPatcher.log(2, 0, "Error scheduling shader reload: " + e.getMessage());
-            }
+        // Use IrisReloadManager to handle the reload
+        try {
+            MinecraftClient.getInstance().execute(() -> {
+                IrisReloadManager.findAndScheduleReload();
+                euphoriaPatcher$debugLog("Scheduled shader reload after dimension change");
+            });
+        } catch (Exception e) {
+            EuphoriaPatcher.log(2, 0, "Error scheduling shader reload: " + e.getMessage());
         }
     }
 }
