@@ -5,13 +5,12 @@ import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
  * Handles error messaging and recovery actions when shader validation fails
  */
-public class ShaderMessageErrorHandler {
+public class UserInstallErrorMessages {
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderMessageErrorHandler] " + message);
@@ -34,7 +33,7 @@ public class ShaderMessageErrorHandler {
             copyLinkMessage();
         } else {
             // No update available, check shaderpacks folder for other versions
-            Path newerVersion = findNewerComplementaryVersion(versionComparator);
+            Path newerVersion = versionComparator.findNewerComplementaryVersion();
 
             if (newerVersion != null) {
                 // Newer shader version found in shaderpacks
@@ -79,36 +78,6 @@ public class ShaderMessageErrorHandler {
         if (instance != null) {
             instance.startShaderpacksWatcher();
         }
-    }
-
-    /**
-     * Finds a newer version of Complementary shader in the shaderpacks folder
-     */
-    private static Path findNewerComplementaryVersion(ShaderVersionComparator versionComparator) {
-        try {
-            Path shaderpacks = EuphoriaPatcher.shaderpacks;
-            if (shaderpacks == null || !Files.exists(shaderpacks)) {
-                return null;
-            }
-
-            try (java.nio.file.DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
-                for (Path path : stream) {
-                    String fileName = path.getFileName().toString();
-                    if (fileName.contains(EuphoriaPatcher.BRAND_NAME) &&
-                        !fileName.contains(EuphoriaPatcher.PATCH_NAME) &&
-                        versionComparator.isNewerShaderVersion(fileName)) {
-                        boolean isFile = Files.isRegularFile(path) && fileName.endsWith(".zip");
-                        boolean isDir = Files.isDirectory(path);
-                        if (isFile || isDir) {
-                            return path;
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            debugLog("Error checking for newer shader versions: " + e.getMessage());
-        }
-        return null;
     }
 
     /**

@@ -6,6 +6,7 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.services.ShaderNamingService;
 import com.euphoriapatches.euphoria_patcher.services.ShaderValidator;
+import com.euphoriapatches.euphoria_patcher.util.UserInstallErrorMessages;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -17,8 +18,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static com.euphoriapatches.euphoria_patcher.util.ShaderMessageErrorHandler.copyLinkMessage;
 
 public class ShaderpacksWatcher {
     private final Path shaderpacks;
@@ -548,7 +547,7 @@ public class ShaderpacksWatcher {
                                 EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION +
                                 ". It may be an incorrect version or modified.");
                         EuphoriaPatcher.log(3, "Please download the correct and official version from " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-                        copyLinkMessage();
+                        UserInstallErrorMessages.copyLinkMessage();
 
                     }
 

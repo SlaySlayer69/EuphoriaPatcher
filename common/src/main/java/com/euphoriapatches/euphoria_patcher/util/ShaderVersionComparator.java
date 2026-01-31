@@ -113,6 +113,36 @@ public class ShaderVersionComparator {
     }
 
     /**
+     * Finds a newer version of Complementary shader in the shaderpacks folder
+     * @return Path to the newer version, or null if none found
+     */
+    public Path findNewerComplementaryVersion() {
+        try {
+            if (shaderpacks == null || !Files.exists(shaderpacks)) {
+                return null;
+            }
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path path : stream) {
+                    String fileName = path.getFileName().toString();
+                    if (fileName.contains(brandName) &&
+                        !fileName.contains(patchName) &&
+                        isNewerShaderVersion(fileName)) {
+                        boolean isFile = Files.isRegularFile(path) && fileName.endsWith(".zip");
+                        boolean isDir = Files.isDirectory(path);
+                        if (isFile || isDir) {
+                            return path;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            debugLog("Error checking for newer shader versions: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Finds the highest version of any older Complementary shader
      * @return Path to the highest version file/directory, or null if none found
      */

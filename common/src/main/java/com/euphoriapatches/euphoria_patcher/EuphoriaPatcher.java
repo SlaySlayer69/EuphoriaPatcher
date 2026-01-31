@@ -82,7 +82,7 @@ public class EuphoriaPatcher {
 
         if (!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null) {
-                ShaderMessageErrorHandler.handleShaderNotFound(versionComparator);
+                UserInstallErrorMessages.handleShaderNotFound(versionComparator);
                 return;
             }
         } else {

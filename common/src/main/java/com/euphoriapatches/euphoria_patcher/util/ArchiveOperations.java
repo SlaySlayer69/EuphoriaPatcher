@@ -181,21 +181,21 @@ public class ArchiveOperations {
             if (!isValidSize) {
                 debugLog("Invalid archive size: verification failed");
                 ShaderVersionComparator versionComparator = getVersionComparator();
-                ShaderMessageErrorHandler.handleSizeMismatch(fileName, originalFileName, versionComparator);
+                UserInstallErrorMessages.handleSizeMismatch(fileName, originalFileName, versionComparator);
                 return false;
             }
 
             // Check for test/dev version
             if (ShaderVersionComparator.isTestOrDevVersion(fileName)) {
                 debugLog("Test/fix version detected: " + originalFileName);
-                ShaderMessageErrorHandler.handleDevVersion(fileName, originalFileName);
+                UserInstallErrorMessages.handleDevVersion(fileName, originalFileName);
                 return false;
             }
 
             // Second check: content hash verification (if size matches)
             if (HashUtils.hasIncorrectHash(baseArchived, PatchInfo.BASE_TAR_SHA256)) {
                 debugLog("Archive hash verification failed - file has been modified");
-                ShaderMessageErrorHandler.handleHashMismatch(fileName, originalFileName);
+                UserInstallErrorMessages.handleHashMismatch(fileName, originalFileName);
                 return false;
             }
 
