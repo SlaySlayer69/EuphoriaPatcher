@@ -23,12 +23,12 @@ public class UserInstallErrorMessages {
         debugLog("Handling shader not found scenario");
 
         // First check if an update is available
-        if (UpdateChecker.isUpdateAvailable()) {
+        if (UpdateChecker.isNewerCompVersionAvailable()) {
             EuphoriaPatcher.log(3, 8, "=== SHADER NOT FOUND ===");
             EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
             EuphoriaPatcher.log(3, 8, "");
             EuphoriaPatcher.log(3, 8, "A newer version of " + EuphoriaPatcher.PATCH_NAME + " is available!");
-            EuphoriaPatcher.log(3, 8, "SOLUTION: Update to version " + UpdateChecker.getNewModVersion() + " which may support newer shaders.");
+            EuphoriaPatcher.log(3, 8, "SOLUTION: Update to version " + UpdateChecker.getNewModVersion() + " along with the compatible shader version: Complementary_r" + UpdateChecker.getComplementaryVersion());
             EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
             copyLinkMessage();
         } else {
@@ -110,7 +110,7 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "Required shader: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "You have a NEWER shader version than what this mod version supports.");
 
-        if (UpdateChecker.isUpdateAvailable()) {
+        if (UpdateChecker.isNewerCompVersionAvailable()) {
             EuphoriaPatcher.log(3, 8, "");
             EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
             EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);

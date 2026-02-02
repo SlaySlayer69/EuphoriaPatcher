@@ -19,6 +19,7 @@ public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.modrinth.com/v2/project/" + PROJECT_ID + "/version";
     private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
     private static String NEW_MOD_VERSION = null;
+    private static String COMPLEMENTARY_VERSION = null;
     private static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
     private static String RECOMMENDED_PATCH_VERSION = null;
@@ -50,6 +51,28 @@ public class UpdateChecker {
     public static String getNewModVersion() {
         checkForUpdates();
         return NEW_MOD_VERSION;
+    }
+
+    public static String getComplementaryVersion() {
+        checkForUpdates();
+        return COMPLEMENTARY_VERSION;
+    }
+
+    /**
+     * Checks if a newer version of Complementary Shaders is available.
+     * @return true if a newer Complementary Shaders version is available, false otherwise
+     */
+    public static boolean isNewerCompVersionAvailable() {
+        checkForUpdates();
+        if (COMPLEMENTARY_VERSION == null || COMPLEMENTARY_VERSION.isEmpty()) {
+            return false;
+        }
+        String currentCompVersion = EuphoriaPatcher.VERSION.replace("_r", "");
+        boolean isNewer = VersionComparator.isNewerVersion(COMPLEMENTARY_VERSION, currentCompVersion);
+        debugLog("Current Complementary Shaders version: " + currentCompVersion);
+        debugLog("Latest Complementary Shaders version: " + COMPLEMENTARY_VERSION);
+        debugLog("Is newer Complementary Shaders version available? " + isNewer);
+        return isNewer;
     }
 
     /**
@@ -247,7 +270,7 @@ public class UpdateChecker {
                 for (int i = 0; i < versions.size(); i++) {
                     JsonObject version = versions.get(i).getAsJsonObject();
                     String fullVersionNumber = version.get("version_number").getAsString();
-                    String mainVersion = extractMainVersion(fullVersionNumber);
+                    String mainVersion = extractEuphoriaPatchesVersion(fullVersionNumber);
 
                     // Skip if we already checked this version (different mod loaders)
                     if (mainVersion.equals(lastCheckedVersion)) {
@@ -336,7 +359,9 @@ public class UpdateChecker {
         debugLog("Current version: " + MOD_VERSION);
 
         try {
-            NEW_MOD_VERSION = fetchLatestVersion();
+            String fullVersionNumber = fetchLatestVersion();
+            NEW_MOD_VERSION = extractEuphoriaPatchesVersion(fullVersionNumber);
+            COMPLEMENTARY_VERSION = extractComplementaryVersion(fullVersionNumber);
             if (NEW_MOD_VERSION == null) {
                 EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Failed to fetch the latest version.");
                 debugLog("Failed to fetch latest version from Modrinth API");
@@ -365,9 +390,14 @@ public class UpdateChecker {
         }
     }
 
-    // Extract main version before the first dash (e.g., "1.7.4-r5.6.1-fabric" -> "1.7.4")
-    private static String extractMainVersion(String versionString) {
+    // Extract Euphoria Patches version before the first dash (e.g., "1.7.4-r5.6.1-fabric" -> "1.7.4")
+    private static String extractEuphoriaPatchesVersion(String versionString) {
         return versionString.split("-")[0];
+    }
+
+    // Extract Complementary Shaders version after the "-r" and remove that r (e.g., "1.7.4-r5.6.1-fabric" -> "5.6.1")
+    private static String extractComplementaryVersion(String versionString) {
+        return versionString.split("-")[1].split("r")[1];
     }
 
     // Fetch the latest version from the Modrinth API
@@ -412,10 +442,7 @@ public class UpdateChecker {
                 JsonObject latestVersion = versions.get(0).getAsJsonObject();
                 String fullVersionNumber = latestVersion.get("version_number").getAsString();
                 debugLog("Full version number from Modrinth: " + fullVersionNumber);
-
-                String mainVersion = extractMainVersion(fullVersionNumber);
-                debugLog("Extracted main version: " + mainVersion);
-                return mainVersion;
+                return fullVersionNumber;
             } finally {
                 connection.disconnect();
                 debugLog("Connection closed");
