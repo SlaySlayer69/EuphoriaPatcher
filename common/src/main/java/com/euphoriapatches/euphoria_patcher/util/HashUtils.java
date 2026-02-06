@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.util;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -27,21 +28,44 @@ public class HashUtils {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] fileBytes = Files.readAllBytes(filePath);
             byte[] hashBytes = digest.digest(fileBytes);
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-
-            return hexString.toString();
+            return bytesToHex(hashBytes);
         } catch (IOException | NoSuchAlgorithmException e) {
             debugLog("Error calculating SHA-256: " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Calculates the SHA-256 hash of a string
+     * @param input String to hash
+     * @return Hexadecimal string representation of the hash, or null if an error occurs
+     */
+    public static String calculateSHA256(String input) {
+        if (input == null) {
+            debugLog("Cannot calculate SHA-256 of null string");
+            return null;
+        }
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            debugLog("Error calculating SHA-256: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static String bytesToHex (byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     /**

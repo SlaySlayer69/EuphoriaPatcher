@@ -25,19 +25,26 @@ public class ShaderData {
     }
 
     /**
-     * Validates that the stored shaderpacks directory matches the current one.
-     * If the directory differs, deletes the data file to prevent cross-user data usage.
-     * If no directory is stored, saves the current one.
+     * Validates that the stored shaderpacks directory hash matches the current one.
+     * If the hash differs, deletes the data file to prevent cross-user data usage.
+     * If no hash is stored, saves the current one.
      */
-    public static void validateShadersDirectory() {
-        debugLog("Validating shaderpacks directory");
+    public static void validateShaderDataHash() {
+        debugLog("Validating shaderpacks directory hash");
 
         String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
         debugLog("Current shaderpacks directory: " + currentShadersDir);
 
+        String currentShaderHash = HashUtils.calculateSHA256(currentShadersDir);
+        if (currentShaderHash == null) {
+            debugLog("Failed to calculate hash for current shaderpacks directory");
+            return;
+        }
+        debugLog("Current shaderpacks directory hash: " + currentShaderHash);
+
         if (!dataFileExists()) {
-            debugLog("Data file does not exist, will create with current shaderpacks directory");
-            save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
+            debugLog("Data file does not exist, will create with current shaderpacks hash");
+            save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
             return;
         }
 
@@ -45,19 +52,20 @@ public class ShaderData {
                 Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
             PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
 
-            if (data == null || data.shaderDirectory == null) {
-                debugLog("No shaderpacks directory stored in data file, will save current one");
-                save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
+            if (data == null || data.shaderHash == null) {
+                debugLog("No shaderpacks hash stored in data file, will save current one");
+                save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
                 return;
             }
 
-            if (!data.shaderDirectory.equals(currentShadersDir)) {
-                debugLog("Shaderpacks directory mismatch! Stored: " + data.shaderDirectory + ", Current: " + currentShadersDir);
+            if (!data.shaderHash.equals(currentShaderHash)) {
+                debugLog("Shaderpacks hash mismatch! Stored: " + data.shaderHash + ", Current: " + currentShaderHash);
                 debugLog("Deleting data file to ensure user-specific data");
                 deleteDataFile();
-                save(SaveData.of(DataField.SHADER_DIRECTORY, currentShadersDir));
+                save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
             } else {
-                debugLog("Shaderpacks directory matches, data file is valid for this user");
+                debugLog("Current shader data directory hash: " + data.shaderHash);
+                debugLog("Shaderpacks hash matches, data file is valid for this user");
             }
         } catch (IOException e) {
             debugLog("Error reading data file for validation: " + e.getMessage());
@@ -70,10 +78,32 @@ public class ShaderData {
      * Enum representing fields that can be saved/loaded
      */
     public enum DataField {
-        STYLE_REIMAGINED,
-        STYLE_UNBOUND,
-        SHADER_DIRECTORY,
-        SUPPORT_EP_BUTTON
+        STYLE_REIMAGINED("styleReimagined"),
+        STYLE_UNBOUND("styleUnbound"),
+        SHADER_HASH("shaderHash"),
+        SUPPORT_EP_BUTTON("supportEPButtonVisible");
+
+        private final String jsonKey;
+
+        DataField(String jsonKey) {
+            this.jsonKey = jsonKey;
+        }
+
+        public String getJsonKey() {
+            return jsonKey;
+        }
+
+        /**
+         * Get all allowed JSON keys as a set
+         * @return Set of allowed JSON key names
+         */
+        public static java.util.Set<String> getAllowedKeys() {
+            java.util.Set<String> keys = new java.util.HashSet<>();
+            for (DataField field : values()) {
+                keys.add(field.getJsonKey());
+            }
+            return keys;
+        }
     }
 
     /**
@@ -126,24 +156,33 @@ public class ShaderData {
                 jsonObject = new JsonObject();
             }
 
+            // Remove any old/unknown fields that are no longer allowed
+            java.util.Set<String> allowedKeys = DataField.getAllowedKeys();
+            java.util.Set<String> keysToRemove = new java.util.HashSet<>();
+            for (String key : jsonObject.keySet()) {
+                if (!allowedKeys.contains(key)) {
+                    keysToRemove.add(key);
+                }
+            }
+            if (!keysToRemove.isEmpty()) {
+                debugLog("Removing " + keysToRemove.size() + " old/unknown field(s): " + keysToRemove);
+                for (String key : keysToRemove) {
+                    jsonObject.remove(key);
+                }
+            }
+
             // Update specified fields only
             for (SaveData update : updates) {
                 switch (update.field) {
                     case STYLE_REIMAGINED:
-                        jsonObject.addProperty("styleReimagined", (Boolean) update.value);
-                        debugLog("Updating STYLE_REIMAGINED to " + update.value);
-                        break;
                     case STYLE_UNBOUND:
-                        jsonObject.addProperty("styleUnbound", (Boolean) update.value);
-                        debugLog("Updating STYLE_UNBOUND to " + update.value);
-                        break;
-                    case SHADER_DIRECTORY:
-                        jsonObject.addProperty("shaderDirectory", (String) update.value);
-                        debugLog("Updating SHADER_DIRECTORY to " + update.value);
-                        break;
                     case SUPPORT_EP_BUTTON:
-                        jsonObject.addProperty("supportEPButtonVisible", (Boolean) update.value);
-                        debugLog("Updating SUPPORT_EP_BUTTON to " + update.value);
+                        jsonObject.addProperty(update.field.getJsonKey(), (Boolean) update.value);
+                        debugLog("Updating " + update.field + " to " + update.value);
+                        break;
+                    case SHADER_HASH:
+                        jsonObject.addProperty(update.field.getJsonKey(), (String) update.value);
+                        debugLog("Updating " + update.field + " to " + update.value);
                         break;
                 }
             }
@@ -249,13 +288,13 @@ public class ShaderData {
     public static class PersistentShaderData {
         public Boolean styleReimagined;
         public Boolean styleUnbound;
-        public String shaderDirectory;
+        public String shaderHash;
         public Boolean supportEPButtonVisible;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
             this.styleUnbound = null;
-            this.shaderDirectory = null;
+            this.shaderHash = null;
             this.supportEPButtonVisible = null;
         }
     }
