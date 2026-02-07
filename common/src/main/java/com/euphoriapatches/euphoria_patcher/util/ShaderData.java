@@ -25,63 +25,14 @@ public class ShaderData {
     }
 
     /**
-     * Validates that the stored shaderpacks directory hash matches the current one.
-     * If the hash differs, deletes the data file to prevent cross-user data usage.
-     * If no hash is stored, saves the current one.
-     */
-    public static void validateShaderDataHash() {
-        debugLog("Validating shaderpacks directory hash");
-
-        String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
-        debugLog("Current shaderpacks directory: " + currentShadersDir);
-
-        String currentShaderHash = HashUtils.calculateSHA256(currentShadersDir);
-        if (currentShaderHash == null) {
-            debugLog("Failed to calculate hash for current shaderpacks directory");
-            return;
-        }
-        debugLog("Current shaderpacks directory hash: " + currentShaderHash);
-
-        if (!dataFileExists()) {
-            debugLog("Data file does not exist, will create with current shaderpacks hash");
-            save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
-            return;
-        }
-
-        try (Reader reader = new InputStreamReader(
-                Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
-            PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
-
-            if (data == null || data.shaderHash == null) {
-                debugLog("No shaderpacks hash stored in data file, will save current one");
-                save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
-                return;
-            }
-
-            if (!data.shaderHash.equals(currentShaderHash)) {
-                debugLog("Shaderpacks hash mismatch! Stored: " + data.shaderHash + ", Current: " + currentShaderHash);
-                debugLog("Deleting data file to ensure user-specific data");
-                deleteDataFile();
-                save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
-            } else {
-                debugLog("Current shader data directory hash: " + data.shaderHash);
-                debugLog("Shaderpacks hash matches, data file is valid for this user");
-            }
-        } catch (IOException e) {
-            debugLog("Error reading data file for validation: " + e.getMessage());
-        } catch (JsonSyntaxException e) {
-            debugLog("Invalid JSON format in data file during validation: " + e.getMessage());
-        }
-    }
-
-    /**
      * Enum representing fields that can be saved/loaded
      */
     public enum DataField {
         STYLE_REIMAGINED("styleReimagined"),
         STYLE_UNBOUND("styleUnbound"),
         SHADER_HASH("shaderHash"),
-        SUPPORT_EP_BUTTON("supportEPButtonVisible");
+        SUPPORT_EP_BUTTON("supportEPButtonVisible"),
+        EP_VERSION("EPVersion");
 
         private final String jsonKey;
 
@@ -103,6 +54,25 @@ public class ShaderData {
                 keys.add(field.getJsonKey());
             }
             return keys;
+        }
+    }
+
+    /**
+     * Data class to hold persistent shader information
+     */
+    public static class PersistentShaderData {
+        public Boolean styleReimagined;
+        public Boolean styleUnbound;
+        public String shaderHash;
+        public Boolean supportEPButtonVisible;
+        public String EPVersion;
+
+        public PersistentShaderData() {
+            this.styleReimagined = null;
+            this.styleUnbound = null;
+            this.shaderHash = null;
+            this.supportEPButtonVisible = null;
+            this.EPVersion = null;
         }
     }
 
@@ -181,6 +151,7 @@ public class ShaderData {
                         debugLog("Updating " + update.field + " to " + update.value);
                         break;
                     case SHADER_HASH:
+                    case EP_VERSION:
                         jsonObject.addProperty(update.field.getJsonKey(), (String) update.value);
                         debugLog("Updating " + update.field + " to " + update.value);
                         break;
@@ -199,19 +170,6 @@ public class ShaderData {
         } catch (ClassCastException e) {
             debugLog("Invalid type for field update: " + e.getMessage());
         }
-    }
-
-    /**
-     * Convenience method to save both shader styles at once
-     *
-     * @param styleReimagined Whether Reimagined style is used
-     * @param styleUnbound    Whether Unbound style is used
-     */
-    public static void saveShaderStyles(boolean styleReimagined, boolean styleUnbound) {
-        save(
-            SaveData.of(DataField.STYLE_REIMAGINED, styleReimagined),
-            SaveData.of(DataField.STYLE_UNBOUND, styleUnbound)
-        );
     }
 
     /**
@@ -264,9 +222,6 @@ public class ShaderData {
         return Files.exists(DATA_FILE);
     }
 
-    /**
-     * Delete the data file
-     */
     public static void deleteDataFile() {
         debugLog("Deleting data file: " + DATA_FILE);
         try {
@@ -283,19 +238,104 @@ public class ShaderData {
     }
 
     /**
-     * Data class to hold persistent shader information
+     * Convenience method to save both shader styles at once
+     *
+     * @param styleReimagined Whether Reimagined style is used
+     * @param styleUnbound    Whether Unbound style is used
      */
-    public static class PersistentShaderData {
-        public Boolean styleReimagined;
-        public Boolean styleUnbound;
-        public String shaderHash;
-        public Boolean supportEPButtonVisible;
+    public static void saveShaderStyles(boolean styleReimagined, boolean styleUnbound) {
+        save(
+                SaveData.of(DataField.STYLE_REIMAGINED, styleReimagined),
+                SaveData.of(DataField.STYLE_UNBOUND, styleUnbound)
+        );
+    }
 
-        public PersistentShaderData() {
-            this.styleReimagined = null;
-            this.styleUnbound = null;
-            this.shaderHash = null;
-            this.supportEPButtonVisible = null;
+    /**
+     * Convenience method to reset both shader styles to false
+     */
+    public static void resetShaderStyles() {
+        save(
+                SaveData.of(DataField.STYLE_REIMAGINED, false),
+                SaveData.of(DataField.STYLE_UNBOUND, false)
+        );
+    }
+
+    /**
+     * Checks if the current patch version matches the stored version.
+     * If versions don't match, updates the stored version.
+     *
+     * @return true if version has changed (incorrect), false if version matches (correct)
+     */
+    public static boolean isIncorrectVersion() {
+        debugLog("Checking patch version");
+
+        String currentVersion = EuphoriaPatcher.PATCH_VERSION.replace("_", "");
+        debugLog("Current patch version: " + currentVersion);
+
+        if (!dataFileExists()) {
+            debugLog("Data file does not exist, will create with current patch version");
+            save(SaveData.of(DataField.EP_VERSION, currentVersion));
+            return false; // Version is now correct as we just saved it
+        }
+
+        PersistentShaderData data = load();
+
+        if (data.EPVersion == null) {
+            debugLog("No patch version stored in data file, will save current one");
+            save(SaveData.of(DataField.EP_VERSION, currentVersion));
+            return true; // Version was incorrect (missing) and has now been set
+        }
+
+        if (!data.EPVersion.equals(currentVersion)) {
+            debugLog("Patch version mismatch! Stored: " + data.EPVersion + ", Current: " + currentVersion);
+            save(SaveData.of(DataField.EP_VERSION, currentVersion));
+            return true; // Version was incorrect (has changed)
+        }
+
+        debugLog("Patch version matches: " + currentVersion);
+        return false; // Version is correct
+    }
+
+    /**
+     * Validates that the stored shaderpacks directory hash matches the current one.
+     * If the hash differs, deletes the data file to prevent cross-user data usage.
+     * If no hash is stored, saves the current one.
+     */
+    public static void validateShaderDataHash() {
+        debugLog("Validating shaderpacks directory hash");
+
+        String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
+        debugLog("Current shaderpacks directory: " + currentShadersDir);
+
+        String currentShaderHash = HashUtils.calculateSHA256(currentShadersDir);
+        if (currentShaderHash == null) {
+            debugLog("Failed to calculate hash for current shaderpacks directory");
+            return;
+        }
+        debugLog("Current shaderpacks directory hash: " + currentShaderHash);
+
+        if (!dataFileExists()) {
+            debugLog("Data file does not exist, will create with current shaderpacks hash");
+            save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
+            return;
+        }
+
+        PersistentShaderData data = load();
+
+        if (data.shaderHash == null) {
+            debugLog("No shaderpacks hash stored in data file, will save current one");
+            save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
+            return;
+        }
+
+        if (!data.shaderHash.equals(currentShaderHash)) {
+            debugLog("Shaderpacks hash mismatch! Stored: " + data.shaderHash + ", Current: " + currentShaderHash);
+            debugLog("Deleting data file to ensure user-specific data");
+            deleteDataFile();
+            save(SaveData.of(DataField.SHADER_HASH, currentShaderHash));
+        } else {
+            debugLog("Current shader data directory hash: " + data.shaderHash);
+            debugLog("Shaderpacks hash matches, data file is valid for this user");
         }
     }
 }
