@@ -722,6 +722,18 @@ public class ShaderDetector {
     }
 
     /**
+     * If the shader is a Euphoria Patches shader, read the version from pack.json
+     * @param shaderPath Path to shader (directory or zip file)
+     * @return Version string from pack.json, or null if not a Euphoria Patches shader or version not found
+     */
+    public String getEuphoriaPatchesVersionFromShader(Path shaderPath) {
+        if (isEuphoriaPatchesShader(shaderPath)) {
+            return readVersionFromPackJson(shaderPath);
+        }
+        return null;
+    }
+
+    /**
      * Reads the version from pack.json in a shader directory or zip file
      * Uses static cache to avoid redundant reads across instances
      * @param shaderPath Path to shader (directory or zip file)

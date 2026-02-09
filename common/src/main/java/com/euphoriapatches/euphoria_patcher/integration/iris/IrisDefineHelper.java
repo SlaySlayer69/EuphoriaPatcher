@@ -95,7 +95,7 @@ public class IrisDefineHelper {
                 }
             }
 
-            UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
+            UpdateShaderConfig.markCurrentEPSettingsFile();
 
             if (injectCount == 1) {
                 EuphoriaPatcher.log(0, "Added Euphoria Patches defines to " +

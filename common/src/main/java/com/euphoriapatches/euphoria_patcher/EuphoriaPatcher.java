@@ -73,7 +73,7 @@ public class EuphoriaPatcher {
 
         log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 
-        UpdateShaderConfig.markEuphoriaPatchesSettingsFiles();
+        UpdateShaderConfig.markAllEPSettingsFiles();
 
         // Initialize service classes
         initializeServices();

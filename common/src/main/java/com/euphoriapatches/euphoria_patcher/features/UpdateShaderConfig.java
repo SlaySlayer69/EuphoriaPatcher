@@ -1,7 +1,10 @@
 package com.euphoriapatches.euphoria_patcher.features;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,8 +51,14 @@ public class UpdateShaderConfig {
         // Convert PATCH_VERSION (like "_1.5.2") to format "1_5_2" for the identifier
         String version = EuphoriaPatcher.PATCH_VERSION;
         version = version.substring(1); // Remove leading underscore
-        version = version.replace(".", "_"); // Replace dots with underscores
-        return VERSION_IDENTIFIER_PREFIX + version + VERSION_IDENTIFIER_SUFFIX;
+        return createVersionIdentifier(version);
+    }
+
+    // Create version identifier from a version string
+    private static String createVersionIdentifier(String version) {
+        // Convert version (like "1.5.2") to format "1_5_2" for the identifier
+        String formattedVersion = version.replace(".", "_"); // Replace dots with underscores
+        return VERSION_IDENTIFIER_PREFIX + formattedVersion + VERSION_IDENTIFIER_SUFFIX;
     }
 
     // Extract version from identifier line
@@ -84,14 +93,21 @@ public class UpdateShaderConfig {
         }
 
         // Add identifier to all Euphoria Patches settings files
-        markEuphoriaPatchesSettingsFiles();
+        markAllEPSettingsFiles();
     }
 
-    public static void markEuphoriaPatchesSettingsFiles() {
+    /**
+     * Marks all Euphoria Patches settings files in the shaderpacks directory
+     */
+    public static void markAllEPSettingsFiles() {
         try {
             // Get all the files that need to be updated
             List<Path> filesToUpdate = new ArrayList<>();
-            List<Boolean> addVersionFlags = new ArrayList<>();
+            List<String> versionIdentifiers = new ArrayList<>();
+
+            // Get ShaderDetector instance
+            EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+            ShaderDetector detector = instance != null ? instance.getShaderDetector() : null;
 
             try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
                     path -> Files.isRegularFile(path) && path.toString().endsWith(".txt"))) {
@@ -100,10 +116,11 @@ public class UpdateShaderConfig {
                     String fileName = configFile.getFileName().toString();
                     // Check if matches any Euphoria Patches pattern
                     if (EUPHORIA_FILE_PATTERN.matcher(fileName).find()) {
-                        boolean addVersionIdentifier = fileName.contains(EuphoriaPatcher.PATCH_VERSION);
+                        String versionIdentifier = getVersionIdentifierForShader(fileName, detector);
                         filesToUpdate.add(configFile);
-                        addVersionFlags.add(addVersionIdentifier);
-                        debugLog("Identified settings file: " + fileName);
+                        versionIdentifiers.add(versionIdentifier);
+                        debugLog("Identified settings file: " + fileName + " (version identifier: " +
+                                (versionIdentifier != null ? versionIdentifier : "none") + ")");
                     }
                 }
             }
@@ -116,10 +133,10 @@ public class UpdateShaderConfig {
                 scheduler.schedule(() -> {
                     for (int i = 0; i < filesToUpdate.size(); i++) {
                         Path configFile = filesToUpdate.get(i);
-                        boolean addVersionIdentifier = addVersionFlags.get(i);
+                        String versionIdentifier = versionIdentifiers.get(i);
 
                         debugLog("Delayed processing of file: " + configFile.getFileName());
-                        addIdentifierToSettingsFile(configFile, addVersionIdentifier);
+                        addIdentifierToSettingsFile(configFile, versionIdentifier);
                     }
                 }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
             }
@@ -128,7 +145,123 @@ public class UpdateShaderConfig {
         }
     }
 
-    private static void addIdentifierToSettingsFile(Path configFile, boolean addVersionIdentifier) {
+    /**
+     * Marks only the current shaderpack's settings file if it's an EP shader
+     * Uses ShaderLoader to get the current shaderpack and ShaderDetector to verify it's an EP shader
+     */
+    public static void markCurrentEPSettingsFile() {
+        try {
+            // Get current shaderpack path
+            Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
+            if (currentShaderpack == null) {
+                debugLog("No current shaderpack selected");
+                return;
+            }
+
+            // Check if it's an EP shader using ShaderDetector
+            EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+            if (instance == null) {
+                debugLog("EuphoriaPatcher instance not available");
+                return;
+            }
+
+            ShaderDetector detector = instance.getShaderDetector();
+            if (detector == null || !detector.isEuphoriaPatchesShader(currentShaderpack)) {
+                debugLog("Current shaderpack is not an EP shader: " + currentShaderpack.getFileName());
+                return;
+            }
+
+            // Construct the .txt config filename
+            String shaderName = currentShaderpack.getFileName().toString();
+            String configFileName = shaderName + ".txt";
+            Path configFile = EuphoriaPatcher.shaderpacks.resolve(configFileName);
+
+            // Check if the config file exists
+            if (!Files.exists(configFile) || !Files.isRegularFile(configFile)) {
+                debugLog("Config file does not exist: " + configFileName);
+                return;
+            }
+
+            debugLog("Marking current EP settings file: " + configFileName);
+
+            // Determine version identifier to use based on the actual shader version
+            String versionIdentifier = getVersionIdentifierForShader(shaderName, detector);
+
+            // Schedule the update
+            scheduler.schedule(() -> {
+                debugLog("Delayed processing of current settings file: " + configFile.getFileName());
+                addIdentifierToSettingsFile(configFile, versionIdentifier);
+            }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+        } catch (Exception e) {
+            EuphoriaPatcher.log(2, 0, "Error marking current settings file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Determines the version identifier to use for a shader based on its actual version from pack.json
+     * Only returns a version identifier if the shader version is >= current PATCH_VERSION
+     * @param shaderName The name of the shader (without .txt extension for config files)
+     * @param detector ShaderDetector instance, can be null
+     * @return Version identifier string to add, or null if no version identifier should be added
+     */
+    private static String getVersionIdentifierForShader(String shaderName, ShaderDetector detector) {
+        // Fallback to filename check if detector not available
+        if (detector == null) {
+            debugLog("ShaderDetector not available, falling back to filename check");
+            if (shaderName.contains(EuphoriaPatcher.PATCH_VERSION)) {
+                return getVersionIdentifier();
+            }
+            return null;
+        }
+
+        // Remove .txt extension if present
+        String baseShaderName = shaderName.endsWith(".txt")
+            ? shaderName.substring(0, shaderName.length() - 4)
+            : shaderName;
+
+        // Try to find the corresponding shader pack (directory or .zip)
+        Path shaderPath = EuphoriaPatcher.shaderpacks.resolve(baseShaderName);
+        if (!Files.exists(shaderPath)) {
+            debugLog("Could not find shader pack for: " + baseShaderName + ", falling back to filename check");
+            if (shaderName.contains(EuphoriaPatcher.PATCH_VERSION)) {
+                return getVersionIdentifier();
+            }
+            return null;
+        }
+
+        // Get the version from pack.json
+        String versionFromShader = detector.getEuphoriaPatchesVersionFromShader(shaderPath);
+        if (versionFromShader == null) {
+            debugLog("Could not read version from shader pack: " + baseShaderName + ", falling back to filename check");
+            if (shaderName.contains(EuphoriaPatcher.PATCH_VERSION)) {
+                return getVersionIdentifier();
+            }
+            return null;
+        }
+
+        // Compare with current PATCH_VERSION (remove leading underscore from PATCH_VERSION)
+        String currentVersion = EuphoriaPatcher.PATCH_VERSION.substring(1); // e.g., "_1.8.3" -> "1.8.3"
+
+        // Use VersionComparator to check if shader version >= current version
+        int comparison = VersionComparator.compareVersionStrings(versionFromShader, currentVersion);
+
+        debugLog("Version check for " + baseShaderName + ": pack.json=" + versionFromShader +
+                ", current=" + currentVersion + ", comparison=" + comparison);
+
+        // Only add version identifier if shader version >= current version
+        if (comparison >= 0) {
+            // Use the shader's actual version for the identifier
+            String identifier = createVersionIdentifier(versionFromShader);
+            debugLog("Will add version identifier: " + identifier);
+            return identifier;
+        } else {
+            debugLog("Shader version is older than current version, not adding version identifier");
+            return null;
+        }
+    }
+
+    private static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd) {
         // Try with increasing delay between attempts
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
@@ -174,8 +307,8 @@ public class UpdateShaderConfig {
                 // 2. Identifiers are already correct AND are at the top of the file after comments
                 boolean identifiersAtTop = areIdentifiersAtTop(lines);
                 if (!settingsChanged && mainIdentifierExists &&
-                    (!addVersionIdentifier ||
-                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(getVersionIdentifier()))) &&
+                    (versionIdentifierToAdd == null ||
+                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
                     identifiersAtTop) {
 
                     debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
@@ -198,8 +331,8 @@ public class UpdateShaderConfig {
                 // Phase 2: Add identifiers right after comments
                 newLines.add(EUPHORIA_IDENTIFIER);
 
-                if (addVersionIdentifier) {
-                    newLines.add(getVersionIdentifier());
+                if (versionIdentifierToAdd != null) {
+                    newLines.add(versionIdentifierToAdd);
                 } else if (existingVersionIdentifier != null) {
                     newLines.add(existingVersionIdentifier);
                     debugLog("Preserved existing version identifier: " + existingVersionIdentifier);
@@ -292,7 +425,7 @@ public class UpdateShaderConfig {
                 Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
 
                 // Add our identifiers to the new config file - include version since the name has current version
-                addIdentifierToSettingsFile(newPath, true);
+                addIdentifierToSettingsFile(newPath, getVersionIdentifier());
 
                 EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
             }
@@ -318,7 +451,7 @@ public class UpdateShaderConfig {
                             Files.copy(latestShaderConfigFilePath, newPath);
 
                             // Add our identifiers to this copy too
-                            addIdentifierToSettingsFile(newPath, true);
+                            addIdentifierToSettingsFile(newPath, getVersionIdentifier());
 
                             EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
                         }
