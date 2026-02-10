@@ -255,6 +255,8 @@ public class EuphoriaPatcher {
         if (ConfigHandler.autoMergeBlockProperties) {
             debugLog("Auto-merge block properties is enabled, starting properties watcher");
             PropertiesWatcher.startWatcher();
+        } else {
+            debugLog("Auto-merge block properties is disabled, not starting properties watcher");
         }
     }
 
