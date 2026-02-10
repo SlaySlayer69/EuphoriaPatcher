@@ -14,6 +14,7 @@ public class ConfigHandler {
     public static boolean doDisplayShaderInGameMessage = true;
     public static boolean doDebugLogging = false;
     public static String alternativeShaderNames = "";
+    public static boolean autoMergeBlockProperties = false;
 
     public static void configStuff() {
         // Initialize config system (handles migration on first call)
@@ -75,11 +76,20 @@ public class ConfigHandler {
                         "\nDefault = false");
         handleJVMArgumentDebugLogging(configDebugLogging);
 
+        boolean configAutoMergeBlockProperties = Config.readWriteConfig("advanced", "autoMergeBlockProperties", false,
+                "Option that enables or disables automatic merging of the fragmented block.properties files into the main block.properties file." +
+                "\nThe properties files inside \"Euphoria Patches/shaders/properties/\" will be merged into a single block.properties file at the specified interval if any of them have changed." +
+                "\nThis helps organizing the files, reduces the number of entries in a single file and improves speed while editing them. " +
+                "\nSince they are merged automatically into the final block.properties file, the individual files can be edited without worrying about merge conflicts or losing changes." +
+                "\nDefault = false");
+        handleSpaceEagleAutoMergeBlockProperties(configAutoMergeBlockProperties);
+
         // Regenerate config to apply proper ordering and ensure header is present
         Config.regenerateConfig();
 
         Config.startConfigWatcher();
     }
+
     @SuppressWarnings("SpellCheckingInspection")
     private static void handleJVMArgumentDebugLogging(boolean configDebugLogging) {
         // Check for JVM argument -DEPDebug=true/false which takes priority over config
@@ -95,6 +105,16 @@ public class ConfigHandler {
             }
         } else {
             doDebugLogging = configDebugLogging;
+        }
+    }
+
+    private static void handleSpaceEagleAutoMergeBlockProperties(boolean configAutoMergeBlockProperties) {
+        if (EuphoriaPatcher.isSpacEagle()) {
+            autoMergeBlockProperties = true;
+            debugLog("Automatic merging of block.properties files enabled due to user being SpaceEagle17");
+        } else {
+            autoMergeBlockProperties = configAutoMergeBlockProperties;
+            debugLog("Automatic merging of block.properties files set to " + autoMergeBlockProperties + " via config");
         }
     }
 

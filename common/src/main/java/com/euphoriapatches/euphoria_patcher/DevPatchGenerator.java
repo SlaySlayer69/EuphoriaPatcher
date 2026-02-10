@@ -490,7 +490,7 @@ public class DevPatchGenerator {
                 String fileName = entry.getFileName().toString();
 
                 // Skip excluded files and directories
-                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip")) {
+                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip") || fileName.equals("propertiesFragmenter.py")) {
                     System.out.println("    " + YELLOW + "Skipping: " + fileName + RESET);
                     continue;
                 }

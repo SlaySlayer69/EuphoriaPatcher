@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher;
 import com.euphoriapatches.euphoria_patcher.config.Config;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.*;
+import com.euphoriapatches.euphoria_patcher.features.properties.PropertiesWatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
@@ -199,6 +200,7 @@ public class EuphoriaPatcher {
                 Config.stopConfigWatcher();
                 instance.shaderpacksWatcher.stopWatching();
                 PotatoFileMonitor.stopMonitoring();
+                PropertiesWatcher.stopMonitoring();
             } catch (Exception ignored) {
             }
         }));
@@ -248,6 +250,12 @@ public class EuphoriaPatcher {
         applyCompatibilityModifications(shader, styleUnbound, styleReimagined);
         applyDeveloperModifications(shader, styleUnbound, styleReimagined);
         namingService.createAlternativeShaderNames(shader, isAlreadyInstalled, ConfigHandler.alternativeShaderNames);
+
+        // Initialize properties watcher if auto-merge is enabled
+        if (ConfigHandler.autoMergeBlockProperties) {
+            debugLog("Auto-merge block properties is enabled, starting properties watcher");
+            PropertiesWatcher.startWatcher();
+        }
     }
 
     private void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
