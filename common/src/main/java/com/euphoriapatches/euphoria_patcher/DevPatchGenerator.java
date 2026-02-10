@@ -489,8 +489,8 @@ public class DevPatchGenerator {
             for (Path entry : stream) {
                 String fileName = entry.getFileName().toString();
 
-                // Skip excluded files and directories
-                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip") || fileName.equals("propertiesFragmenter.py")) {
+                // Skip excluded files and directories from root of Euphoria-Patches
+                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip")) {
                     System.out.println("    " + YELLOW + "Skipping: " + fileName + RESET);
                     continue;
                 }
@@ -498,8 +498,37 @@ public class DevPatchGenerator {
                 Path targetPath = target.resolve(fileName);
 
                 if (Files.isDirectory(entry)) {
-                    // Recursively copy directories
-                    FileUtils.copyDirectory(entry.toFile(), targetPath.toFile());
+                    // Recursively copy directories with exclusions
+                    copyEuphoriaPatchesDirectoryRecursive(entry, targetPath);
+                } else {
+                    // Copy files
+                    Files.copy(entry, targetPath);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively copies a directory while excluding specific files at any depth
+     */
+    private static void copyEuphoriaPatchesDirectoryRecursive(Path source, Path target) throws IOException {
+        Files.createDirectories(target);
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
+            for (Path entry : stream) {
+                String fileName = entry.getFileName().toString();
+
+                // Skip excluded files at any depth (just check filename, not full path)
+                if (fileName.equals("propertiesFragmenter.py") || fileName.endsWith(".zip")) {
+                    System.out.println("    " + YELLOW + "Skipping: " + source.relativize(entry) + RESET);
+                    continue;
+                }
+
+                Path targetPath = target.resolve(fileName);
+
+                if (Files.isDirectory(entry)) {
+                    // Recursively copy subdirectories
+                    copyEuphoriaPatchesDirectoryRecursive(entry, targetPath);
                 } else {
                     // Copy files
                     Files.copy(entry, targetPath);
