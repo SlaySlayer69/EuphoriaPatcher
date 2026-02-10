@@ -35,6 +35,9 @@ public class PropertiesWatcher {
     private static volatile long lastMergeTime = 0;
     private static final long MERGE_COOLDOWN_MS = 2000; // 2 seconds between merges
 
+    private static final String PROPERTIES_DIR_NAME = "blockProperties";
+    private static final String TARGET_PROPERTIES_FILE_NAME = "block.properties";
+
     /**
      * Start monitoring both the shader loader config and the current shader's properties
      */
@@ -192,7 +195,7 @@ public class PropertiesWatcher {
             }
 
             // Check if properties directory exists
-            Path propertiesDir = shaderpackPath.resolve("shaders/properties");
+            Path propertiesDir = shaderpackPath.resolve("shaders/" + PROPERTIES_DIR_NAME);
             if (!Files.exists(propertiesDir) || !Files.isDirectory(propertiesDir)) {
                 debugLog("Properties directory does not exist, skipping monitoring");
                 return;
@@ -308,7 +311,7 @@ public class PropertiesWatcher {
      * Monitor the properties directory using WatchService
      */
     private static void monitorPropertiesDirectory(Path shaderpackPath) {
-        Path propertiesDir = shaderpackPath.resolve("shaders/properties");
+        Path propertiesDir = shaderpackPath.resolve("shaders/" + PROPERTIES_DIR_NAME);
 
         if (!Files.exists(propertiesDir) || !Files.isDirectory(propertiesDir)) {
             debugLog("Properties directory does not exist, cannot monitor");
@@ -451,8 +454,8 @@ public class PropertiesWatcher {
      */
     private static void performMerge(Path shaderpackPath) {
         try {
-            Path propertiesDir = shaderpackPath.resolve("shaders/properties");
-            Path targetFile = shaderpackPath.resolve("shaders/block.properties");
+            Path propertiesDir = shaderpackPath.resolve("shaders/" + PROPERTIES_DIR_NAME);
+            Path targetFile = shaderpackPath.resolve("shaders/" + TARGET_PROPERTIES_FILE_NAME);
 
             debugLog("Initiating merge: " + propertiesDir + " -> " + targetFile);
 
@@ -460,7 +463,7 @@ public class PropertiesWatcher {
 
             if (success) {
                 debugLog("Properties merge completed successfully");
-                EuphoriaPatcher.log(0, "Auto-merged properties files into block.properties");
+                EuphoriaPatcher.log(0, "Auto-merged properties files into " + TARGET_PROPERTIES_FILE_NAME);
             } else {
                 debugLog("Properties merge failed");
             }

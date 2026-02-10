@@ -18,7 +18,7 @@ public class PropertiesMerger {
      * Merge all properties files from a source directory into a target file.
      * Files are merged according to the order defined in PropertiesOrder.
      *
-     * @param propertiesDir The root properties directory (e.g., shaderpack/shaders/properties)
+     * @param propertiesDir The root properties directory (e.g., shaderpack/shaders/blockProperties)
      * @param targetFile The target file to merge into (e.g., shaderpack/shaders/block.properties)
      * @return true if merge was successful, false otherwise
      */
