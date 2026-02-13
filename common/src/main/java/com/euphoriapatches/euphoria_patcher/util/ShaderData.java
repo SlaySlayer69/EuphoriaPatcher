@@ -6,6 +6,7 @@ import com.euphoriapatches.euphoria_patcher.config.Config;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -141,20 +142,28 @@ public class ShaderData {
                 }
             }
 
-            // Update specified fields only
+            // Update specified fields only using reflection for better maintainability
             for (SaveData update : updates) {
-                switch (update.field) {
-                    case STYLE_REIMAGINED:
-                    case STYLE_UNBOUND:
-                    case SUPPORT_EP_BUTTON:
-                        jsonObject.addProperty(update.field.getJsonKey(), (Boolean) update.value);
-                        debugLog("Updating " + update.field + " to " + update.value);
-                        break;
-                    case SHADER_HASH:
-                    case EP_VERSION:
-                        jsonObject.addProperty(update.field.getJsonKey(), (String) update.value);
-                        debugLog("Updating " + update.field + " to " + update.value);
-                        break;
+                String jsonKey = update.field.getJsonKey();
+                try {
+                    // Get the field type from PersistentShaderData class
+                    Field dataField = PersistentShaderData.class.getField(jsonKey);
+                    Class<?> fieldType = dataField.getType();
+
+                    // Add property based on the field type
+                    if (fieldType == Boolean.class) {
+                        jsonObject.addProperty(jsonKey, (Boolean) update.value);
+                    } else if (fieldType == String.class) {
+                        jsonObject.addProperty(jsonKey, (String) update.value);
+                    } else {
+                        debugLog("Unsupported field type for " + update.field + ": " + fieldType);
+                        continue;
+                    }
+                    debugLog("Updating " + update.field + " to " + update.value);
+                } catch (NoSuchFieldException e) {
+                    debugLog("Field not found in PersistentShaderData: " + jsonKey);
+                } catch (ClassCastException e) {
+                    debugLog("Invalid type for field " + update.field + ": " + e.getMessage());
                 }
             }
 
