@@ -6,6 +6,7 @@ import com.euphoriapatches.euphoria_patcher.features.UpdateShaderConfig;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
+import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 
@@ -26,6 +27,10 @@ public class IrisDefineHelper {
                                          BiConsumer<List<?>, String> defineKey,
                                          BiConsumer<List<?>, String[]> defineKeyValue) {
         try {
+
+            EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+            ShaderDetector shaderDetector = instance.getShaderDetector();
+
             injectCount++;
             debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
             isIrisRunning = true;
@@ -65,7 +70,7 @@ public class IrisDefineHelper {
 
             // Check for potato.png file and add the define if it doesn't exist
             Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
-            if (currentShaderpack != null) {
+            if (currentShaderpack != null && shaderDetector.isEuphoriaPatchesShader(currentShaderpack)) {
                 if (PotatoFileMonitor.shouldAddPotatoRemovedDefine(currentShaderpack)) {
                     defineKey.accept(standardDefines, "EUPHORIA_PATCHES_POTATO_REMOVED");
                     debugLog("Adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png not found");
@@ -73,7 +78,11 @@ public class IrisDefineHelper {
                     debugLog("Not adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png found");
                 }
             } else {
-                debugLog("Cannot check for potato.png - currentShaderpack is null");
+                if (currentShaderpack == null) {
+                    debugLog("Current shaderpack is null, skipping potato.png check");
+                } else {
+                    debugLog("Current shaderpack (" + currentShaderpack.getFileName() + ") is not an Euphoria Patches shader, skipping potato.png check");
+                }
             }
 
             if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= 2) {
