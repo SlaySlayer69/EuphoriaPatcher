@@ -134,7 +134,7 @@ void main() {
 	if (frameCounter == 1 || abs(screenSize - previousScreenSize) > 10.0 || abs(guiHidden - previousGUIHidden) > 0.5) {
 
 		if (guiHidden < 0.5) {
-			beginTextM(4, screenToTextCoordCentered(vec2(0.5, getHotbarSafeY(0.085)), 4, 24));
+			beginTextM(4, screenToTextCoordCentered(vec2(0.5, getHotbarSafeY(0.11)), 4, 24));
 				printString((_P, _r, _e, _s, _s, _space, _F, _1, _space, _t, _o, _space, _h, _i, _d, _e , _space, _t, _h, _e, _space, _G, _U, _I, _dot));
 			endText(textColor);
 		}
