@@ -208,7 +208,7 @@ public class EuphoriaPatcher {
 
     public static boolean isSpacEagle() {
         try {
-            boolean containsSpacEagle = shaderpacks.toString().contains("SpacEagle");
+            boolean containsSpacEagle = shaderpacks.toString().toLowerCase(Locale.ROOT).contains("spaceagle");
             debugLog("Contains SpacEagle in Path: " + containsSpacEagle);
             Path euphoriaFolder = shaderpacks.resolve("Euphoria-Patches");
             boolean hasEuphoriaFolder = Files.exists(euphoriaFolder) && Files.isDirectory(euphoriaFolder);
