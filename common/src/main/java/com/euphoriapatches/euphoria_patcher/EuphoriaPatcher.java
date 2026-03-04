@@ -310,7 +310,7 @@ public class EuphoriaPatcher {
 
             // Change DRAGON_DEATH_EFFECT=1 to DRAGON_DEATH_EFFECT=0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1DRAGON_DEATH_EFFECT=0$2");
+                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1 DRAGON_DEATH_EFFECT=0$2");
 
             // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
