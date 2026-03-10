@@ -691,6 +691,11 @@ public class ShaderDetector {
      * @return true if this is a Euphoria Patches shader
      */
     public boolean isEuphoriaPatchesShader(Path shaderPath) {
+        if (shaderPath == null) {
+            debugLog("isEuphoriaPatchesShader called with null path, returning false");
+            return false;
+        }
+
         // Check cache first
         Boolean cached = euphoriaShaderCache.get(shaderPath);
         if (cached != null) {
@@ -740,6 +745,11 @@ public class ShaderDetector {
      * @return Version string from pack.json, or null if not found
      */
     public String readVersionFromPackJson(Path shaderPath) {
+        if (shaderPath == null) {
+            debugLog("readVersionFromPackJson called with null path, returning null");
+            return null;
+        }
+
         // Check cache first
         Optional<String> cached = versionCache.get(shaderPath);
         if (cached != null) {

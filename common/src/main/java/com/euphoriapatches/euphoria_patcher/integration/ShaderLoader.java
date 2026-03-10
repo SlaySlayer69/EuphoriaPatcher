@@ -711,7 +711,7 @@ public class ShaderLoader {
 
     /**
      * Finds a shaderpack by name in the shaderpacks directory
-     * Handles special characters that may cause issues with direct path resolution
+     * Handles Unicode escape sequences (like \u0424) that may appear in config files
      * @param shaderpackName The name of the shaderpack to find
      * @return Path to the shaderpack, or null if not found
      * @throws IOException if there's an error reading the directory
@@ -728,27 +728,48 @@ public class ShaderLoader {
             debugLog("Invalid path characters in shader name: " + e.getMessage());
         }
 
-        debugLog("Direct path resolution failed for: " + shaderpackName + ", trying directory scan");
+        // If the name contains Unicode escape sequences (like \u0424), unescape them
+        String unescapedName = shaderpackName;
+        if (shaderpackName.contains("\\u")) {
+            unescapedName = unescapeJavaString(shaderpackName);
+            debugLog("Unescaped '" + shaderpackName + "' to '" + unescapedName + "'");
 
-        // If direct resolution fails (likely due to special characters), list files and find match
-        String normalizedName = normalizeShaderName(shaderpackName);
-        debugLog("Normalized shader name: " + normalizedName);
+            // Try direct resolution with unescaped name
+            try {
+                Path directPath = EuphoriaPatcher.shaderpacks.resolve(unescapedName);
+                if (Files.exists(directPath)) {
+                    debugLog("Found shader with unescaped name: " + directPath);
+                    return directPath;
+                }
+            } catch (InvalidPathException e) {
+                debugLog("Invalid path after unescaping: " + e.getMessage());
+            }
+        }
 
-        // Also try the special case for our error shader
+        debugLog("Direct path resolution failed, trying directory scan");
+
+        // Special case for error shader
         final boolean isErrorShader = shaderpackName.contains("EuphoriaPatches") &&
                                      shaderpackName.contains("Error") &&
                                      shaderpackName.contains("Shader");
 
+        // Fall back to directory listing and exact matching
+        final String finalUnescapedName = unescapedName;
         try (Stream<Path> fileStream = Files.list(EuphoriaPatcher.shaderpacks)) {
-            // Try to find a file that matches when normalized
             Path result = fileStream
                     .filter(Files::exists)
                     .filter(path -> {
                         String fileName = path.getFileName().toString();
 
-                        // Check exact match first
+                        // Check exact match with original name
                         if (fileName.equals(shaderpackName)) {
                             debugLog("Found exact shader match: " + fileName);
+                            return true;
+                        }
+
+                        // Check exact match with unescaped name
+                        if (fileName.equals(finalUnescapedName)) {
+                            debugLog("Found shader match with unescaped name: " + fileName);
                             return true;
                         }
 
@@ -759,13 +780,7 @@ public class ShaderLoader {
                             return true;
                         }
 
-                        // Try normalized match
-                        String normalizedFileName = normalizeShaderName(fileName);
-                        boolean matches = normalizedFileName.equals(normalizedName);
-                        if (matches) {
-                            debugLog("Found matching shader via normalization: " + fileName);
-                        }
-                        return matches;
+                        return false;
                     })
                     .findFirst().orElse(null);
 
@@ -777,20 +792,36 @@ public class ShaderLoader {
     }
 
     /**
-     * Properly normalizes a shader name by removing special characters
-     * @param name The shader name to normalize
-     * @return The normalized shader name
+     * Unescapes Java Unicode escape sequences in a string (e.g., \u0424 -> Ф)
+     * This is needed because config file readers don't automatically interpret escape sequences
+     * @param str The string potentially containing escape sequences
+     * @return The unescaped string
      */
-    private static String normalizeShaderName(String name) {
-        // First handle the § character specifically
-        String withoutSection = name.replace("§", "").replace("\\u00A7", "");
-
-        // Then handle other special characters
-        String safeChars = withoutSection.replaceAll("[^a-zA-Z0-9_ \\-.+()\\[\\]{}]", "");
-
-        if (!name.equals(safeChars)) {
-            debugLog("Normalized '" + name + "' to '" + safeChars + "'");
+    private static String unescapeJavaString(String str) {
+        if (str == null || !str.contains("\\u")) {
+            return str;
         }
-        return safeChars.trim();
+
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < str.length()) {
+            if (i < str.length() - 5 && str.charAt(i) == '\\' && str.charAt(i + 1) == 'u') {
+                // Found potential Unicode escape sequence
+                try {
+                    String hex = str.substring(i + 2, i + 6);
+                    int codePoint = Integer.parseInt(hex, 16);
+                    sb.append((char) codePoint);
+                    i += 6;
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Not a valid escape sequence, keep as-is
+                    sb.append(str.charAt(i));
+                    i++;
+                }
+            } else {
+                sb.append(str.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
     }
 }
