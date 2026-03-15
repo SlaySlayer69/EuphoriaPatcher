@@ -1,8 +1,8 @@
 package com.euphoriapatches.euphoria_patcher.integration.iris;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ModChecker;
 
 /**
  * Centralizes all functionality related to Iris shader reloading
@@ -33,7 +33,7 @@ public class IrisReloadManager {
      * Convenience method to find and schedule a reload in one step
      */
     public static void findAndScheduleReload() {
-        Class<?> irisClass = ShaderLoader.findIrisClass();
+        Class<?> irisClass = ModChecker.findIrisClass();
         if (irisClass != null) {
             scheduleReload(irisClass);
         }

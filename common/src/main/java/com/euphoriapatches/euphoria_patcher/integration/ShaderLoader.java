@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.integration;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisDefineHelper;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.ModsDirectory;
 import com.euphoriapatches.euphoria_patcher.util.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
@@ -37,11 +38,6 @@ public class ShaderLoader {
     public static final String ANGELICA = "angelica";
     public static final String UNKNOWN = "unknown";
 
-    // Class names for detection (primary method)
-    private static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.Iris";
-    private static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.Iris";
-    private static final String OPTIFINE_CLASS = "optifine.OptiFineTweaker";
-
     // Cache variables
     private static File cachedShaderFile = null;
     private static boolean shaderFileSearched = false;
@@ -57,126 +53,9 @@ public class ShaderLoader {
         EuphoriaLogger.debugLog("[ShaderLoader] " + message);
     }
 
-    /**
-     * Checks if a class exists in the current classpath
-     * @param className The fully qualified class name to check
-     * @return true if the class exists, false otherwise
-     */
-    private static boolean checkClassExists(String className) {
-        try {
-            String resourceName = className.replace('.', '/') + ".class";
-            boolean exists = ShaderLoader.class.getClassLoader().getResource(resourceName) != null;
-            debugLog("Class check for " + className + ": " + (exists ? "found" : "not found"));
-            return exists;
-        } catch (Exception e) {
-            debugLog("Exception checking class " + className + ": " + e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Attempts to find the Iris/Oculus/Angelica class from known possible locations
-     * @return The Iris class if found, null otherwise
-     */
-    public static Class<?> findIrisClass() {
-        if (checkClassExists(MODERN_IRIS_CLASS)) {
-            try {
-                return Class.forName(MODERN_IRIS_CLASS);
-            } catch (ClassNotFoundException e) {
-                debugLog("Class exists but couldn't load: " + MODERN_IRIS_CLASS);
-            }
-        }
-
-        if (checkClassExists(LEGACY_IRIS_CLASS)) {
-            try {
-                return Class.forName(LEGACY_IRIS_CLASS);
-            } catch (ClassNotFoundException e) {
-                debugLog("Class exists but couldn't load: " + LEGACY_IRIS_CLASS);
-            }
-        }
-
-        return null;
-    }
-
     public static boolean isIrisRunning() {
         debugLog("Iris is running: " + IrisDefineHelper.isIrisRunning);
         return IrisDefineHelper.isIrisRunning;
-    }
-
-    /**
-     * Gets the MODNAME field value from the Iris/Oculus/Angelica class to distinguish between them
-     * @param classObj The Class object to check
-     * @return The shader loader type ("iris", "oculus", "angelica"), or null if not found or error
-     */
-    private static String getModIdFromClass(Class<?> classObj) {
-        try {
-            // Try MODNAME field (Iris/Oculus/Angelica all use this with distinct values)
-            try {
-                java.lang.reflect.Field modNameField = classObj.getField("MODNAME");
-                Object modNameValue = modNameField.get(null);
-                if (modNameValue instanceof String) {
-                    String modName = (String) modNameValue;
-                    debugLog("Found MODNAME field in " + classObj.getName() + ": " + modName);
-
-                    // Check which shader loader it is based on MODNAME
-                    switch (modName) {
-                        case "Iris":
-                            debugLog("Detected Iris via MODNAME='Iris'");
-                            return IRIS;
-                        case "Oculus":
-                            debugLog("Detected Oculus via MODNAME='Oculus'");
-                            return OCULUS;
-                        case "AngelicaShaders":
-                            debugLog("Detected Angelica via MODNAME='AngelicaShaders'");
-                            return ANGELICA;
-                    }
-                }
-            } catch (NoSuchFieldException e) {
-                debugLog("MODNAME field not found");
-            }
-
-        } catch (Exception e) {
-            debugLog("Error reading fields from " + classObj.getName() + ": " + e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * Detects shader loader by checking for known classes (primary method)
-     * @return The shader loader type, or null if not detected via class checks
-     */
-    private static String detectShaderLoaderByClass() {
-        debugLog("Attempting shader loader detection via class checks");
-
-        // Check for Iris/Oculus/Angelica (they share the same class structure)
-        // We need to check the MODNAME field to distinguish between them
-        Class<?> irisClass = findIrisClass();
-        if (irisClass != null) {
-            String modId = getModIdFromClass(irisClass);
-            if (IRIS.equals(modId)) {
-                debugLog("Detected IRIS via class check and MODNAME field");
-                return IRIS;
-            } else if (OCULUS.equals(modId)) {
-                debugLog("Detected OCULUS via class check and MODNAME field");
-                return OCULUS;
-            } else if (ANGELICA.equals(modId)) {
-                debugLog("Detected ANGELICA via class check and MODNAME field");
-                return ANGELICA;
-            } else {
-                debugLog("Found Iris-like class but MODNAME was: " + modId);
-                // Fall back to assuming Iris if we can't read the field
-                debugLog("Assuming IRIS as default for Iris-like class");
-                return IRIS;
-            }
-        }
-
-         if (checkClassExists(OPTIFINE_CLASS)) {
-             debugLog("Detected OPTIFINE via class check");
-             return OPTIFINE;
-         }
-
-        debugLog("No shader loader detected via class checks");
-        return null;
     }
 
     /**
@@ -279,7 +158,7 @@ public class ShaderLoader {
         debugLog("Determining shader loader type");
 
         // Primary method: Class-based detection
-        String detectedByClass = detectShaderLoaderByClass();
+        String detectedByClass = ModChecker.detectShaderLoaderByClass();
         if (detectedByClass != null) {
             cachedShaderLoader = detectedByClass;
             return cachedShaderLoader;

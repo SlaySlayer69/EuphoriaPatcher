@@ -291,34 +291,67 @@ public class EuphoriaPatcher {
     }
 
     private void applyCompatibilityModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
-        boolean isIris = ShaderLoader.getShaderLoader().equals(ShaderLoader.IRIS);
-        boolean isOculus = ShaderLoader.getShaderLoader().equals(ShaderLoader.OCULUS);
+        boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
+        boolean isAngelica = ShaderLoader.getShaderLoader().equals(ShaderLoader.ANGELICA);
         boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        boolean isPhotonicsInstalled = ModChecker.isPhotonicsPresent();
 
-        if (!isMacOS && (isIris || isOculus)) {
-            return; // No compatibility modifications needed
+        // This changes the popular settings profile dynamically
+        if (isOptifine || isMacOS) {
+            removeColoredLighting(shader, styleUnbound, styleReimagined);
+            removeEndCrystalVortex(shader, styleUnbound, styleReimagined);
+            removeDragonDeathEffect(shader, styleUnbound, styleReimagined);
+            removeEndPortalBeam(shader, styleUnbound, styleReimagined);
+        } else if (isAngelica) {
+            removeEndCrystalVortex(shader, styleUnbound, styleReimagined);
+            removeDragonDeathEffect(shader, styleUnbound, styleReimagined);
+            removeEndPortalBeam(shader, styleUnbound, styleReimagined);
+        } else if (isPhotonicsInstalled) {
+            removeColoredLighting(shader, styleUnbound, styleReimagined);
         }
+    }
 
+    private void removeColoredLighting(Path shader, boolean styleUnbound, boolean styleReimagined) {
         try {
             // Change COLORED_LIGHTING from 192 to 0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+            debugLog("Removed COLORED_LIGHTING=192 from POPULAR profile");
+        } catch (IOException e) {
+            log(3, 0, "Could not remove COLORED_LIGHTING=192 from POPULAR profile: " + e.getMessage());
+        }
+    }
 
+    private void removeEndCrystalVortex(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        try {
             // Change END_CRYSTAL_VORTEX from 3 to 0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
                 "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
+            debugLog("Removed END_CRYSTAL_VORTEX=3 from POPULAR profile");
+        } catch (IOException e) {
+            log(3, 0, "Could not remove END_CRYSTAL_VORTEX=3 from POPULAR profile: " + e.getMessage());
+        }
+    }
 
-            // Change DRAGON_DEATH_EFFECT=1 to DRAGON_DEATH_EFFECT=0
-            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1 DRAGON_DEATH_EFFECT=0$2");
-
+    private void removeEndPortalBeam(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        try {
             // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
-
-            debugLog("Applied compatibility modifications for macOS/non-iris loader: disabled COLORED_LIGHTING, END_CRYSTAL_VORTEX, DRAGON_DEATH_EFFECT, and END_PORTAL_BEAM in POPULAR profile");
+                    "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
+            debugLog("Removed END_PORTAL_BEAM from POPULAR profile");
         } catch (IOException e) {
-            log(3, 0, "Could not apply compatibility shader modifications: " + e.getMessage());
+            log(3, 0, "Could not remove END_PORTAL_BEAM=1 from POPULAR profile: " + e.getMessage());
+        }
+    }
+
+    private void removeDragonDeathEffect(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        try {
+            // Change DRAGON_DEATH_EFFECT=1 to DRAGON_DEATH_EFFECT=0
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
+                    "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1 DRAGON_DEATH_EFFECT=0$2");
+            debugLog("Removed DRAGON_DEATH_EFFECT=1 from POPULAR profile");
+        } catch (IOException e) {
+            log(3, 0, "Could not remove DRAGON_DEATH_EFFECT=1 from POPULAR profile: " + e.getMessage());
         }
     }
 
