@@ -4,17 +4,15 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 @Debug(export = true)
 @Pseudo
@@ -24,52 +22,37 @@ public class IrisLegacyShaderPropertiesMixin {
     @Unique
     private final Map<String, List<String>> euphoriaPatcher$profiles2 = new LinkedHashMap<>();
 
-    @Shadow(remap = false)
-    private Map<String, List<String>> profiles;
-
-    @Inject(
+    @ModifyArg(
         method = {
             "<init>(Ljava/lang/String;Lnet/coderbot/iris/shaderpack/option/ShaderPackOptions;Ljava/lang/Iterable;)V",
             "<init>"
         },
-        at = @At("RETURN"),
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/Properties;forEach(Ljava/util/function/BiConsumer;)V",
+            ordinal = 1
+        ),
+        index = 0,
         remap = false,
         require = 0
     )
-    private void euphoriaPatcher$splitSecondProfiles(CallbackInfo ci) {
-        if (profiles == null || profiles.isEmpty()) {
-            return;
-        }
+    private BiConsumer<Object, Object> euphoriaPatcher$registerProfile2(BiConsumer<Object, Object> originalConsumer) {
+        return (keyObject, valueObject) -> {
+            originalConsumer.accept(keyObject, valueObject);
 
-        int moved = 0;
-        Iterator<Map.Entry<String, List<String>>> iterator = profiles.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, List<String>> entry = iterator.next();
-            String key = entry.getKey();
-
-            if (key == null || !key.startsWith("2.")) {
-                continue;
+            if (!(keyObject instanceof String) || !(valueObject instanceof String)) {
+                return;
             }
 
-            String strippedKey = key.substring(2);
-            List<String> values = entry.getValue();
-            List<String> rewrittenValues = new ArrayList<>(values.size());
-            for (String token : values) {
-                if (token != null && token.startsWith("profile.2.")) {
-                    rewrittenValues.add("profile." + token.substring("profile.2.".length()));
-                } else {
-                    rewrittenValues.add(token);
-                }
+            String key = (String) keyObject;
+            String value = (String) valueObject;
+            if (!key.startsWith("profile2.")) {
+                return;
             }
 
-            euphoriaPatcher$profiles2.put(strippedKey, rewrittenValues);
-            iterator.remove();
-            moved++;
-        }
-
-        if (moved > 0) {
-            euphoriaPatcher$debugLog("Split secondary profiles from base map: moved=" + moved + ", profiles2=" + euphoriaPatcher$profiles2.size());
-        }
+            String strippedKey = key.substring("profile2.".length());
+            euphoriaPatcher$profiles2.put(strippedKey, Arrays.asList(value.split(" +")));
+        };
     }
 
     @Unique

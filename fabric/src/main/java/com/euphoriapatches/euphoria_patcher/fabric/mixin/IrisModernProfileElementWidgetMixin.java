@@ -81,15 +81,15 @@ public class IrisModernProfileElementWidgetMixin {
     @Unique
     private static String euphoriaPatcher$modifyProfileTranslationKeyInternal(String translationKey) {
         String name = translationKey.substring("profile.".length());
-        return "profile." + (euphoriaPatcher$useSecondProfileSet.get() ? "2." : "") + name;
+        return (euphoriaPatcher$useSecondProfileSet.get() ? "profile2." : "profile.") + name;
     }
 
     @Inject(method = "getCommentKey", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private void euphoriaPatcher$modifyCommentKey(CallbackInfoReturnable<String> cir) {
         Object element = euphoriaPatcher$getElement();
         if (element != null && ProfileElementTracker.isSecondProfileSet(element)) {
-            euphoriaPatcher$debugLog("Using profile.2.comment for second profile element");
-            cir.setReturnValue("profile.2.comment");
+            euphoriaPatcher$debugLog("Using profile2.comment for second profile element");
+            cir.setReturnValue("profile2.comment");
         }
     }
 
