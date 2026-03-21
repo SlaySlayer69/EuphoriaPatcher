@@ -12,6 +12,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
     public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
     public static final String IRIS_ELEMENT_ROW_CLASS = "net.irisshaders.iris.gui.element.IrisElementRow";
+    public static final String LEGACY_IRIS_SHADER_PROPERTIES_CLASS = "net.coderbot.iris.shaderpack.ShaderProperties";
+    public static final String LEGACY_IRIS_OPTION_MENU_ELEMENT_CLASS = "net.coderbot.iris.shaderpack.option.menu.OptionMenuElement";
+    public static final String LEGACY_IRIS_OPTION_MENU_CONTAINER_CLASS = "net.coderbot.iris.shaderpack.option.menu.OptionMenuContainer";
+    public static final String LEGACY_IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.coderbot.iris.gui.element.widget.ProfileElementWidget";
+    public static final String IRIS_SHADER_PROPERTIES_CLASS = "net.irisshaders.iris.shaderpack.properties.ShaderProperties";
+    public static final String IRIS_OPTION_MENU_ELEMENT_CLASS = "net.irisshaders.iris.shaderpack.option.menu.OptionMenuElement";
+    public static final String IRIS_OPTION_MENU_CONTAINER_CLASS = "net.irisshaders.iris.shaderpack.option.menu.OptionMenuContainer";
+    public static final String IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.irisshaders.iris.gui.element.widget.ProfileElementWidget";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -39,6 +47,38 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisElementRowMixin")) {
             return checkClassExists(IRIS_ELEMENT_ROW_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyShaderPropertiesMixin")) {
+            return checkClassExists(LEGACY_IRIS_SHADER_PROPERTIES_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyOptionMenuElementMixin")) {
+            return checkClassExists(LEGACY_IRIS_OPTION_MENU_ELEMENT_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyOptionMenuContainerMixin")) {
+            return checkClassExists(LEGACY_IRIS_OPTION_MENU_CONTAINER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyProfileElementWidgetMixin")) {
+            return checkClassExists(LEGACY_IRIS_PROFILE_ELEMENT_WIDGET_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernShaderPropertiesMixin")) {
+            return checkClassExists(IRIS_SHADER_PROPERTIES_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernOptionMenuElementMixin")) {
+            return checkClassExists(IRIS_OPTION_MENU_ELEMENT_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernOptionMenuContainerMixin")) {
+            return checkClassExists(IRIS_OPTION_MENU_CONTAINER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernProfileElementWidgetMixin")) {
+            return checkClassExists(IRIS_PROFILE_ELEMENT_WIDGET_CLASS);
         }
 
         // Apply other mixins by default

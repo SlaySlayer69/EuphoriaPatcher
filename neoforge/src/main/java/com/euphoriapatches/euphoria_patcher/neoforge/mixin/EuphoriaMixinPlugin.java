@@ -11,6 +11,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.gl.shader.StandardMacros";
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
     public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
+    public static final String IRIS_SHADER_PROPERTIES_CLASS = "net.irisshaders.iris.shaderpack.properties.ShaderProperties";
+    public static final String IRIS_OPTION_MENU_ELEMENT_CLASS = "net.irisshaders.iris.shaderpack.option.menu.OptionMenuElement";
+    public static final String IRIS_OPTION_MENU_CONTAINER_CLASS = "net.irisshaders.iris.shaderpack.option.menu.OptionMenuContainer";
+    public static final String IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.irisshaders.iris.gui.element.widget.ProfileElementWidget";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -34,6 +38,22 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisHeaderEntryMixin")) {
             return checkClassExists(IRIS_HEADER_ENTRY_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernShaderPropertiesMixin")) {
+            return checkClassExists(IRIS_SHADER_PROPERTIES_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernOptionMenuElementMixin")) {
+            return checkClassExists(IRIS_OPTION_MENU_ELEMENT_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernOptionMenuContainerMixin")) {
+            return checkClassExists(IRIS_OPTION_MENU_CONTAINER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernProfileElementWidgetMixin")) {
+            return checkClassExists(IRIS_PROFILE_ELEMENT_WIDGET_CLASS);
         }
 
         // Apply other mixins by default

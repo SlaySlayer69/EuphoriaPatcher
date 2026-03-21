@@ -5,7 +5,15 @@
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisLegacyStandardMacrosMixin",
-    "IrisModernStandardMacrosMixin"
+    "IrisModernStandardMacrosMixin",
+    "IrisLegacyShaderPropertiesMixin",
+    "IrisLegacyOptionMenuElementMixin",
+    "IrisLegacyOptionMenuContainerMixin",
+    "IrisLegacyProfileElementWidgetMixin",
+    "IrisModernShaderPropertiesMixin",
+    "IrisModernOptionMenuElementMixin",
+    "IrisModernOptionMenuContainerMixin",
+    "IrisModernProfileElementWidgetMixin"
   ],
   "client": [
     "ClientTickMixin",

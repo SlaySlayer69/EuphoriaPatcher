@@ -7,7 +7,15 @@
     "IrisHeaderEntryMixin",
     "IrisHeaderEntryMixinYarn",
     "IrisLegacyStandardMacrosMixin",
-    "IrisModernStandardMacrosMixin"
+    "IrisLegacyShaderPropertiesMixin",
+    "IrisLegacyOptionMenuElementMixin",
+    "IrisLegacyOptionMenuContainerMixin",
+    "IrisLegacyProfileElementWidgetMixin",
+    "IrisModernStandardMacrosMixin",
+    "IrisModernShaderPropertiesMixin",
+    "IrisModernOptionMenuElementMixin",
+    "IrisModernOptionMenuContainerMixin",
+    "IrisModernProfileElementWidgetMixin"
   ],
   "client": [
     "ClientTickMixin",

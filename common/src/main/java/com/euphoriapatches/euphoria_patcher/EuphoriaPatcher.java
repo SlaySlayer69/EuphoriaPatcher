@@ -315,7 +315,7 @@ public class EuphoriaPatcher {
         try {
             // Change COLORED_LIGHTING from 192 to 0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                "(profile\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
+                "(profile\\.2\\.POPULAR\\s+=\\s+.*?COLORED_LIGHTING=)192(\\s+.*)", "$10  $2");
             debugLog("Removed COLORED_LIGHTING=192 from POPULAR profile");
         } catch (IOException e) {
             log(3, 0, "Could not remove COLORED_LIGHTING=192 from POPULAR profile: " + e.getMessage());
@@ -326,7 +326,7 @@ public class EuphoriaPatcher {
         try {
             // Change END_CRYSTAL_VORTEX from 3 to 0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                "(profile\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
+                "(profile\\.2\\.POPULAR\\s+=\\s+.*?END_CRYSTAL_VORTEX=)3(\\s+.*)", "$10$2");
             debugLog("Removed END_CRYSTAL_VORTEX=3 from POPULAR profile");
         } catch (IOException e) {
             log(3, 0, "Could not remove END_CRYSTAL_VORTEX=3 from POPULAR profile: " + e.getMessage());
@@ -337,7 +337,7 @@ public class EuphoriaPatcher {
         try {
             // Change END_PORTAL_BEAM to !END_PORTAL_BEAM
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                    "(profile\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
+                    "(profile\\.2\\.POPULAR\\s+=\\s+.*?)\\s+END_PORTAL_BEAM(\\s+.*)", "$1 !END_PORTAL_BEAM$2");
             debugLog("Removed END_PORTAL_BEAM from POPULAR profile");
         } catch (IOException e) {
             log(3, 0, "Could not remove END_PORTAL_BEAM=1 from POPULAR profile: " + e.getMessage());
@@ -348,7 +348,7 @@ public class EuphoriaPatcher {
         try {
             // Change DRAGON_DEATH_EFFECT=1 to DRAGON_DEATH_EFFECT=0
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, SHADERS_PROPERTIES_LOCATION, null,
-                    "(profile\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1 DRAGON_DEATH_EFFECT=0$2");
+                    "(profile\\.2\\.POPULAR\\s+=\\s+.*?)\\s+DRAGON_DEATH_EFFECT=1(\\s+.*)", "$1 DRAGON_DEATH_EFFECT=0$2");
             debugLog("Removed DRAGON_DEATH_EFFECT=1 from POPULAR profile");
         } catch (IOException e) {
             log(3, 0, "Could not remove DRAGON_DEATH_EFFECT=1 from POPULAR profile: " + e.getMessage());

@@ -5,7 +5,11 @@
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisModernStandardMacrosMixin",
-    "IrisLegacyStandardMacrosMixin"
+    "IrisLegacyStandardMacrosMixin",
+    "IrisModernShaderPropertiesMixin",
+    "IrisModernOptionMenuElementMixin",
+    "IrisModernOptionMenuContainerMixin",
+    "IrisModernProfileElementWidgetMixin"
   ],
   "client": [
     "ReloadShadersOnDimensionChangeMixin",
