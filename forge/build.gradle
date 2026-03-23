@@ -292,6 +292,8 @@ publishMods {
             start = "1.13"
             end = "latest"
         }
+        clientRequired = true
+        serverRequired = false
     }
     modrinth {
         projectId = modrinth_project_id
@@ -299,6 +301,7 @@ publishMods {
         minecraftVersionRange {
             start = "1.13"
             end = "latest"
+            includeSnapshots = true
         }
     }
 }
