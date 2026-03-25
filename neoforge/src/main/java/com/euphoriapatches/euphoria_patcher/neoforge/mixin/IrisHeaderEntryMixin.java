@@ -75,7 +75,7 @@ public class IrisHeaderEntryMixin {
         euphoriaPatcher$recolorEPButtonWhileShift();
     }
 
-    @Inject(method = "renderContent(Lnet/minecraft/client/gui/GuiGraphics;IIZF)V", at = @At("TAIL"), remap = false, require = 0)
+    @Inject(method = {"renderContent(Lnet/minecraft/client/gui/GuiGraphics;IIZF)V", "extractContent"}, at = @At("TAIL"), remap = false, require = 0)
     private void onRenderContent5Params(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         euphoriaPatcher$renderTooltipImpl(guiGraphics);
         euphoriaPatcher$recolorEPButtonWhileShift();

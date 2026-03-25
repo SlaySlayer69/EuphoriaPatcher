@@ -61,7 +61,7 @@ public class IrisHeaderEntryMixin {
         }
     }
 
-    @Inject(method = "renderContent", at = @At("TAIL"), remap = false, require = 0)
+    @Inject(method = {"renderContent", "extractContent"}, at = @At("TAIL"), remap = false, require = 0)
     private void onRenderContent(@Coerce Object guiGraphics, int mouseX, int mouseY, boolean bl, float tickDelta, CallbackInfo ci) {
         try {
             Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
