@@ -172,7 +172,7 @@ public class IrisHeaderEntryMixin {
             Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
             boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
 
-            boolean shiftDown = euphoriaPatcher$isShiftDown();
+            boolean shiftDown = euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown();
 
             // Create button text with appropriate color
             Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
@@ -331,9 +331,10 @@ public class IrisHeaderEntryMixin {
             euphoriaPatcher$playButtonClickSound();
 
             // Check if shift is held
-            if (euphoriaPatcher$isShiftDown()) {
+            if (euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown()) {
                 euphoriaPatcher$debugLog("Pressed Shift while clicking EP button - removing button");
                 ShaderData.save(ShaderData.SaveData.of(ShaderData.DataField.SUPPORT_EP_BUTTON, false));
+                euphoriaPatcher$refreshOptionListAfterDismiss();
                 return;
             }
 
@@ -422,6 +423,70 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
+    private void euphoriaPatcher$refreshOptionListAfterDismiss() {
+        Object optionList = euphoriaPatcher$resolveOptionListFromScreen();
+        if (optionList == null) {
+            euphoriaPatcher$debugLog("Could not resolve ShaderPackOptionList from header entry");
+            return;
+        }
+
+        boolean rebuilt = euphoriaPatcher$invokeIfPresent(optionList, "rebuild");
+        boolean refreshed = euphoriaPatcher$invokeIfPresent(optionList, "refresh");
+        if (!rebuilt && !refreshed) {
+            euphoriaPatcher$debugLog("No rebuild/refresh method found on ShaderPackOptionList");
+        }
+    }
+
+    @Unique
+    private Object euphoriaPatcher$resolveOptionListFromScreen() {
+        try {
+            Object screen = euphoriaPatcher$getFieldValue(this, "screen");
+            if (screen == null) {
+                return null;
+            }
+
+            Class<?> optionListClass = Class.forName("net.irisshaders.iris.gui.element.ShaderPackOptionList");
+            return euphoriaPatcher$findFieldValueByType(screen, optionListClass);
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error resolving ShaderPackOptionList from screen: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    @Unique
+    private Object euphoriaPatcher$findFieldValueByType(Object owner, Class<?> targetType) {
+        Class<?> clazz = owner.getClass();
+        while (clazz != null) {
+            for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
+                try {
+                    field.setAccessible(true);
+                    Object value = field.get(owner);
+                    if (value != null && targetType.isInstance(value)) {
+                        return value;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return null;
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$invokeIfPresent(Object target, String methodName) {
+        try {
+            target.getClass().getMethod(methodName).invoke(target);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Failed to invoke " + methodName + " on ShaderPackOptionList: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Unique
     private void euphoriaPatcher$renderTooltip(Object guiGraphics, Object utilityButtons, Object resetButton) throws Exception {
         Object minecraft = euphoriaPatcher$getMinecraftInstance();
         Object font = euphoriaPatcher$getFont(minecraft);
@@ -459,7 +524,7 @@ public class IrisHeaderEntryMixin {
                     }
 
                     // Get tooltip text and color based on shift state and update availability
-                    boolean shiftDown = euphoriaPatcher$isShiftDown();
+                    boolean shiftDown = euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown();
                     EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
                     ShaderDetector shaderDetector = instance.getShaderDetector();
                     Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
@@ -472,7 +537,7 @@ public class IrisHeaderEntryMixin {
                         tooltipString = "Update Euphoria Patches!";
                         colorFormatting = "GREEN";
                     } else if (shiftDown) {
-                        tooltipString = "Remove Support Button? Requires re-entering the menu to show effect";
+                        tooltipString = "Remove Support Button?";
                         colorFormatting = "RED";
                     } else {
                         String removeString = "";
