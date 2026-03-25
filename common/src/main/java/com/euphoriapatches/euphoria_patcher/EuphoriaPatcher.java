@@ -367,7 +367,7 @@ public class EuphoriaPatcher {
 
     private void displayFinalMessage() {
         if (isSpacEagle()) {
-            log(1, "Have fun developing Euphoria Patches!\n");
+            log(1, "Have fun developing Euphoria Patches!\n\n ");
         } else {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
         }
