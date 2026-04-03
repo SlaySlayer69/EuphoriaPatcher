@@ -9,8 +9,10 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -18,7 +20,8 @@ import java.util.TreeSet;
  * Handles persistent storage of shader data in a JSON file
  */
 public class ShaderData {
-    private static final Path DATA_FILE = Config.CONFIG_DIR.resolve("data.json");
+    private static final Path DATA_FILE = Config.CONFIG_DIR.resolve(".data.json");
+    private static final Path LEGACY_DATA_FILE = Config.CONFIG_DIR.resolve("data.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     // Cache for loaded data to avoid repeated disk I/O
@@ -101,7 +104,7 @@ public class ShaderData {
     }
 
     /**
-     * Save specific fields to the data.json file. Only updates the specified fields,
+     * Save specific fields to the .data.json file. Only updates the specified fields,
      * preserving other existing data.
      *
      * @param updates One or more field updates to save
@@ -114,7 +117,11 @@ public class ShaderData {
 
         debugLog("Saving " + updates.length + " field(s) to data file");
 
+        boolean shouldRelockFile = false;
+
         try {
+            removeLegacyDataFileIfPresent();
+
             // Ensure config directory exists
             if (!Files.exists(Config.CONFIG_DIR)) {
                 Files.createDirectories(Config.CONFIG_DIR);
@@ -174,9 +181,12 @@ public class ShaderData {
             }
 
             // Write to file
+            setDataFileWritable(true);
+            shouldRelockFile = true;
             try (Writer writer = new OutputStreamWriter(
                     Files.newOutputStream(DATA_FILE), StandardCharsets.UTF_8)) {
                 GSON.toJson(jsonObject, writer);
+                ensureDataFileHidden();
                 debugLog("Successfully saved data to " + DATA_FILE);
                 cachedData = null; // Invalidate cache after save
             }
@@ -184,11 +194,15 @@ public class ShaderData {
             debugLog("Error saving data: " + e.getMessage());
         } catch (ClassCastException e) {
             debugLog("Invalid type for field update: " + e.getMessage());
+        } finally {
+            if (shouldRelockFile && Files.exists(DATA_FILE)) {
+                setDataFileWritable(false);
+            }
         }
     }
 
     /**
-     * Load shader data from the data.json file
+     * Load shader data from the .data.json file
      * @return PersistentShaderData object with loaded data, or default values if file doesn't exist
      */
     public static PersistentShaderData load() {
@@ -197,6 +211,8 @@ public class ShaderData {
             debugLog("Returning cached shader data");
             return cachedData;
         }
+
+        removeLegacyDataFileIfPresent();
 
         debugLog("Loading shader data from " + DATA_FILE);
 
@@ -234,13 +250,16 @@ public class ShaderData {
      * @return true if the data file exists
      */
     public static boolean dataFileExists() {
+        removeLegacyDataFileIfPresent();
         return Files.exists(DATA_FILE);
     }
 
     public static void deleteDataFile() {
+        removeLegacyDataFileIfPresent();
         debugLog("Deleting data file: " + DATA_FILE);
         try {
             if (Files.exists(DATA_FILE)) {
+                setDataFileWritable(true);
                 Files.delete(DATA_FILE);
                 debugLog("Successfully deleted data file");
                 cachedData = null; // Invalidate cache after delete
@@ -249,6 +268,64 @@ public class ShaderData {
             debugLog("Data file does not exist, nothing to delete");
         } catch (IOException e) {
             debugLog("Error deleting data file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Toggle writability of .data.json to discourage user edits while allowing internal saves.
+     */
+    private static void setDataFileWritable(boolean writable) {
+        File file = DATA_FILE.toFile();
+        if (!file.exists()) {
+            return;
+        }
+
+        boolean isSetWriteable = file.setWritable(writable, false);
+
+        if (isSetWriteable) {
+            debugLog("Set writable state to " + writable + " for " + DATA_FILE);
+        }  else {
+            debugLog("Could not set data file writable=" + writable + ": " + DATA_FILE);
+        }
+    }
+
+    /**
+     * Removes legacy non-hidden data.json if it exists.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static void removeLegacyDataFileIfPresent() {
+        try {
+            if (!Files.exists(LEGACY_DATA_FILE)) {
+                return;
+            }
+
+            File legacyFile = LEGACY_DATA_FILE.toFile();
+            legacyFile.setWritable(true, false);
+            Files.delete(LEGACY_DATA_FILE);
+            debugLog("Removed legacy data file: " + LEGACY_DATA_FILE);
+        } catch (IOException e) {
+            debugLog("Could not remove legacy data file " + LEGACY_DATA_FILE + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Keeps the data file hidden on platforms that support hidden-file attributes.
+     */
+    private static void ensureDataFileHidden() {
+        if (!Files.exists(DATA_FILE)) {
+            return;
+        }
+
+        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
+            return;
+        }
+
+        try {
+            Files.setAttribute(DATA_FILE, "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
+        } catch (UnsupportedOperationException e) {
+            debugLog("Hidden attribute unsupported for " + DATA_FILE);
+        } catch (IOException e) {
+            debugLog("Could not set hidden attribute for " + DATA_FILE + ": " + e.getMessage());
         }
     }
 
