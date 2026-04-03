@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ShaderData;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import org.apache.commons.io.FileUtils;
 
@@ -132,18 +133,14 @@ public class ShaderNamingService {
      */
     public void createAlternativeShaderNames(Path patchedShaderPath, boolean isAlreadyInstalled, String alternativeShaderNames) {
         debugLog("createAlternativeShaderNames called with isAlreadyInstalled: " + isAlreadyInstalled);
-        if (alternativeShaderNames.isEmpty()) {
-            debugLog("No alternative shader names configured.");
-            return; // No alternative names to create
-        }
-
         String baseVersion = version.replace("_", "");
         String patchVersionClean = patchVersion.replace("_", "");
 
         // Define illegal characters for file/folder names on most OSes
         String illegalChars = "[\\\\/:*?\"<>|]";
 
-        String[] alternativeNames = alternativeShaderNames.split(",");
+        String[] alternativeNames = alternativeShaderNames.isEmpty() ? new String[0] : alternativeShaderNames.split(",");
+        java.util.Set<String> configuredAlternativeNames = new java.util.TreeSet<>();
 
         for (String name : alternativeNames) {
             String trimmedName = name.trim();
@@ -162,6 +159,14 @@ public class ShaderNamingService {
                 continue;
             }
 
+            configuredAlternativeNames.add(finalName);
+
+            if (!ShaderData.hasKnownAlternativeShaderName(finalName)) {
+                debugLog("Alternative shader \"" + finalName + "\" has not been created before, creating it now.");
+                createShaderCopy(patchedShaderPath, finalName);
+                continue;
+            }
+
             // Get the target path
             Path targetPath = shaderpacks.resolve(finalName);
 
@@ -175,18 +180,30 @@ public class ShaderNamingService {
                             ArchiveOperations.deleteRecursively(targetPath); // Delete the corrupted version
                             createShaderCopy(patchedShaderPath, finalName); // Create a new copy - patchedShaderPath should be safe since EP is installed
                         } else {
+                            ShaderData.rememberAlternativeShaderNames(finalName);
                             debugLog("Alternative shader \"" + finalName + "\" exists and is valid, skipping.");
                         }
                     } catch (IOException e) {
                         log(2, "Error verifying alternative shader \"" + finalName + "\": " + e.getMessage());
                     }
                 } else {
-                    debugLog("Alternative shader \"" + finalName + "\" doesn't exist (user may have deleted it), skipping creation.");
+                    if (ShaderData.hasKnownAlternativeShaderName(finalName)) {
+                        debugLog("Alternative shader \"" + finalName + "\" was previously created but is now missing, assuming the user deleted it and skipping creation.");
+                    } else {
+                        debugLog("Alternative shader \"" + finalName + "\" has not been created before, creating it now.");
+                        createShaderCopy(patchedShaderPath, finalName);
+                    }
                 }
             } else {
                 // EP is not already installed, create alternative names normally
                 createShaderCopy(patchedShaderPath, finalName);
             }
+        }
+
+        ShaderData.pruneAlternativeShaderNames(configuredAlternativeNames);
+
+        if (configuredAlternativeNames.isEmpty()) {
+            debugLog("No alternative shader names configured.");
         }
     }
 
@@ -244,6 +261,7 @@ public class ShaderNamingService {
             // Copy the directory
             debugLog("Creating alternative shader with name: \"" + newName + "\"");
             FileUtils.copyDirectory(sourceShaderPath.toFile(), targetPath.toFile());
+            ShaderData.rememberAlternativeShaderNames(newName);
 
             log(0, "Successfully created alternative shader: \"" + newName + "\"");
         } catch (IOException e) {

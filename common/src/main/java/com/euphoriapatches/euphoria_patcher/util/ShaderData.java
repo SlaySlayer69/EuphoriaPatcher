@@ -10,6 +10,9 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Handles persistent storage of shader data in a JSON file
@@ -33,7 +36,8 @@ public class ShaderData {
         STYLE_UNBOUND("styleUnbound"),
         SHADER_HASH("shaderHash"),
         SUPPORT_EP_BUTTON("supportEPButtonVisible"),
-        EP_VERSION("EPVersion");
+        EP_VERSION("EPVersion"),
+        ALTERNATIVE_SHADER_NAMES("alternativeShaderNames");
 
         private final String jsonKey;
 
@@ -67,6 +71,7 @@ public class ShaderData {
         public String shaderHash;
         public Boolean supportEPButtonVisible;
         public String EPVersion;
+        public String alternativeShaderNames;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
@@ -74,6 +79,7 @@ public class ShaderData {
             this.shaderHash = null;
             this.supportEPButtonVisible = null;
             this.EPVersion = null;
+            this.alternativeShaderNames = null;
         }
     }
 
@@ -257,6 +263,93 @@ public class ShaderData {
                 SaveData.of(DataField.STYLE_REIMAGINED, styleReimagined),
                 SaveData.of(DataField.STYLE_UNBOUND, styleUnbound)
         );
+    }
+
+    /**
+     * Returns the set of alternative shader names that have already been recorded.
+     */
+    public static Set<String> getKnownAlternativeShaderNames() {
+        return parseAlternativeShaderNames(load().alternativeShaderNames);
+    }
+
+    /**
+     * Checks whether an alternative shader name has already been recorded.
+     */
+    public static boolean hasKnownAlternativeShaderName(String name) {
+        String normalizedName = normalizeAlternativeShaderName(name);
+        return normalizedName != null && getKnownAlternativeShaderNames().contains(normalizedName);
+    }
+
+    /**
+     * Records one or more alternative shader names as having been created before.
+     */
+    public static void rememberAlternativeShaderNames(String... names) {
+        if (names == null || names.length == 0) {
+            return;
+        }
+
+        Set<String> knownNames = new TreeSet<>(getKnownAlternativeShaderNames());
+        boolean changed = false;
+
+        for (String name : names) {
+            String normalizedName = normalizeAlternativeShaderName(name);
+            if (normalizedName != null && knownNames.add(normalizedName)) {
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            save(SaveData.of(DataField.ALTERNATIVE_SHADER_NAMES, String.join(",", knownNames)));
+        }
+    }
+
+    /**
+     * Removes remembered alternative shader names that are no longer configured.
+     */
+    public static void pruneAlternativeShaderNames(Set<String> allowedNames) {
+        Set<String> normalizedAllowedNames = new TreeSet<>();
+        if (allowedNames != null) {
+            for (String name : allowedNames) {
+                String normalizedName = normalizeAlternativeShaderName(name);
+                if (normalizedName != null) {
+                    normalizedAllowedNames.add(normalizedName);
+                }
+            }
+        }
+
+        Set<String> knownNames = new TreeSet<>(getKnownAlternativeShaderNames());
+        if (knownNames.equals(normalizedAllowedNames)) {
+            return;
+        }
+
+        knownNames.retainAll(normalizedAllowedNames);
+        save(SaveData.of(DataField.ALTERNATIVE_SHADER_NAMES, String.join(",", knownNames)));
+    }
+
+    private static Set<String> parseAlternativeShaderNames(String rawNames) {
+        Set<String> names = new HashSet<>();
+
+        if (rawNames == null || rawNames.trim().isEmpty()) {
+            return names;
+        }
+
+        for (String name : rawNames.split(",")) {
+            String normalizedName = normalizeAlternativeShaderName(name);
+            if (normalizedName != null) {
+                names.add(normalizedName);
+            }
+        }
+
+        return names;
+    }
+
+    private static String normalizeAlternativeShaderName(String name) {
+        if (name == null) {
+            return null;
+        }
+
+        String trimmedName = name.trim();
+        return trimmedName.isEmpty() ? null : trimmedName;
     }
 
     /**
