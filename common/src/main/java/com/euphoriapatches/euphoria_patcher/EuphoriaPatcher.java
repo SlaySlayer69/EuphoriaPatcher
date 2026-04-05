@@ -57,7 +57,7 @@ public class EuphoriaPatcher {
         // Initialize the logger
         loggerInstance = new EuphoriaLogger();
         loggerInstance.checkErrorLogFileAndAddSeparator();
-        GUIScreen.doSomethingRandomToPreventMinimization(3, 7);
+        JarLauncher.touch(); // Call to prevent minimizers from removing the GUI code.
 
         ConfigHandler.configStuff();
 

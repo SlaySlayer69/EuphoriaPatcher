@@ -17,7 +17,7 @@ public class GUIScreen {
     private static final Color BUTTON_COLOR = new Color(75, 75, 75);
     private static final Color BUTTON_HOVER_COLOR = new Color(90, 90, 90);
 
-    public static void main(String[] args) {
+    public static void launch() {
         if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac")) {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
@@ -151,11 +151,5 @@ public class GUIScreen {
 
         okButton.addActionListener(e -> dialog.dispose());
         return okButton;
-    }
-
-    // Dummy method to prevent code minimization tools from removing this class
-    @SuppressWarnings("unused")
-    public static void doSomethingRandomToPreventMinimization(int x, int y) {
-        int z = x * y;
     }
 }
