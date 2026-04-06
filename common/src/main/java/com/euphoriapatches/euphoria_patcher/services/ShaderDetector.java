@@ -22,6 +22,9 @@ import java.util.stream.Stream;
  * Handles detection of installed shaders and their properties
  */
 public class ShaderDetector {
+    private static final int[] INITIAL_EUPHORIA_CHECK_DELAYS_MS = {0, 50, 150, 300};
+    private static final int REQUIRED_CONSECUTIVE_EUPHORIA_CHECKS = 2;
+
     // Static cache to store whether shaders are Euphoria Patches shaders (persists across instances)
     private static final Map<Path, Boolean> euphoriaShaderCache = new ConcurrentHashMap<>();
     // Static cache to store shader versions read from pack.json (persists across instances)
@@ -685,6 +688,30 @@ public class ShaderDetector {
     }
 
     /**
+     * Performs a single uncached check to determine whether a shader path is Euphoria Patches.
+     */
+    private boolean performSingleEuphoriaShaderCheck(Path shaderPath) {
+        try {
+            if (Files.isDirectory(shaderPath)) {
+                Path myFilePath = shaderPath.resolve(shaderMyFileLocation);
+                boolean exists = Files.exists(myFilePath);
+                debugLog("Checked directory " + shaderPath.getFileName() + " for myFile: " + exists);
+                return exists;
+            }
+
+            if (Files.isRegularFile(shaderPath) && shaderPath.toString().endsWith(".zip")) {
+                boolean exists = ArchiveOperations.fileExistsInZip(shaderPath, shaderMyFileLocation);
+                debugLog("Checked zip " + shaderPath.getFileName() + " for myFile: " + exists);
+                return exists;
+            }
+        } catch (Exception e) {
+            debugLog("Error checking if shader is Euphoria Patches: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
      * Check if a shader path is a Euphoria Patches shader by looking for the myFile.glsl
      * Uses static cache to avoid redundant checks across instances
      * @param shaderPath Path to shader (directory or zip file)
@@ -703,27 +730,46 @@ public class ShaderDetector {
             return cached;
         }
 
-        // Not in cache, perform the check
-        boolean isEuphoriaShader = false;
-        try {
-            if (Files.isDirectory(shaderPath)) {
-                // For directories, simply check if myFile.glsl exists
-                Path myFilePath = shaderPath.resolve(shaderMyFileLocation);
-                isEuphoriaShader = Files.exists(myFilePath);
-                debugLog("Checked directory " + shaderPath.getFileName() + " for myFile: " + isEuphoriaShader);
-            } else if (Files.isRegularFile(shaderPath) && shaderPath.toString().endsWith(".zip")) {
-                // For zip files, check if the file exists inside the archive
-                isEuphoriaShader = ArchiveOperations.fileExistsInZip(shaderPath, shaderMyFileLocation);
-                debugLog("Checked zip " + shaderPath.getFileName() + " for myFile: " + isEuphoriaShader);
+        // Not in cache: require a stable result (2 consecutive identical checks) before caching.
+        int consecutiveMatches = 0;
+        Boolean previousResult = null;
+        Boolean lastObservedResult = null;
+
+        for (int i = 0; i < INITIAL_EUPHORIA_CHECK_DELAYS_MS.length; i++) {
+            int delayMs = INITIAL_EUPHORIA_CHECK_DELAYS_MS[i];
+            if (delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    debugLog("Interrupted during initial Euphoria shader verification checks");
+                    break;
+                }
             }
-        } catch (Exception e) {
-            debugLog("Error checking if shader is Euphoria Patches: " + e.getMessage());
-            isEuphoriaShader = false;
+
+            boolean currentResult = performSingleEuphoriaShaderCheck(shaderPath);
+            lastObservedResult = currentResult;
+
+            if (previousResult != null && previousResult == currentResult) {
+                consecutiveMatches++;
+            } else {
+                consecutiveMatches = 1;
+            }
+
+            previousResult = currentResult;
+            debugLog("Initial Euphoria shader check #" + (i + 1) + " result: " + currentResult + " (streak=" + consecutiveMatches + ")");
+
+            if (consecutiveMatches >= REQUIRED_CONSECUTIVE_EUPHORIA_CHECKS) {
+                euphoriaShaderCache.put(shaderPath, currentResult);
+                debugLog("Committed Euphoria shader cache for " + shaderPath.getFileName() + ": " + currentResult);
+                return currentResult;
+            }
         }
 
-        // Cache the result
-        euphoriaShaderCache.put(shaderPath, isEuphoriaShader);
-        return isEuphoriaShader;
+        // Unstable result: return latest observation, but don't cache it.
+        boolean fallbackResult = lastObservedResult;
+        debugLog("Unstable initial Euphoria shader checks for " + shaderPath.getFileName() + ", returning uncached result: " + fallbackResult);
+        return fallbackResult;
     }
 
     /**

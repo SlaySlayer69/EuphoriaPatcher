@@ -18,6 +18,9 @@ import static java.nio.file.StandardWatchEventKinds.*;
  * Monitors the presence of potato.png in shaderpacks and triggers reloads when it changes
  */
 public class PotatoFileMonitor {
+    private static final int[] INITIAL_POTATO_CHECK_DELAYS_MS = {0, 50, 150, 300};
+    private static final int REQUIRED_CONSECUTIVE_POTATO_CHECKS = 2;
+
     // Per-shaderpack state tracking
     private static final Map<String, Boolean> shaderpackStates = new HashMap<>();
     // Track initial state to know if shaderpack ever had potato.png
@@ -88,7 +91,12 @@ public class PotatoFileMonitor {
             currentShaderpackPath = pathKey;
 
             // Check current state and compare with last known state for this shaderpack
-            boolean currentState = checkPotatoExists(shaderpackPath);
+            boolean currentState;
+            if (!shaderpackInitialStates.containsKey(pathKey)) {
+                currentState = determineInitialPotatoState(shaderpackPath);
+            } else {
+                currentState = checkPotatoExists(shaderpackPath);
+            }
             Boolean lastKnownState = shaderpackStates.get(pathKey);
 
             // Track initial state on first encounter
@@ -126,6 +134,50 @@ public class PotatoFileMonitor {
                 debugLog("ZIP shaderpack detected - no continuous monitoring needed");
             }
         }
+    }
+
+    /**
+     * For first-time shaderpack initialization, require consecutive false checks
+     * before caching the shaderpack as never having potato.png.
+     */
+    private static boolean determineInitialPotatoState(Path shaderpackPath) {
+        int consecutiveMatches = 0;
+        Boolean previousResult = null;
+
+        for (int i = 0; i < INITIAL_POTATO_CHECK_DELAYS_MS.length; i++) {
+            int delayMs = INITIAL_POTATO_CHECK_DELAYS_MS[i];
+            if (delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    debugLog("Interrupted before initial potato.png check #" + (i + 1));
+                    break;
+                }
+            }
+
+            boolean exists = performPotatoCheck(shaderpackPath);
+            debugLog("Initial potato.png check #" + (i + 1) + " result: " + exists);
+
+            if (previousResult != null && previousResult == exists) {
+                consecutiveMatches++;
+            } else {
+                if (previousResult != null) {
+                    debugLog("Initial potato.png checks unstable, resetting streak");
+                }
+                consecutiveMatches = 1;
+            }
+
+            previousResult = exists;
+
+            if (consecutiveMatches >= REQUIRED_CONSECUTIVE_POTATO_CHECKS) {
+                debugLog("Committing initial potato.png state=" + exists + " after " + consecutiveMatches + " consecutive matching checks");
+                return exists;
+            }
+        }
+
+        debugLog("Refusing to commit initial false due to unstable results, defaulting to true");
+        return true;
     }
 
     /**

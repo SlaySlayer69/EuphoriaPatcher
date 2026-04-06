@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -110,6 +111,49 @@ public class ArchiveOperations {
     }
 
     /**
+     * Finds an entry by exact path first, then by the same path nested one directory deeper.
+     * Example fallback: "folder/shaders/file.glsl" for requested "shaders/file.glsl".
+     */
+    private static String normalizeZipEntryPath(String path) {
+        String normalized = path.replace("\\", "/");
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    private static ZipEntry findEntryWithOptionalSingleTopLevelFolder(ZipFile zipFile, String filePathInZip) {
+        String normalizedPath = normalizeZipEntryPath(filePathInZip);
+
+        ZipEntry exactMatch = zipFile.getEntry(normalizedPath);
+        if (exactMatch != null && !exactMatch.isDirectory()) {
+            return exactMatch;
+        }
+
+        String nestedSuffix = "/" + normalizedPath;
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry candidate = entries.nextElement();
+            if (candidate.isDirectory()) {
+                continue;
+            }
+
+            String candidatePath = normalizeZipEntryPath(candidate.getName());
+            if (!candidatePath.endsWith(nestedSuffix)) {
+                continue;
+            }
+
+            String topLevelFolder = candidatePath.substring(0, candidatePath.length() - nestedSuffix.length());
+            if (!topLevelFolder.isEmpty() && topLevelFolder.indexOf('/') == -1) {
+                debugLog("Resolved nested zip entry: " + candidatePath + " for requested path: " + normalizedPath);
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Check if a file exists inside a zip archive
      * @param zipPath Path to the zip file
      * @param filePathInZip Path to the file inside the zip (e.g., "shaders/myFile.glsl")
@@ -120,15 +164,23 @@ public class ArchiveOperations {
             return false;
         }
 
-        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
-            ZipEntry entry = zipFile.getEntry(filePathInZip);
-            boolean exists = entry != null && !entry.isDirectory();
-            debugLog("Checked for " + filePathInZip + " in " + zipPath.getFileName() + ": " + exists);
-            return exists;
-        } catch (IOException e) {
-            debugLog("Error checking file in zip: " + e.getMessage());
-            return false;
+        int maxAttempts = 3;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+                ZipEntry entry = findEntryWithOptionalSingleTopLevelFolder(zipFile, filePathInZip);
+                boolean exists = entry != null && !entry.isDirectory();
+
+                debugLog("Checked for " + filePathInZip + " in " + zipPath.getFileName() + ": " + exists + " (attempt " + attempt + ")");
+                return exists;
+
+            } catch (IOException e) {
+                debugLog("Error checking file in zip (attempt " + attempt + "): " + e.getMessage());
+            }
         }
+
+        debugLog("Failed after " + maxAttempts + " attempts, returning false");
+        return false;
     }
 
     /**
@@ -143,7 +195,7 @@ public class ArchiveOperations {
         }
 
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
-            ZipEntry entry = zipFile.getEntry(filePathInZip);
+            ZipEntry entry = findEntryWithOptionalSingleTopLevelFolder(zipFile, filePathInZip);
             if (entry == null || entry.isDirectory()) {
                 debugLog("File not found in zip: " + filePathInZip);
                 return null;
