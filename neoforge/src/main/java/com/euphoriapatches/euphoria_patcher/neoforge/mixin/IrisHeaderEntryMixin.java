@@ -9,7 +9,6 @@ import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
@@ -18,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -70,19 +70,19 @@ public class IrisHeaderEntryMixin {
     }
 
     @Inject(method = "render", at = @At("TAIL"), remap = false, require = 0)
-    private void onRenderContent10Params(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
+    private void onRenderContent10Params(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         euphoriaPatcher$renderTooltipImpl(guiGraphics);
         euphoriaPatcher$recolorEPButtonWhileShift();
     }
 
     @Inject(method = {"renderContent(Lnet/minecraft/client/gui/GuiGraphics;IIZF)V", "extractContent"}, at = @At("TAIL"), remap = false, require = 0)
-    private void onRenderContent5Params(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
+    private void onRenderContent5Params(@Coerce Object guiGraphics, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         euphoriaPatcher$renderTooltipImpl(guiGraphics);
         euphoriaPatcher$recolorEPButtonWhileShift();
     }
 
     @Unique
-    private void euphoriaPatcher$renderTooltipImpl(GuiGraphics guiGraphics) {
+    private void euphoriaPatcher$renderTooltipImpl(Object guiGraphics) {
         try {
             Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
             Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
@@ -385,7 +385,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$renderTooltip(GuiGraphics guiGraphics, Object utilityButtons, Object resetButton) throws Exception {
+    private void euphoriaPatcher$renderTooltip(Object guiGraphics, Object utilityButtons, Object resetButton) throws Exception {
         Minecraft minecraft = Minecraft.getInstance();
 
         Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
@@ -466,7 +466,7 @@ public class IrisHeaderEntryMixin {
 
                     Runnable renderTask = () -> {
                         try {
-                            guiUtilClass.getMethod("drawTextPanel", minecraft.font.getClass(), GuiGraphics.class, Component.class, int.class, int.class)
+                            guiUtilClass.getMethod("drawTextPanel", minecraft.font.getClass(), guiGraphics.getClass(), Component.class, int.class, int.class)
                                 .invoke(null, minecraft.font, guiGraphics, tooltipText, finalTooltipX, finalTooltipY);
                         } catch (Exception e) {
                             euphoriaPatcher$debugLog("Error in render task: " + e.getMessage());
