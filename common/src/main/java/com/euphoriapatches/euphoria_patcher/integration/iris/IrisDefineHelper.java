@@ -7,6 +7,7 @@ import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 
@@ -83,6 +84,11 @@ public class IrisDefineHelper {
                 } else {
                     debugLog("Current shaderpack (" + currentShaderpack.getFileName() + ") is not an Euphoria Patches shader, skipping potato.png check");
                 }
+            }
+
+            if (ModChecker.isAstrocraftPresent()) {
+                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
             }
 
             if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= 2) {
