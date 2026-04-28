@@ -78,7 +78,6 @@ public class PropertiesWatcher {
 
                 configWatchService = FileSystems.getDefault().newWatchService();
                 Path configDir = configPath.getParent();
-                WatchKey configKey = configDir.register(configWatchService, ENTRY_MODIFY);
 
                 debugLog("Registered WatchService on config directory: " + configDir);
 

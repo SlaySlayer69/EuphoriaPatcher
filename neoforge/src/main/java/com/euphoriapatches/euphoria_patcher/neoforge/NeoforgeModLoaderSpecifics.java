@@ -7,7 +7,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 
 import java.nio.file.Path;
 

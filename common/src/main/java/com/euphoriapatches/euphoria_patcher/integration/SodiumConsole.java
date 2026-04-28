@@ -1,6 +1,5 @@
 package com.euphoriapatches.euphoria_patcher.integration;
 
-import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 

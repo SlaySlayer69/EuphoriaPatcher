@@ -329,10 +329,6 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             Object world = minecraft.getClass().getField("field_71441_e").get(minecraft);
             debugLog("Got world field field_71441_e " + world.toString());
 
-            if (world == null) {
-                return "minecraft:overworld";
-            }
-
             // Get dimension key using obfuscated method (1.16.5: func_234923_W_ = getDimensionKey)
             Object dimensionKey = world.getClass().getMethod("func_234923_W_").invoke(world);
             debugLog("Got dimension key using func_234923_W_ " + dimensionKey.toString());
