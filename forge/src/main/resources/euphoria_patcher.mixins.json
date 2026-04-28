@@ -13,7 +13,9 @@
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",
-    "IrisModernProfileElementWidgetMixin"
+    "IrisModernProfileElementWidgetMixin",
+    "IrisLegacyPackRenderTargetDirectivesMixin",
+    "IrisModernPackRenderTargetDirectivesMixin"
   ],
   "client": [
     "ClientTickMixin",

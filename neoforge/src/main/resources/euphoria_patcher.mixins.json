@@ -9,7 +9,8 @@
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",
-    "IrisModernProfileElementWidgetMixin"
+    "IrisModernProfileElementWidgetMixin",
+    "IrisModernPackRenderTargetDirectivesMixin"
   ],
   "client": [
     "ReloadShadersOnDimensionChangeMixin",

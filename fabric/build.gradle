@@ -50,6 +50,7 @@ dependencies {
 	shade project(':common')
 	shade 'io.sigpipe:jbsdiff:1.0'
 	shade 'com.google.code.gson:gson:2.8.9'
+	shade 'com.google.guava:guava:33.6.0-jre'
 
 	// Apache Commons dependencies - these need to be shadowed
 	shade 'org.apache.commons:commons-compress:1.21'
@@ -71,7 +72,7 @@ shadowJar {
 	// Relocate the problematic libraries to avoid conflicts
 	relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
 	relocate 'io.sigpipe.jbsdiff', 'com.euphoriapatches.shadow.io.sigpipe.jbsdiff'
-	relocate 'com.google.gson', 'com.euphoriapatches.shadow.com.google.gson'
+	relocate 'com.google', 'com.euphoriapatches.shadow.com.google'
 
 	// Include license file
 	from("../LICENSE") {
@@ -86,8 +87,6 @@ shadowJar {
 
 	// Minimize dependencies but keep all classes from the common project
 	minimize {
-		// Exclude common project from minimization to keep Main.class and PatchInfo.class
-//		exclude(project(':common'))
 	}
 
 	manifest {

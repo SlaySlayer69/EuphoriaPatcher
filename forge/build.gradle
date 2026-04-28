@@ -145,6 +145,7 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
+    shade 'com.google.guava:guava:33.6.0-jre'
 
     // Include Mixin annotation processor
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
@@ -188,7 +189,7 @@ shadowJar {
     // Relocate libraries to avoid conflicts
     relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
     relocate 'io.sigpipe.jbsdiff', 'com.euphoriapatches.shadow.io.sigpipe.jbsdiff'
-    relocate 'com.google.gson', 'com.euphoriapatches.shadow.com.google.gson'
+    relocate 'com.google', 'com.euphoriapatches.shadow.com.google'
 
     // Exclude unnecessary files
     exclude 'META-INF/maven/**'
