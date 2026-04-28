@@ -22,6 +22,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.irisshaders.iris.gui.element.widget.ProfileElementWidget";
     public static final String LEGACY_IRIS_PACK_RENDER_TARGETS_CLASS = "net.coderbot.iris.shaderpack.PackRenderTargetDirectives";
     public static final String IRIS_PACK_RENDER_TARGETS_CLASS = "net.irisshaders.iris.shaderpack.properties.PackRenderTargetDirectives";
+    public static final String OPTIFINE_CONNECTED_PARSER_CLASS = "net.optifine.config.ConnectedParser";
+    public static final String OPTIFINE_BLOCK_ALIASES_CLASS = "net.optifine.shaders.BlockAliases";
+    public static final String OPTIFINE_ITEM_ALIASES_CLASS = "net.optifine.shaders.ItemAliases";
+    public static final String OPTIFINE_ENTITY_ALIASES_CLASS = "net.optifine.shaders.EntityAliases";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -89,6 +93,22 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisModernPackRenderTargetDirectivesMixin")) {
             return checkClassExists(IRIS_PACK_RENDER_TARGETS_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineConnectedParserMixin")) {
+            return checkClassExists(OPTIFINE_CONNECTED_PARSER_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineBlockAliasesMixin")) {
+            return checkClassExists(OPTIFINE_BLOCK_ALIASES_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineItemAliasesMixin")) {
+            return checkClassExists(OPTIFINE_ITEM_ALIASES_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineEntityAliasesMixin")) {
+            return checkClassExists(OPTIFINE_ENTITY_ALIASES_CLASS);
         }
 
         // Apply other mixins by default

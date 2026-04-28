@@ -15,7 +15,11 @@
     "IrisModernOptionMenuContainerMixin",
     "IrisModernProfileElementWidgetMixin",
     "IrisLegacyPackRenderTargetDirectivesMixin",
-    "IrisModernPackRenderTargetDirectivesMixin"
+    "IrisModernPackRenderTargetDirectivesMixin",
+    "OptifineConnectedParserMixin",
+    "OptifineBlockAliasesMixin",
+    "OptifineItemAliasesMixin",
+    "OptifineEntityAliasesMixin"
   ],
   "client": [
     "ClientTickMixin",
