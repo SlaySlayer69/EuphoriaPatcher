@@ -1,6 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.forge.mixin;
 
-import com.euphoriapatches.euphoria_patcher.integration.iris.IrisDefineHelper;
+import com.euphoriapatches.euphoria_patcher.integration.DefineHelper;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -37,9 +37,9 @@ public class IrisModernStandardMacrosMixin {
             remap = false
     )
     private static void addEuphoriaDefine(CallbackInfoReturnable<?> cir, ArrayList<?> standardDefines) {
-        IrisDefineHelper.addEuphoriaDefines(
+        DefineHelper.addEuphoriaDefines(
             standardDefines,
-            false,  // isLegacy = false
+            DefineHelper.Target.IRIS_MODERN,
             IrisModernStandardMacrosMixin::define,
             (defines, keyValue) -> define(defines, keyValue[0], keyValue[1])
         );

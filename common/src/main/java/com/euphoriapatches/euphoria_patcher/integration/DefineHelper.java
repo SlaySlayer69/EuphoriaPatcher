@@ -1,9 +1,8 @@
-package com.euphoriapatches.euphoria_patcher.integration.iris;
+package com.euphoriapatches.euphoria_patcher.integration;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.UpdateShaderConfig;
-import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
@@ -16,64 +15,122 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
 
-public class IrisDefineHelper {
-    private static int injectCount = 0;
-    public static boolean isIrisRunning = false;
-
-    private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[IrisDefineHelper] " + message);
+public final class DefineHelper {
+    public enum Target {
+        IRIS_MODERN,
+        IRIS_LEGACY,
+        OPTIFINE
     }
 
-    public static void addEuphoriaDefines(List<?> standardDefines, boolean isLegacy,
-                                         BiConsumer<List<?>, String> defineKey,
-                                         BiConsumer<List<?>, String[]> defineKeyValue) {
-        try {
+    public interface DefineEmitter {
+        void define(String key);
 
+        void define(String key, String value);
+    }
+
+    private static int injectCount = 0;
+    public static boolean isShaderLoaderRunning = false;
+
+    private DefineHelper() {}
+
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[DefineHelper] " + message);
+    }
+
+    public static void addEuphoriaDefines(List<?> standardDefines,
+                                          Target target,
+                                          BiConsumer<List<?>, String> defineKey,
+                                          BiConsumer<List<?>, String[]> defineKeyValue) {
+        if (target == Target.OPTIFINE) {
+            EuphoriaPatcher.log(3,0,"Use the string overload for OptiFine defines");
+        }
+
+        addCommonDefines(target, new DefineEmitter() {
+            @Override
+            public void define(String key) {
+                defineKey.accept(standardDefines, key);
+            }
+
+            @Override
+            public void define(String key, String value) {
+                defineKeyValue.accept(standardDefines, new String[]{key, value});
+            }
+        });
+    }
+
+    public static String addEuphoriaDefines(String str, Target target) {
+        if (target != Target.OPTIFINE) {
+            EuphoriaPatcher.log(3,0,"Use the list overload for Iris defines");
+        }
+
+        StringBuilder sb = new StringBuilder(str);
+        addCommonDefines(target, new DefineEmitter() {
+            @Override
+            public void define(String key) {
+                appendMacroLine(sb, key);
+            }
+
+            @Override
+            public void define(String key, String value) {
+                appendMacroLine(sb, key, value);
+            }
+        });
+        return sb.toString();
+    }
+
+    private static void addCommonDefines(Target target, DefineEmitter emitter) {
+        try {
             EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
             ShaderDetector shaderDetector = instance.getShaderDetector();
 
+            boolean isLegacy = target == Target.IRIS_LEGACY;
+            boolean isOptifine = target == Target.OPTIFINE;
+
             injectCount++;
-            debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
-            isIrisRunning = true;
+            isShaderLoaderRunning = true;
+            if (isOptifine) {
+                debugLog("Adding Euphoria Patches defines to OptiFine");
+            } else {
+                debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
+            }
 
             if (EuphoriaPatcher.isSpacEagle()) {
-                defineKey.accept(standardDefines, "SPACEAGLE17");
+                emitter.define("SPACEAGLE17");
                 debugLog("Adding SPACEAGLE17 define");
             }
 
             String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
-            defineKeyValue.accept(standardDefines, new String[]{"CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion});
+            emitter.define("CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
             debugLog("Adding CURRENT_EUPHORIA_PATCHES_VERSION = " + currentVersion + " define");
 
-            defineKey.accept(standardDefines, "EUPHORIA_PATCHES_MOD_INSTALLED");
+            emitter.define("EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
 
             if (ModLoaderSpecifics.isCurrentDimensionInMappingsStatic()) {
-                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES");
+                emitter.define("EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES");
                 debugLog("Adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define");
             } else {
                 debugLog("Not adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define - dimension not in dimensions.properties");
             }
 
             String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase(Locale.ROOT);
-            defineKey.accept(standardDefines, currentDimension);
+            emitter.define(currentDimension);
             debugLog("Adding " + currentDimension + " define");
 
             String shaderLoader = ShaderLoader.getShaderLoader().toUpperCase(Locale.ROOT);
-            defineKey.accept(standardDefines, "EUPHORIA_PATCHES_" + shaderLoader);
+            emitter.define("EUPHORIA_PATCHES_" + shaderLoader);
             debugLog("Adding EUPHORIA_PATCHES_" + shaderLoader + " define");
 
             String[] shaderLoaderVersionDefine = ShaderLoader.getShaderLoaderVersionDefine();
             if (shaderLoaderVersionDefine != null) {
-                defineKeyValue.accept(standardDefines, shaderLoaderVersionDefine);
+                emitter.define(shaderLoaderVersionDefine[0], shaderLoaderVersionDefine[1]);
                 debugLog("Adding " + shaderLoaderVersionDefine[0] + " = " + shaderLoaderVersionDefine[1] + " define");
             }
 
-            // Check for potato.png file and add the define if it doesn't exist
             Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
             if (currentShaderpack != null && shaderDetector.isEuphoriaPatchesShader(currentShaderpack)) {
                 if (PotatoFileMonitor.shouldAddPotatoRemovedDefine(currentShaderpack)) {
-                    defineKey.accept(standardDefines, "EUPHORIA_PATCHES_POTATO_REMOVED");
+                    emitter.define("EUPHORIA_PATCHES_POTATO_REMOVED");
                     debugLog("Adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png not found");
                 } else {
                     debugLog("Not adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png found");
@@ -87,21 +144,22 @@ public class IrisDefineHelper {
             }
 
             if (ModChecker.isAstrocraftPresent()) {
-                defineKey.accept(standardDefines, "EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
+                emitter.define("EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
             }
 
-            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= 2) {
-                defineKey.accept(standardDefines, "NEW_EUPHORIA_PATCHES_UPDATE");
+            int injectedCountAmount = isOptifine ? 100 : 2; //Yeah... OptiFine does MANY Macro injections
+            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= injectedCountAmount) {
+                emitter.define("NEW_EUPHORIA_PATCHES_UPDATE");
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 
                 if (UpdateChecker.getNewModVersion() != null) {
                     String nextVersionFormatted = formatVersion(UpdateChecker.getNewModVersion());
-                    defineKeyValue.accept(standardDefines, new String[]{"NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted});
+                    emitter.define("NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
                     debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
                 }
             } else {
-                if (injectCount > 2) {
+                if (injectCount > injectedCountAmount) {
                     debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected " + injectCount + " times");
                 } else if (!ConfigHandler.doDisplayShaderInGameMessage) {
                     debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - in-game messages disabled");
@@ -114,10 +172,9 @@ public class IrisDefineHelper {
 
             if (injectCount == 1) {
                 EuphoriaPatcher.log(0, "Added Euphoria Patches defines to " +
-                        shaderLoader.substring(0, 1).toUpperCase(Locale.ROOT) + shaderLoader.substring(1).toLowerCase(Locale.ROOT) +
-                        (isLegacy ? " (Legacy)" : ""));
+                        shaderLoader.substring(0, 1).toUpperCase(Locale.ROOT) + shaderLoader.substring(1).toLowerCase(Locale.ROOT));
             }
-
+            debugLog("Injected count:" + injectCount);
         } catch (Exception e) {
             debugLog("Exception while adding defines: " + e.getMessage());
         }
@@ -133,5 +190,19 @@ public class IrisDefineHelper {
             }
         }
         return versionBuilder.toString();
+    }
+
+    private static void appendMacroLine(StringBuilder sb, String name) {
+        sb.append("#define ");
+        sb.append(name);
+        sb.append("\n");
+    }
+
+    private static void appendMacroLine(StringBuilder sb, String name, String value) {
+        sb.append("#define ");
+        sb.append(name);
+        sb.append(" ");
+        sb.append(value);
+        sb.append("\n");
     }
 }

@@ -212,7 +212,7 @@ public class EuphoriaLogger {
                             if (ErrorShaderGenerator.isErrorShaderActive() &&
                             lastErrorURL != null &&
                             !errorURLAlreadyCopied &&
-                            ShaderLoader.isIrisRunning()) {
+                            ShaderLoader.isShaderLoaderRunning()) {
                                 debugLog("Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
                                 boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
                                 if (success) {

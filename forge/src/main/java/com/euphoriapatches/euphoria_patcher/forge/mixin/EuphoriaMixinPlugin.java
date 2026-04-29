@@ -26,6 +26,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String OPTIFINE_BLOCK_ALIASES_CLASS = "net.optifine.shaders.BlockAliases";
     public static final String OPTIFINE_ITEM_ALIASES_CLASS = "net.optifine.shaders.ItemAliases";
     public static final String OPTIFINE_ENTITY_ALIASES_CLASS = "net.optifine.shaders.EntityAliases";
+    public static final String OPTIFINE_SHADER_MACROS_CLASS = "net.optifine.shaders.config.ShaderMacros";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -109,6 +110,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("OptifineEntityAliasesMixin")) {
             return checkClassExists(OPTIFINE_ENTITY_ALIASES_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineShaderMacrosMixin")) {
+            return checkClassExists(OPTIFINE_SHADER_MACROS_CLASS);
         }
 
         // Apply other mixins by default

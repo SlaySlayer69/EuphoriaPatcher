@@ -19,7 +19,8 @@
     "OptifineConnectedParserMixin",
     "OptifineBlockAliasesMixin",
     "OptifineItemAliasesMixin",
-    "OptifineEntityAliasesMixin"
+    "OptifineEntityAliasesMixin",
+    "OptifineShaderMacrosMixin"
   ],
   "client": [
     "ClientTickMixin",
