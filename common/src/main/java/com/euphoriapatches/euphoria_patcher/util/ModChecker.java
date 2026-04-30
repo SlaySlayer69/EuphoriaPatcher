@@ -3,14 +3,9 @@ package com.euphoriapatches.euphoria_patcher.util;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
-@SuppressWarnings("unused")
-public class ModChecker {
-	private static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.Iris";
-	private static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.Iris";
-	private static final String OPTIFINE_CLASS = "optifine.OptiFineTweaker";
-    private static final String PHOTONICS_CLASS = "at.redi2go.photonics.client.Photonics";
-	private static final String ASTROCRAFT_CLASS = "mod.lwhrvw.astrocraft.Astrocraft";
+import java.util.EnumMap;
 
+public class ModChecker {
 	private static final String IRIS = ShaderLoader.IRIS;
 	private static final String OCULUS = ShaderLoader.OCULUS;
 	private static final String OPTIFINE = ShaderLoader.OPTIFINE;
@@ -20,12 +15,59 @@ public class ModChecker {
 	private static boolean irisClassSearched = false;
 	private static String cachedIrisLikeLoader = null;
 
-	private static Boolean cachedPhotonicsPresent = null;
-	private static Boolean cachedAstrocraftPresent = null;
-	private static Boolean cachedOptiFinePresent = null;
-	private static Boolean cachedIrisPresent = null;
-	private static Boolean cachedOculusPresent = null;
-	private static Boolean cachedAngelicaPresent = null;
+	private static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.Iris";
+	private static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.Iris";
+
+	@SuppressWarnings("SpellCheckingInspection")
+	public enum ModClasses {
+		IRIS(ModProbe.irisLike(ModChecker.IRIS)),
+		OCULUS(ModProbe.irisLike(ModChecker.OCULUS)),
+		ANGELICA(ModProbe.irisLike(ModChecker.ANGELICA)),
+		PHOTONICS(ModProbe.classes("at.redi2go.photonics.client.Photonics")),
+		ASTROCRAFT(ModProbe.classes("mod.lwhrvw.astrocraft.Astrocraft")),
+		OPTIFINE(ModProbe.classes("optifine.OptiFineTweaker")),
+		FABRIC_SKYBOXES(ModProbe.classes("io.github.amerebagatelle.fabricskyboxes.SkyboxManager", "me.flashyreese.mods.nuit.SkyboxManager")),
+		FORGE_SKYBOXES(ModProbe.classes("com.foopy.forgeskyboxes.SkyboxManager")),
+		SKYBOXIFY(ModProbe.classes("btw.lowercase.skyboxify.SkyboxifyClient", "btw.lowercase.optiboxes.OptiBoxesClient")),
+		STELLAR_VIEW(ModProbe.classes("net.povstalec.stellarview.StellarView"));
+
+		private final ModProbe probe;
+
+		ModClasses(ModProbe probe) {
+			this.probe = probe;
+		}
+
+		boolean isPresent() {
+			return this.probe.isPresent();
+		}
+	}
+
+	private static final EnumMap<ModClasses, Boolean> modClassCache = new EnumMap<>(ModClasses.class);
+
+	private static final class ModProbe {
+		private final String shaderLoaderId;
+		private final String[] classNames;
+
+		private ModProbe(String shaderLoaderId, String... classNames) {
+			this.shaderLoaderId = shaderLoaderId;
+			this.classNames = classNames;
+		}
+
+		static ModProbe classes(String... classNames) {
+			return new ModProbe(null, classNames);
+		}
+
+		static ModProbe irisLike(String shaderLoaderId) {
+			return new ModProbe(shaderLoaderId, ModChecker.MODERN_IRIS_CLASS, ModChecker.LEGACY_IRIS_CLASS);
+		}
+
+		boolean isPresent() {
+			if (shaderLoaderId != null) {
+				return shaderLoaderId.equals(getIrisLikeLoader());
+			}
+			return hasAnyClass(classNames);
+		}
+	}
 
 	private static void debugLog(String message) {
 		EuphoriaLogger.debugLog("[ModChecker] " + message);
@@ -49,58 +91,24 @@ public class ModChecker {
 		}
 	}
 
-    public static boolean isPhotonicsPresent() {
-        if (cachedPhotonicsPresent != null) {
-            return cachedPhotonicsPresent;
-        }
-
-        cachedPhotonicsPresent = checkClassExists(PHOTONICS_CLASS);
-        return cachedPhotonicsPresent;
-    }
-
-    public static boolean isAstrocraftPresent() {
-        if (cachedAstrocraftPresent != null) {
-            return cachedAstrocraftPresent;
-        }
-
-        cachedAstrocraftPresent = checkClassExists(ASTROCRAFT_CLASS);
-        return cachedAstrocraftPresent;
-    }
-
-	public static boolean isOptiFinePresent() {
-		if (cachedOptiFinePresent != null) {
-			return cachedOptiFinePresent;
+	public static boolean isModPresent(ModClasses modClass) {
+		Boolean cached = modClassCache.get(modClass);
+		if (cached != null) {
+			debugLog("Cached mod found for " + modClass + ": " + cached);
+			return cached;
 		}
-
-		cachedOptiFinePresent = checkClassExists(OPTIFINE_CLASS);
-		return cachedOptiFinePresent;
+		boolean present = modClass.isPresent();
+		modClassCache.put(modClass, present);
+		return present;
 	}
 
-	public static boolean isIrisPresent() {
-		if (cachedIrisPresent != null) {
-			return cachedIrisPresent;
+	private static boolean hasAnyClass(String... classNames) {
+		for (String className : classNames) {
+			if (checkClassExists(className)) {
+				return true;
+			}
 		}
-
-		cachedIrisPresent = IRIS.equals(getIrisLikeLoader());
-		return cachedIrisPresent;
-	}
-
-	public static boolean isOculusPresent() {
-		if (cachedOculusPresent != null) {
-			return cachedOculusPresent;
-		}
-
-		cachedOculusPresent = OCULUS.equals(getIrisLikeLoader());
-		return cachedOculusPresent;
-	}
-
-	public static boolean isAngelicaPresent() {
-		if (cachedAngelicaPresent != null) {
-			return cachedAngelicaPresent;
-		}
-
-		cachedAngelicaPresent = ANGELICA.equals(getIrisLikeLoader());
-		return cachedAngelicaPresent;
+		return false;
 	}
 
 	/**
@@ -218,7 +226,7 @@ public class ModChecker {
 			return irisLikeLoader;
 		}
 
-		if (checkClassExists(OPTIFINE_CLASS)) {
+		if (isModPresent(ModClasses.OPTIFINE)) {
 			debugLog("Detected OPTIFINE via class check");
 			return OPTIFINE;
 		}

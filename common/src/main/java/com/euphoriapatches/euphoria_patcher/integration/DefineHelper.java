@@ -143,9 +143,19 @@ public final class DefineHelper {
                 }
             }
 
-            if (ModChecker.isAstrocraftPresent()) {
+            if (ModChecker.isModPresent(ModChecker.ModClasses.ASTROCRAFT)) {
                 emitter.define("EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
+            }
+
+            if (isSkyboxModInstalled()){
+                emitter.define("EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED define");
+            }
+
+            if (isSpaceModInstalled()) {
+                emitter.define("EUPHORIA_PATCHES_IS_SPACE_MOD_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_SPACE_MOD_INSTALLED define");
             }
 
             int injectedCountAmount = isOptifine ? 100 : 2; //Yeah... OptiFine does MANY Macro injections
@@ -190,6 +200,17 @@ public final class DefineHelper {
             }
         }
         return versionBuilder.toString();
+    }
+
+    private static boolean isSkyboxModInstalled() {
+        return ModChecker.isModPresent(ModChecker.ModClasses.FORGE_SKYBOXES) ||
+               ModChecker.isModPresent(ModChecker.ModClasses.FABRIC_SKYBOXES) ||
+               ModChecker.isModPresent(ModChecker.ModClasses.SKYBOXIFY);
+    }
+
+    private static boolean isSpaceModInstalled() {
+        return ModChecker.isModPresent(ModChecker.ModClasses.ASTROCRAFT) ||
+               ModChecker.isModPresent(ModChecker.ModClasses.STELLAR_VIEW);
     }
 
     private static void appendMacroLine(StringBuilder sb, String name) {
