@@ -766,6 +766,10 @@ public class ShaderDetector {
             }
         }
 
+        if (lastObservedResult == null) {
+            debugLog("No valid observation obtained for " + shaderPath.getFileName() + ", returning false");
+            return false;
+        }
         // Unstable result: return latest observation, but don't cache it.
         boolean fallbackResult = lastObservedResult;
         debugLog("Unstable initial Euphoria shader checks for " + shaderPath.getFileName() + ", returning uncached result: " + fallbackResult);

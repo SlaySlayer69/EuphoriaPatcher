@@ -214,6 +214,7 @@ public class IrisHeaderEntryMixin {
                     break;
             }
 
+            @SuppressWarnings("null")
             MutableComponent buttonText = Component.literal(buttonTextLiteral).withStyle(buttonColorFormatting);
             Minecraft minecraft = Minecraft.getInstance();
 
@@ -275,6 +276,7 @@ public class IrisHeaderEntryMixin {
                 return;
             }
 
+            @SuppressWarnings("null")
             ConfirmLinkScreen confirmScreen = new ConfirmLinkScreen(
                 confirmed -> {
                     if (confirmed) {
@@ -453,6 +455,7 @@ public class IrisHeaderEntryMixin {
                     // Get y position
                     Object position = rect.getClass().getMethod("position").invoke(rect);
                     int yPos = (int) position.getClass().getMethod("y").invoke(position);
+                    if (tooltipText == null) return;
                     int textWidth = minecraft.font.width(tooltipText);
                     int tooltipX = rightBound - (textWidth + 10);
                     int tooltipY = yPos - 16;

@@ -134,7 +134,7 @@ public class ArchiveOperations {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {
             ZipEntry candidate = entries.nextElement();
-            if (candidate.isDirectory()) {
+            if (candidate == null || candidate.isDirectory()) {
                 continue;
             }
 

@@ -16,15 +16,16 @@ public class ModChecker {
 	private static final String OPTIFINE = ShaderLoader.OPTIFINE;
 	private static final String ANGELICA = ShaderLoader.ANGELICA;
 
+	private static Class<?> cachedIrisClass = null;
+	private static boolean irisClassSearched = false;
+	private static String cachedIrisLikeLoader = null;
+
 	private static Boolean cachedPhotonicsPresent = null;
 	private static Boolean cachedAstrocraftPresent = null;
 	private static Boolean cachedOptiFinePresent = null;
 	private static Boolean cachedIrisPresent = null;
 	private static Boolean cachedOculusPresent = null;
 	private static Boolean cachedAngelicaPresent = null;
-	private static Class<?> cachedIrisClass = null;
-	private static boolean irisClassSearched = false;
-	private static String cachedIrisLikeLoader = null;
 
 	private static void debugLog(String message) {
 		EuphoriaLogger.debugLog("[ModChecker] " + message);

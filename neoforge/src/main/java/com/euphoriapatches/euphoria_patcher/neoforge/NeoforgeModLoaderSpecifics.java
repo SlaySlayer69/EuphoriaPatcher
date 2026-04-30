@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.neoforge;
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
@@ -97,13 +98,14 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Getting current dimension ID");
             Minecraft minecraft = Minecraft.getInstance();
 
-            if (minecraft.level == null) {
+            Level level = minecraft.level;
+            if (level == null) {
                 debugLog("Minecraft or level is null, defaulting to 'minecraft:overworld'");
                 return "minecraft:overworld";
             }
 
             String currentDimensionId;
-            String dimensionString = minecraft.level.dimension().toString();
+            String dimensionString = level.dimension().toString();
             debugLog("Dimension toString(): " + dimensionString);
             // Format: "ResourceKey[minecraft:dimension / minecraft:overworld]"
             if (dimensionString.contains("/")) {

@@ -119,6 +119,7 @@ public class ShaderpacksWatcher {
                     debugLog("Added to processed files: " + fileName);
                     // Save metadata for this file
                     try {
+                        @SuppressWarnings("null")
                         BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
                         fileMetadata.put(fileName, new FileMetadata(attrs.size(), attrs.lastModifiedTime().toMillis()));
                         debugLog("Saved file metadata for: " + fileName + " (size: " + attrs.size() + ", modified: " + attrs.lastModifiedTime().toMillis() + ")");
@@ -225,6 +226,7 @@ public class ShaderpacksWatcher {
 
                                 try {
                                     debugLog("Reading file attributes: " + fileNameStr);
+                                    @SuppressWarnings("null")
                                     BasicFileAttributes attrs = Files.readAttributes(fullPath, BasicFileAttributes.class);
                                     FileMetadata newMetadata = new FileMetadata(attrs.size(), attrs.lastModifiedTime().toMillis());
                                     FileMetadata oldMetadata = fileMetadata.get(fileNameStr);
@@ -331,6 +333,7 @@ public class ShaderpacksWatcher {
                 }
 
                 try {
+                    @SuppressWarnings("null")
                     BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
                     FileMetadata newMetadata = new FileMetadata(attrs.size(), attrs.lastModifiedTime().toMillis());
                     FileMetadata oldMetadata = fileMetadata.get(fileName);

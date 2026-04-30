@@ -93,6 +93,7 @@ public class PropertiesOrder {
      * - Then process all remaining .properties files alphabetically
      * - Any subdirectories will also be processed alphabetically after defined files
      */
+    @SuppressWarnings("null")
     private static final List<OrderEntry> MERGE_ORDER = Arrays.asList(
         new OrderEntry("instructions"),
         new OrderEntry("tags"),

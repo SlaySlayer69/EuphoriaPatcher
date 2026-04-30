@@ -12,7 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("unused")
 public class Config {
     // TOML config location
     public static final Path CONFIG_DIR = EuphoriaPatcher.configDirectory.resolve("euphoria_patcher");
@@ -158,6 +157,7 @@ public class Config {
      * (without custom migrations)
      * @param allowedValues Array of allowed string values (case-insensitive), or null for no validation
      */
+    @SuppressWarnings("unused")
     public static <T> T readWriteConfig(String category, String key, T defaultValue, String description, String[] allowedValues) {
         return readWriteConfig(category, key, defaultValue, description, allowedValues, (TypeMigration[]) null);
     }
@@ -452,6 +452,7 @@ public class Config {
             return new TypeMigration(oldValue, newValue);
         }
 
+        @SuppressWarnings("unused")
         public Object getOldValue() {
             return oldValue;
         }

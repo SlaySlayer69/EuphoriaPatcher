@@ -279,7 +279,7 @@ public class IrisHeaderEntryMixin {
                 }
             }
 
-            if (constructor == null) {
+            if (constructor == null || consumerClass == null) {
                 euphoriaPatcher$debugLog("Could not find ConfirmLinkScreen constructor");
                 return;
             }

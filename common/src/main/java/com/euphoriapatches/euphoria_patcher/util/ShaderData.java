@@ -133,6 +133,7 @@ public class ShaderData {
             if (dataFileExists()) {
                 try (Reader reader = new InputStreamReader(
                         Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
+                    @SuppressWarnings("null")
                     JsonElement element = GSON.fromJson(reader, JsonElement.class);
                     jsonObject = (element != null && element.isJsonObject()) ? element.getAsJsonObject() : new JsonObject();
                 }
@@ -224,13 +225,8 @@ public class ShaderData {
 
         try (Reader reader = new InputStreamReader(
                 Files.newInputStream(DATA_FILE), StandardCharsets.UTF_8)) {
+            @SuppressWarnings("null")
             PersistentShaderData data = GSON.fromJson(reader, PersistentShaderData.class);
-
-            if (data == null) {
-                debugLog("Parsed data is null, returning default values");
-                cachedData = new PersistentShaderData();
-                return cachedData;
-            }
 
             cachedData = data;
             return cachedData;

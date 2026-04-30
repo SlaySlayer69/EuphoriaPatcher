@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Pseudo
@@ -25,7 +26,7 @@ public class IrisLegacyPackRenderTargetDirectivesMixin {
     @Inject(method = "<clinit>", at = @At("TAIL"))
     private static void euphoriaPatcher$appendTargets(CallbackInfo ci) {
         ImmutableSet.Builder<Integer> builder = ImmutableSet.builder();
-        builder.addAll(BASELINE_SUPPORTED_RENDER_TARGETS);
+        builder.addAll(Objects.requireNonNull(BASELINE_SUPPORTED_RENDER_TARGETS));
         IrisColortexAdder.appendAdditionalRenderTargets(builder);
         BASELINE_SUPPORTED_RENDER_TARGETS = builder.build();
     }
