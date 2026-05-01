@@ -19,46 +19,48 @@ public class ModChecker {
 	private static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.Iris";
 
 	@SuppressWarnings("SpellCheckingInspection")
-	public enum ModClasses {
-		IRIS(ModProbe.irisLike(ModChecker.IRIS)),
-		OCULUS(ModProbe.irisLike(ModChecker.OCULUS)),
-		ANGELICA(ModProbe.irisLike(ModChecker.ANGELICA)),
-		PHOTONICS(ModProbe.classes("at.redi2go.photonics.client.Photonics")),
-		ASTROCRAFT(ModProbe.classes("mod.lwhrvw.astrocraft.Astrocraft")),
-		OPTIFINE(ModProbe.classes("optifine.OptiFineTweaker")),
-		FABRIC_SKYBOXES(ModProbe.classes("io.github.amerebagatelle.fabricskyboxes.SkyboxManager", "me.flashyreese.mods.nuit.SkyboxManager")),
-		FORGE_SKYBOXES(ModProbe.classes("com.foopy.forgeskyboxes.SkyboxManager")),
-		SKYBOXIFY(ModProbe.classes("btw.lowercase.skyboxify.SkyboxifyClient", "btw.lowercase.optiboxes.OptiBoxesClient")),
-		STELLAR_VIEW(ModProbe.classes("net.povstalec.stellarview.StellarView"));
+	public enum ModNames {
+		IRIS(Registers.irisLike(ModChecker.IRIS)),
+		OCULUS(Registers.irisLike(ModChecker.OCULUS)),
+		ANGELICA(Registers.irisLike(ModChecker.ANGELICA)),
+		PHOTONICS(Registers.classes("at.redi2go.photonics.client.Photonics")),
+		ASTROCRAFT(Registers.classes("mod.lwhrvw.astrocraft.Astrocraft")),
+		OPTIFINE(Registers.classes("optifine.OptiFineTweaker")),
+		FABRIC_SKYBOXES(Registers.classes("io.github.amerebagatelle.fabricskyboxes.SkyboxManager", "me.flashyreese.mods.nuit.SkyboxManager")),
+		FORGE_SKYBOXES(Registers.classes("com.foopy.forgeskyboxes.SkyboxManager")),
+		SKYBOXIFY(Registers.classes("btw.lowercase.skyboxify.SkyboxifyClient", "btw.lowercase.optiboxes.OptiBoxesClient")),
+		STELLAR_VIEW(Registers.classes("net.povstalec.stellarview.StellarView")),
+		CELESTIAL(Registers.classes("fishcute.celestial.Celestial")),
+		HORIZON(Registers.classes("com.jeff.horizon.SkyboxManager"));
 
-		private final ModProbe probe;
+		private final Registers register;
 
-		ModClasses(ModProbe probe) {
-			this.probe = probe;
+		ModNames(Registers register) {
+			this.register = register;
 		}
 
 		boolean isPresent() {
-			return this.probe.isPresent();
+			return this.register.isPresent();
 		}
 	}
 
-	private static final EnumMap<ModClasses, Boolean> modClassCache = new EnumMap<>(ModClasses.class);
+	private static final EnumMap<ModNames, Boolean> modNameCache = new EnumMap<>(ModNames.class);
 
-	private static final class ModProbe {
+	private static final class Registers {
 		private final String shaderLoaderId;
 		private final String[] classNames;
 
-		private ModProbe(String shaderLoaderId, String... classNames) {
+		private Registers(String shaderLoaderId, String... classNames) {
 			this.shaderLoaderId = shaderLoaderId;
 			this.classNames = classNames;
 		}
 
-		static ModProbe classes(String... classNames) {
-			return new ModProbe(null, classNames);
+		static Registers classes(String... classNames) {
+			return new Registers(null, classNames);
 		}
 
-		static ModProbe irisLike(String shaderLoaderId) {
-			return new ModProbe(shaderLoaderId, ModChecker.MODERN_IRIS_CLASS, ModChecker.LEGACY_IRIS_CLASS);
+		static Registers irisLike(String shaderLoaderId) {
+			return new Registers(shaderLoaderId, ModChecker.MODERN_IRIS_CLASS, ModChecker.LEGACY_IRIS_CLASS);
 		}
 
 		boolean isPresent() {
@@ -91,14 +93,14 @@ public class ModChecker {
 		}
 	}
 
-	public static boolean isModPresent(ModClasses modClass) {
-		Boolean cached = modClassCache.get(modClass);
+	public static boolean isModPresent(ModNames modName) {
+		Boolean cached = modNameCache.get(modName);
 		if (cached != null) {
-			debugLog("Cached mod found for " + modClass + ": " + cached);
+			debugLog("Cached mod found for " + modName + ": " + cached);
 			return cached;
 		}
-		boolean present = modClass.isPresent();
-		modClassCache.put(modClass, present);
+		boolean present = modName.isPresent();
+		modNameCache.put(modName, present);
 		return present;
 	}
 
@@ -226,7 +228,7 @@ public class ModChecker {
 			return irisLikeLoader;
 		}
 
-		if (isModPresent(ModClasses.OPTIFINE)) {
+		if (isModPresent(ModNames.OPTIFINE)) {
 			debugLog("Detected OPTIFINE via class check");
 			return OPTIFINE;
 		}

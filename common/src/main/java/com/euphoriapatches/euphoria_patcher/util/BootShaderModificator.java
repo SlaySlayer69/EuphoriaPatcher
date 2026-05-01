@@ -71,7 +71,7 @@ public class BootShaderModificator {
         boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
         boolean isAngelica = ShaderLoader.getShaderLoader().equals(ShaderLoader.ANGELICA);
         boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
-        boolean isPhotonicsInstalled = ModChecker.isModPresent(ModChecker.ModClasses.PHOTONICS);
+        boolean isPhotonicsInstalled = ModChecker.isModPresent(ModChecker.ModNames.PHOTONICS);
 
         // This changes the popular settings profile dynamically
         if (isOptifine || isMacOS) {

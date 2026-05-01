@@ -143,7 +143,7 @@ public final class DefineHelper {
                 }
             }
 
-            if (ModChecker.isModPresent(ModChecker.ModClasses.ASTROCRAFT)) {
+            if (ModChecker.isModPresent(ModChecker.ModNames.ASTROCRAFT)) {
                 emitter.define("EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
             }
@@ -203,14 +203,16 @@ public final class DefineHelper {
     }
 
     private static boolean isSkyboxModInstalled() {
-        return ModChecker.isModPresent(ModChecker.ModClasses.FORGE_SKYBOXES) ||
-               ModChecker.isModPresent(ModChecker.ModClasses.FABRIC_SKYBOXES) ||
-               ModChecker.isModPresent(ModChecker.ModClasses.SKYBOXIFY);
+        return ModChecker.isModPresent(ModChecker.ModNames.FORGE_SKYBOXES) ||
+               ModChecker.isModPresent(ModChecker.ModNames.FABRIC_SKYBOXES) ||
+               ModChecker.isModPresent(ModChecker.ModNames.SKYBOXIFY) ||
+               ModChecker.isModPresent(ModChecker.ModNames.CELESTIAL) ||
+               ModChecker.isModPresent(ModChecker.ModNames.HORIZON);
     }
 
     private static boolean isSpaceModInstalled() {
-        return ModChecker.isModPresent(ModChecker.ModClasses.ASTROCRAFT) ||
-               ModChecker.isModPresent(ModChecker.ModClasses.STELLAR_VIEW);
+        return ModChecker.isModPresent(ModChecker.ModNames.ASTROCRAFT) ||
+               ModChecker.isModPresent(ModChecker.ModNames.STELLAR_VIEW);
     }
 
     private static void appendMacroLine(StringBuilder sb, String name) {
