@@ -9,6 +9,7 @@ import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
+import com.sun.org.apache.xpath.internal.operations.Mod;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -146,6 +147,11 @@ public final class DefineHelper {
             if (ModChecker.isModPresent(ModChecker.ModNames.ASTROCRAFT)) {
                 emitter.define("EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
+            }
+
+            if (ModChecker.isModPresent(ModChecker.ModNames.STELLAR_VIEW)) {
+                emitter.define("EUPHORIA_PATCHES_IS_STELLAR_VIEW_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_STELLAR_VIEW_INSTALLED define");
             }
 
             if (isSkyboxModInstalled()){
