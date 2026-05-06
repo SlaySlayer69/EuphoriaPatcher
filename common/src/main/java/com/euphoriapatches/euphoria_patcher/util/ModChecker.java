@@ -31,7 +31,8 @@ public class ModChecker {
 		SKYBOXIFY(Registers.classes("btw.lowercase.skyboxify.SkyboxifyClient", "btw.lowercase.optiboxes.OptiBoxesClient")),
 		STELLAR_VIEW(Registers.classes("net.povstalec.stellarview.StellarView")),
 		CELESTIAL(Registers.classes("fishcute.celestial.Celestial")),
-		HORIZON(Registers.classes("com.jeff.horizon.SkyboxManager"));
+		HORIZON(Registers.classes("com.jeff.horizon.SkyboxManager")),
+		SPYGLASS_ASTRONOMY(Registers.classes("com.nettakrim.spyglass_astronomy.SpyglassAstronomyClient"));
 
 		private final Registers register;
 

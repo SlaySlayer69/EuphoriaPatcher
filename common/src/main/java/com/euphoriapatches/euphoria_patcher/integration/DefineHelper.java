@@ -148,6 +148,11 @@ public final class DefineHelper {
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");
             }
 
+            if (ModChecker.isModPresent(ModChecker.ModNames.SPYGLASS_ASTRONOMY)) {
+                emitter.define("EUPHORIA_PATCHES_IS_SPYGLASS_ASTRONOMY_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_SPYGLASS_ASTRONOMY_INSTALLED define");
+            }
+
             if (isSkyboxModInstalled()){
                 emitter.define("EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED define");
