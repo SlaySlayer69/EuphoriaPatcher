@@ -173,20 +173,6 @@ public class ModChecker {
 		return null;
 	}
 
-	@SuppressWarnings("unused")
-    public static String getPhotonicsVersion() {
-		String version = null;
-
-		for (String className : ModNames.PHOTONICS.getClassNames()) {
-			Object value = ReflectionUtils.getFieldValue(className, "MOD_VERSION");
-
-			if (value != null) {
-				version = String.valueOf(value).split("\\+")[0];
-			}
-		}
-		return version;
-	}
-
 	/**
 	 * Gets the shader loader ID for an Iris-like class.
 	 *

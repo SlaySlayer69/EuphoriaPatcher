@@ -23,6 +23,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_OPTION_MENU_CONTAINER_CLASS = "net.coderbot.iris.shaderpack.option.menu.OptionMenuContainer";
     public static final String LEGACY_IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.coderbot.iris.gui.element.widget.ProfileElementWidget";
     public static final String LEGACY_IRIS_PACK_RENDER_TARGETS_CLASS = "net.coderbot.iris.shaderpack.PackRenderTargetDirectives";
+    public static final String PHOTONICS_RAYTRACER_CLASS = "at.redi2go.photonic.client.Raytracer";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -108,6 +109,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisLegacyPackRenderTargetDirectivesMixin")) {
             return checkClassExists(LEGACY_IRIS_PACK_RENDER_TARGETS_CLASS);
+        }
+
+        if (mixinClassName.contains("PhotonicsRaytracerMixin")) {
+            return checkClassExists(PHOTONICS_RAYTRACER_CLASS);
         }
 
         // Apply other mixins by default

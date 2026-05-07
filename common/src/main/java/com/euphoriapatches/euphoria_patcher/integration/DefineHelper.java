@@ -143,6 +143,11 @@ public final class DefineHelper {
                 }
             }
 
+            if (ModChecker.isModPresent(ModChecker.ModNames.PHOTONICS)) {
+                emitter.define("EUPHORIA_PATCHES_IS_PHOTONICS_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_PHOTONICS_INSTALLED define");
+            }
+
             if (ModChecker.isModPresent(ModChecker.ModNames.ASTROCRAFT)) {
                 emitter.define("EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_ASTROCRAFT_INSTALLED define");

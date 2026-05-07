@@ -17,7 +17,8 @@
     "IrisModernOptionMenuContainerMixin",
     "IrisModernProfileElementWidgetMixin",
     "IrisModernPackRenderTargetDirectivesMixin",
-    "IrisLegacyPackRenderTargetDirectivesMixin"
+    "IrisLegacyPackRenderTargetDirectivesMixin",
+    "PhotonicsRaytracerMixin"
   ],
   "client": [
     "ClientTickMixin",
