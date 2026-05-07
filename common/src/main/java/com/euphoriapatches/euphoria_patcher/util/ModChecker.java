@@ -23,7 +23,7 @@ public class ModChecker {
 		IRIS(Registers.irisLike(ModChecker.IRIS)),
 		OCULUS(Registers.irisLike(ModChecker.OCULUS)),
 		ANGELICA(Registers.irisLike(ModChecker.ANGELICA)),
-		PHOTONICS(Registers.classes("at.redi2go.photonics.client.Photonics")),
+		PHOTONICS(Registers.classes("at.redi2go.photonics.client.Photonics", "at.redi2go.photonic.client.Photonic")),
 		ASTROCRAFT(Registers.classes("mod.lwhrvw.astrocraft.Astrocraft")),
 		OPTIFINE(Registers.classes("optifine.OptiFineTweaker")),
 		FABRIC_SKYBOXES(Registers.classes("io.github.amerebagatelle.fabricskyboxes.SkyboxManager", "me.flashyreese.mods.nuit.SkyboxManager")),
@@ -42,6 +42,10 @@ public class ModChecker {
 
 		boolean isPresent() {
 			return this.register.isPresent();
+		}
+
+		public String[] getClassNames() {
+			return this.register.getClassNames();
 		}
 	}
 
@@ -70,28 +74,14 @@ public class ModChecker {
 			}
 			return hasAnyClass(classNames);
 		}
+
+		String[] getClassNames() {
+			return classNames;
+		}
 	}
 
 	private static void debugLog(String message) {
 		EuphoriaLogger.debugLog("[ModChecker] " + message);
-	}
-
-	/**
-	 * Checks if a class exists in the current classpath.
-	 *
-	 * @param className The fully qualified class name to check
-	 * @return true if the class exists, false otherwise
-	 */
-	public static boolean checkClassExists(String className) {
-		try {
-			String resourceName = className.replace('.', '/') + ".class";
-			boolean exists = ModChecker.class.getClassLoader().getResource(resourceName) != null;
-			debugLog("Class check for " + className + ": " + (exists ? "found" : "not found"));
-			return exists;
-		} catch (Exception e) {
-			debugLog("Exception checking class " + className + ": " + e.getMessage());
-			return false;
-		}
 	}
 
 	public static boolean isModPresent(ModNames modName) {
@@ -105,9 +95,13 @@ public class ModChecker {
 		return present;
 	}
 
+	public static String[] getClassNames(ModNames modName) {
+		return modName.getClassNames();
+	}
+
 	private static boolean hasAnyClass(String... classNames) {
 		for (String className : classNames) {
-			if (checkClassExists(className)) {
+			if (ReflectionUtils.checkClassExists(className)) {
 				return true;
 			}
 		}
@@ -126,7 +120,7 @@ public class ModChecker {
 
 		irisClassSearched = true;
 
-		if (checkClassExists(MODERN_IRIS_CLASS)) {
+		if (ReflectionUtils.checkClassExists(MODERN_IRIS_CLASS)) {
 			try {
 				cachedIrisClass = Class.forName(MODERN_IRIS_CLASS);
 				return cachedIrisClass;
@@ -135,7 +129,7 @@ public class ModChecker {
 			}
 		}
 
-		if (checkClassExists(LEGACY_IRIS_CLASS)) {
+		if (ReflectionUtils.checkClassExists(LEGACY_IRIS_CLASS)) {
 			try {
 				cachedIrisClass = Class.forName(LEGACY_IRIS_CLASS);
 				return cachedIrisClass;
@@ -177,6 +171,20 @@ public class ModChecker {
 			debugLog("Error reading fields from " + classObj.getName() + ": " + e.getMessage());
 		}
 		return null;
+	}
+
+	@SuppressWarnings("unused")
+    public static String getPhotonicsVersion() {
+		String version = null;
+
+		for (String className : ModNames.PHOTONICS.getClassNames()) {
+			Object value = ReflectionUtils.getFieldValue(className, "MOD_VERSION");
+
+			if (value != null) {
+				version = String.valueOf(value).split("\\+")[0];
+			}
+		}
+		return version;
 	}
 
 	/**

@@ -4,6 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.ShaderData;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
@@ -84,8 +85,8 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$renderTooltipImpl(Object guiGraphics) {
         try {
-            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
-            Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
+            Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
+            Object resetButton = ReflectionUtils.getFieldValue(this, "resetButton");
 
             if (utilityButtons == null) {
                 return;
@@ -143,8 +144,8 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$recolorEPButtonWhileShift() {
         try {
-            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
-            Object resetButton = euphoriaPatcher$getFieldValue(this, "resetButton");
+            Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
+            Object resetButton = ReflectionUtils.getFieldValue(this, "resetButton");
 
             if (utilityButtons == null) {
                 return;
@@ -190,8 +191,8 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$addEPIrisButton(String buttonTextLiteral, int buttonColor) {
         try {
-            Object utilityButtons = euphoriaPatcher$getFieldValue(this, "utilityButtons");
-            Object screen = euphoriaPatcher$getFieldValue(this, "screen");
+            Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
+            Object screen = ReflectionUtils.getFieldValue(this, "screen");
 
             if (utilityButtons == null) {
                 euphoriaPatcher$debugLog("utilityButtons field not found");
@@ -340,7 +341,7 @@ public class IrisHeaderEntryMixin {
     @Unique
     private Object euphoriaPatcher$resolveOptionListFromScreen() {
         try {
-            Object screen = euphoriaPatcher$getFieldValue(this, "screen");
+            Object screen = ReflectionUtils.getFieldValue(this, "screen");
             if (screen == null) {
                 return null;
             }
@@ -489,25 +490,6 @@ public class IrisHeaderEntryMixin {
     private boolean euphoriaPatcher$isUpdateAvailable(ShaderDetector shaderDetector, Path currentShaderPackPath) {
         return UpdateChecker.shouldUserUpdate() &&
                 VersionComparator.isNewerVersion(UpdateChecker.getNewModVersion(), shaderDetector.readVersionFromPackJson(currentShaderPackPath));
-    }
-
-    @Unique
-    private Object euphoriaPatcher$getFieldValue(Object obj, String fieldName) {
-        Class<?> clazz = obj.getClass();
-        while (clazz != null) {
-            try {
-                java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                return field.get(obj);
-            } catch (NoSuchFieldException e) {
-                clazz = clazz.getSuperclass();
-            } catch (Exception e) {
-                euphoriaPatcher$debugLog("Error accessing field " + fieldName + ": " + e.getMessage());
-                return null;
-            }
-        }
-        euphoriaPatcher$debugLog("Field " + fieldName + " not found in class hierarchy");
-        return null;
     }
 
     @Unique
