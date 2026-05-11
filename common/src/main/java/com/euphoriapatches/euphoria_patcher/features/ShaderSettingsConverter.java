@@ -68,11 +68,11 @@ public class ShaderSettingsConverter {
                         // Convert "SETTING=*" to regex pattern that captures the value
                         String settingName = from.substring(0, from.indexOf("="));
                         String toSettingName = to.substring(0, to.indexOf("="));
-                        from = Pattern.quote(settingName) + "=(.+)";
+                        from = "^" + Pattern.quote(settingName) + "=(.*)$";
                         to = toSettingName + "=$1";
                     } else {
                         // Escape special regex characters in the pattern
-                        from = Pattern.quote(from);
+                        from = "^" + Pattern.quote(from) + "$";
                     }
 
                     // Create pattern
@@ -106,7 +106,7 @@ public class ShaderSettingsConverter {
         for (Map.Entry<Pattern, String> rule : conversionRules.entrySet()) {
             Matcher matcher = rule.getKey().matcher(trimmedLine);
 
-            if (matcher.find()) {
+            if (matcher.matches()) {
                 String result = matcher.replaceAll(rule.getValue());
                 debugLog("MATCH FOUND! Converted: '" + trimmedLine + "' -> '" + result + "'");
                 return result;
