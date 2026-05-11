@@ -519,7 +519,7 @@ public class DevPatchGenerator {
                 String fileName = entry.getFileName().toString();
 
                 // Skip excluded files at any depth (just check filename, not full path)
-                if (fileName.equals("propertiesFragmenter.py") || fileName.endsWith(".zip")) {
+                if (fileName.equals("propertiesFragmenter.py") || fileName.equals("TextToGLSLText.py") || fileName.endsWith(".eptext") || fileName.endsWith(".zip")) {
                     System.out.println("    " + YELLOW + "Skipping: " + source.relativize(entry) + RESET);
                     continue;
                 }

@@ -32,7 +32,8 @@ public class ModChecker {
 		STELLAR_VIEW(Registers.classes("net.povstalec.stellarview.StellarView")),
 		CELESTIAL(Registers.classes("fishcute.celestial.Celestial")),
 		HORIZON(Registers.classes("com.jeff.horizon.SkyboxManager")),
-		SPYGLASS_ASTRONOMY(Registers.classes("com.nettakrim.spyglass_astronomy.SpyglassAstronomyClient"));
+		SPYGLASS_ASTRONOMY(Registers.classes("com.nettakrim.spyglass_astronomy.SpyglassAstronomyClient")),
+		THREE_D_SKIN_LAYERS(Registers.classes("dev.tr7zw.skinlayers.SkinLayersMod"));
 
 		private final Registers register;
 

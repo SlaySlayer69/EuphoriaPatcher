@@ -158,6 +158,11 @@ public final class DefineHelper {
                 debugLog("Adding EUPHORIA_PATCHES_IS_SPYGLASS_ASTRONOMY_INSTALLED define");
             }
 
+            if (ModChecker.isModPresent(ModChecker.ModNames.THREE_D_SKIN_LAYERS)) {
+                emitter.define("EUPHORIA_PATCHES_IS_3D_SKIN_LAYERS_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_3D_SKIN_LAYERS_INSTALLED define");
+            }
+
             if (isSkyboxModInstalled()){
                 emitter.define("EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED define");
