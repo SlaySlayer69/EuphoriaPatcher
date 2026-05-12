@@ -80,6 +80,7 @@ public class JsonUtilReader {
         }
     }
 
+    @SuppressWarnings("unused")
     public static Set<String> getAllCategories() {
         return messageCategories.keySet();
     }

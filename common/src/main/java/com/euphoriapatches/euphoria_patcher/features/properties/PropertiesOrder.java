@@ -41,16 +41,16 @@ public class PropertiesOrder {
 
     /**
      * Define the merge order for properties files.
-     *
+     * <p>
      * Order matters: files will be merged in the sequence defined here.
      * - First level: folder names inside shaders/properties/
      * - Nested levels: subfolders or specific file names within parent folders
-     *
+     * <p>
      * To add a new folder/file to the merge order:
      * 1. Add a new OrderEntry with the folder/file name
      * 2. If it has subfolders or multiple files, nest them as children
      * 3. Use regex patterns for flexible matching (patterns are auto-detected)
-     *
+     * <p>
      * Example structure:
      * properties/
      *   ├── instructions/          (merged first)
@@ -62,12 +62,12 @@ public class PropertiesOrder {
      *   ├── 1.8+/                  (merged third)
      *   ├── 1.7.10/                (merged fourth)
      *   └── renderlayers/          (merged last)
-     *
+     * <p>
      * Code example - exact match:
      * new OrderEntry("1.13+",
      *     new OrderEntry("block.5000-10081.properties")
      * )
-     *
+     * <p>
      * Code example - regex pattern (auto-detected by presence of regex metacharacters):
      * new OrderEntry("1.13+",
      *     new OrderEntry("block\\.5000-.*\\.properties")
@@ -76,7 +76,7 @@ public class PropertiesOrder {
      * - block.5000-10081.properties
      * - block.5000-12345.properties
      * - block.5000-anything.properties
-     *
+     * <p>
      * Pattern matching rules:
      * - Use standard Java regex syntax
      * - Patterns are auto-detected (if name contains .*, [, ], etc.)
@@ -86,7 +86,7 @@ public class PropertiesOrder {
      *   * .* = match anything
      *   * [0-9]+ = match one or more digits
      *   * (foo|bar) = match "foo" or "bar"
-     *
+     * <p>
      * This means:
      * - Process the 1.13+ folder
      * - Within it, process files matching the pattern FIRST
@@ -117,6 +117,7 @@ public class PropertiesOrder {
      * @param folderName The folder name to check
      * @return true if the folder is in the merge order, false otherwise
      */
+    @SuppressWarnings("unused")
     public static boolean isInMergeOrder(String folderName) {
         return findEntry(folderName, MERGE_ORDER) != null;
     }
@@ -126,6 +127,7 @@ public class PropertiesOrder {
      * @param folderName The folder name
      * @return The index in the merge order, or -1 if not found
      */
+    @SuppressWarnings("unused")
     public static int getOrderIndex(String folderName) {
         for (int i = 0; i < MERGE_ORDER.size(); i++) {
             if (MERGE_ORDER.get(i).getName().equals(folderName)) {

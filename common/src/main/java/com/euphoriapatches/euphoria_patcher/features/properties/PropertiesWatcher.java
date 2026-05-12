@@ -107,6 +107,7 @@ public class PropertiesWatcher {
 
                                 // Small delay to ensure config write is complete
                                 try {
+                                    //noinspection BusyWait
                                     Thread.sleep(500);
                                 } catch (InterruptedException e) {
                                     // Ignore
@@ -390,6 +391,7 @@ public class PropertiesWatcher {
                         if ((currentTime - lastMergeTime) > MERGE_COOLDOWN_MS) {
                             // Small delay to ensure file write is complete
                             try {
+                                //noinspection BusyWait
                                 Thread.sleep(500);
                             } catch (InterruptedException e) {
                                 // Ignore
@@ -477,7 +479,8 @@ public class PropertiesWatcher {
      * Get the current shaderpack path being monitored
      * @return The current shaderpack path, or null if none is being monitored
      */
-    public static Path getCurrentShaderpackPath() {
+    @SuppressWarnings("unused")
+    public static Path getCurrentMonitoredShaderpackPath() {
         return currentShaderpackPath != null ? Paths.get(currentShaderpackPath) : null;
     }
 
@@ -485,6 +488,7 @@ public class PropertiesWatcher {
      * Check if monitoring is currently active
      * @return true if monitoring is running, false otherwise
      */
+    @SuppressWarnings("unused")
     public static boolean isMonitoring() {
         return running;
     }

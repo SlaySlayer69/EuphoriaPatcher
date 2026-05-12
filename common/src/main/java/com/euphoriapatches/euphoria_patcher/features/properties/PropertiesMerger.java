@@ -149,7 +149,7 @@ public class PropertiesMerger {
      * @param patternString The regex pattern to match against filenames
      * @return List of matching paths, sorted alphabetically
      */
-    private static List<Path> findMatchingPaths(Path directory, String patternString) throws IOException {
+    private static List<Path> findMatchingPaths(Path directory, String patternString) {
         List<Path> matches = new ArrayList<>();
 
         try {
