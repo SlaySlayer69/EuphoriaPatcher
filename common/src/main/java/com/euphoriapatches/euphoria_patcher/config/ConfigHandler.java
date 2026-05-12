@@ -2,6 +2,7 @@ package com.euphoriapatches.euphoria_patcher.config;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.SpacEagle17;
 
 import java.util.Locale;
 
@@ -109,7 +110,7 @@ public class ConfigHandler {
     }
 
     private static void handleSpaceEagleAutoMergeBlockProperties(boolean configAutoMergeBlockProperties) {
-        if (EuphoriaPatcher.isSpacEagle()) {
+        if (SpacEagle17.check()) {
             autoMergeBlockProperties = true;
             debugLog("Automatic merging of block.properties files enabled due to user being SpaceEagle17");
         } else {

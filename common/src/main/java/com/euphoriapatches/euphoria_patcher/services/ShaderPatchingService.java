@@ -26,6 +26,7 @@ public class ShaderPatchingService {
     private final String patchVersion;
     private final String commonLocation;
     private final Path shaderpacks;
+    @SuppressWarnings("unused")
     private final ShaderNamingService namingService;
 
     public ShaderPatchingService(String patchName, String patchVersion, String commonLocation,
@@ -48,7 +49,7 @@ public class ShaderPatchingService {
 
             // Get base name and remove .zip extension
             String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
-            baseName = namingService.cleanBaseName(baseName);
+            baseName = ShaderNamingService.cleanBaseName(baseName);
 
             String patchedName = baseName + " + " + patchName + patchVersion;
 

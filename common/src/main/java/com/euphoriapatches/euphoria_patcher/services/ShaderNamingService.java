@@ -21,6 +21,7 @@ public class ShaderNamingService {
     private static final Pattern CLEAN_BASE_NAME_PATTERN = Pattern.compile("(?i)(?:[\\s_-]+(?:\\(copy\\)|copy|\\(\\d+\\)|\\d+))+$");
 
     private final String brandName;
+    @SuppressWarnings("unused")
     private final String patchName;
     private final String version;
     private final String patchVersion;
@@ -45,7 +46,7 @@ public class ShaderNamingService {
     /**
      * Clean base name from copy suffixes
      */
-    public String cleanBaseName(String baseName) {
+    public static String cleanBaseName(String baseName) {
         if (baseName == null) return null;
         debugLog("Before Cleaning base name: " + baseName);
         String cleaned = CLEAN_BASE_NAME_PATTERN.matcher(baseName).replaceAll("");
@@ -101,30 +102,6 @@ public class ShaderNamingService {
         } catch (IOException e) {
             log(2, "Failed to rename shader: " + e.getMessage());
             return path; // Return original path if renaming failed
-        }
-    }
-
-    /**
-     * Gets the path for a patched shader based on the base shader file
-     *
-     * @param baseFile Path to the base shader file or directory
-     * @return Path to the patched shader, or null if baseFile is null
-     */
-    public Path getPatchedShaderPath(Path baseFile) {
-        if (baseFile == null) {
-            log(3, "Cannot create patched shader path - base file is null");
-            return null;
-        }
-
-        try {
-            String fileName = baseFile.getFileName().toString();
-            String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
-            baseName = cleanBaseName(baseName);
-
-            return baseFile.resolveSibling(baseName + " + " + patchName + patchVersion);
-        } catch (Exception e) {
-            log(3, "Error creating patched shader path: " + e.getMessage());
-            return null;
         }
     }
 
@@ -273,7 +250,7 @@ public class ShaderNamingService {
         com.euphoriapatches.euphoria_patcher.EuphoriaPatcher.log(level, message);
     }
 
-    private void debugLog(String message) {
+    private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderNamingService] " + message);
     }
 }

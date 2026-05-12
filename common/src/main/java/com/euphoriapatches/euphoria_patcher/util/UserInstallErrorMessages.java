@@ -4,6 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
+import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcherUtils;
 
 import java.nio.file.Path;
 
@@ -74,7 +75,7 @@ public class UserInstallErrorMessages {
         }
 
         // Start watching for the shader to be added
-        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        ShaderpacksWatcherUtils instance = ShaderpacksWatcherUtils.getInstance();
         if (instance != null) {
             instance.startShaderpacksWatcher();
         }
@@ -198,7 +199,7 @@ public class UserInstallErrorMessages {
     private static void startWatcherAndTrackFile(String fileName) {
         EuphoriaPatcher.log(0, "Watching for the correct shader to be added...");
 
-        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        ShaderpacksWatcherUtils instance = ShaderpacksWatcherUtils.getInstance();
         if (instance != null) {
             instance.startWatcherAfterByteSizeFailure();
             ShaderpacksWatcher watcher = instance.getShaderpacksWatcher();

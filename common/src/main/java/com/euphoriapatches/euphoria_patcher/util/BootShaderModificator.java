@@ -133,7 +133,7 @@ public class BootShaderModificator {
     }
 
     private static void applyDeveloperModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
-        if (EuphoriaPatcher.isSpacEagle()) {
+        if (SpacEagle17.check()) {
             try {
                 ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, EuphoriaPatcher.SHADER_MYFILE_LOCATION, null, "\\/\\/ Developed by SpacEagle17", "#define SPACEAGLE17");
             } catch (IOException e) {

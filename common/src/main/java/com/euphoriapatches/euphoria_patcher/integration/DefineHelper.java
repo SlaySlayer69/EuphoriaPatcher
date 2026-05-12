@@ -8,6 +8,7 @@ import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.util.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.SpacEagle17;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 
 import java.nio.file.Path;
@@ -94,7 +95,7 @@ public final class DefineHelper {
                 debugLog("Adding Euphoria Patches defines to Iris" + (isLegacy ? " (Legacy)" : ""));
             }
 
-            if (EuphoriaPatcher.isSpacEagle()) {
+            if (SpacEagle17.check()) {
                 emitter.define("SPACEAGLE17");
                 debugLog("Adding SPACEAGLE17 define");
             }

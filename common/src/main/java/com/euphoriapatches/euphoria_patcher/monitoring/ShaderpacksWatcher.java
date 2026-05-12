@@ -23,7 +23,7 @@ public class ShaderpacksWatcher {
     private final Path shaderpacks;
     private final WatchService watchService;
     private final ScheduledExecutorService executor;
-    private final EuphoriaPatcher patcher;
+    private final ShaderpacksWatcherUtils utilsInstance;
     private boolean isRunning = false;
     // Track processed files to avoid duplicates
     private final Set<String> processedFiles = new HashSet<>();
@@ -46,23 +46,25 @@ public class ShaderpacksWatcher {
      * Get the ShaderDetector service from the patcher instance
      */
     private ShaderDetector getShaderDetector() {
-        return patcher != null ? patcher.getShaderDetector() : null;
+        EuphoriaPatcher euphoriaPatcher = EuphoriaPatcher.getInstance();
+        return euphoriaPatcher != null ? euphoriaPatcher.getShaderDetector() : null;
     }
 
     /**
      * Get the ShaderNamingService from the patcher instance
      */
     private ShaderNamingService getNamingService() {
-        return patcher != null ? patcher.getNamingService() : null;
+        EuphoriaPatcher euphoriaPatcher = EuphoriaPatcher.getInstance();
+        return euphoriaPatcher != null ? euphoriaPatcher.getNamingService() : null;
     }
 
-    public ShaderpacksWatcher(EuphoriaPatcher patcher) throws IOException {
+    public ShaderpacksWatcher(ShaderpacksWatcherUtils patcher) throws IOException {
         this(patcher, false);
     }
 
-    public ShaderpacksWatcher(EuphoriaPatcher patcher, boolean skipInitialScan) throws IOException {
+    public ShaderpacksWatcher(ShaderpacksWatcherUtils utilsInstance, boolean skipInitialScan) throws IOException {
         debugLog("Initializing ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
-        this.patcher = patcher;
+        this.utilsInstance = utilsInstance;
         this.shaderpacks = EuphoriaPatcher.shaderpacks;
         this.watchService = FileSystems.getDefault().newWatchService();
         // Add this flag to control initial scanning
@@ -211,7 +213,7 @@ public class ShaderpacksWatcher {
                                 if (detector != null && detector.isNewerDevVersion(fullPath)) {
                                     debugLog("Dev version detected, processing and shutting down watcher: " + fileNameStr);
                                     EuphoriaPatcher.log(0, "Detected newer dev version: " + fileNameStr);
-                                    patcher.processNewShaderpack(fullPath);
+                                    utilsInstance.processNewShaderpack(fullPath);
                                     // Dev version found - stop watching entirely
                                     return;
                                 }
@@ -261,7 +263,7 @@ public class ShaderpacksWatcher {
                                         }
 
                                         debugLog("Starting shader pack processing for: " + fileNameStr);
-                                        boolean wasSuccessful = patcher.processNewShaderpack(fullPath);
+                                        boolean wasSuccessful = utilsInstance.processNewShaderpack(fullPath);
                                         debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") +
                                                  " for: " + fileNameStr);
 
@@ -322,7 +324,7 @@ public class ShaderpacksWatcher {
                 if (detector != null && detector.isNewerDevVersion(path)) {
                     debugLog("Dev version detected during scan, processing and shutting down watcher: " + fileName);
                     EuphoriaPatcher.log(0, "Detected newer dev version during scan: " + fileName);
-                    patcher.processNewShaderpack(path);
+                    utilsInstance.processNewShaderpack(path);
                     // Dev version found - stop scanning entirely
                     return;
                 }
@@ -364,7 +366,7 @@ public class ShaderpacksWatcher {
                         }
 
                         debugLog("Starting shader pack processing for: " + fileName);
-                        boolean wasSuccessful = patcher.processNewShaderpack(path);
+                        boolean wasSuccessful = utilsInstance.processNewShaderpack(path);
                         debugLog("Shader pack processing " + (wasSuccessful ? "successful" : "failed") +
                                  " for: " + fileName);
                         processedCount++;
@@ -461,14 +463,14 @@ public class ShaderpacksWatcher {
     }
 
     // Create a static factory method that handles exceptions internally
-    public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher) {
-        return createAndStart(patcher, false);
+    public static ShaderpacksWatcher createAndStart(ShaderpacksWatcherUtils utilsInstance) {
+        return createAndStart(utilsInstance, false);
     }
 
-    public static ShaderpacksWatcher createAndStart(EuphoriaPatcher patcher, boolean skipInitialScan) {
+    public static ShaderpacksWatcher createAndStart(ShaderpacksWatcherUtils utilsInstance, boolean skipInitialScan) {
         debugLog("Creating and starting new ShaderpacksWatcher" + (skipInitialScan ? " (skipping initial scan)" : ""));
         try {
-            ShaderpacksWatcher watcher = new ShaderpacksWatcher(patcher, skipInitialScan);
+            ShaderpacksWatcher watcher = new ShaderpacksWatcher(utilsInstance, skipInitialScan);
             watcher.startWatching();
             debugLog("ShaderpacksWatcher successfully created and started");
             return watcher;

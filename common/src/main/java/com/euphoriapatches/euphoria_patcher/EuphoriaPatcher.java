@@ -7,14 +7,12 @@ import com.euphoriapatches.euphoria_patcher.features.properties.PropertiesWatche
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
-import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
+import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcherUtils;
 import com.euphoriapatches.euphoria_patcher.services.*;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.util.*;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
 
 public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
@@ -36,7 +34,6 @@ public class EuphoriaPatcher {
     // Global Variables and Objects
     private static boolean ALREADY_LAUNCHED = false;
     private static EuphoriaPatcher instance;
-    private ShaderpacksWatcher shaderpacksWatcher;
     private static EuphoriaLogger loggerInstance;
 
     // Service classes
@@ -75,8 +72,9 @@ public class EuphoriaPatcher {
 
         UpdateShaderConfig.markAllEPSettingsFiles();
 
-        // Initialize service classes
+        // Initialize services
         initializeServices();
+        new ShaderpacksWatcherUtils();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = shaderDetector.detectInstalledShaders(namingService);
@@ -132,35 +130,26 @@ public class EuphoriaPatcher {
         return instance;
     }
 
-    /**
-     * Get the version comparator service
-     */
     public ShaderVersionComparator getVersionComparator() {
         return versionComparator;
     }
 
-    /**
-     * Get the shader detector service
-     */
     public ShaderDetector getShaderDetector() {
         return shaderDetector;
     }
 
-    /**
-     * Get the naming service
-     */
     public ShaderNamingService getNamingService() {
         return namingService;
     }
 
-    private boolean completeShaderPatching(ShaderInfo shaderInfo, Path temp) {
+    public boolean completeShaderPatching(ShaderInfo shaderInfo, Path temp) {
         // Process and patch shaders
         if (!patchingService.processAndPatchShaders(shaderInfo, temp)) return false;
 
         // Update .txt shader config file
         UpdateShaderConfig.updateShaderTxtConfigFile(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        // Update shader loader (iris) config
+        // Update shader loader config
         UpdateShaderLoaderConfig.updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         if (ConfigHandler.doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
@@ -197,7 +186,7 @@ public class EuphoriaPatcher {
             try {
                 UpdateShaderConfig.shutdownFileWriter();
                 Config.stopConfigWatcher();
-                instance.shaderpacksWatcher.stopWatching();
+                ShaderpacksWatcherUtils.getInstance().getShaderpacksWatcher().stopWatching();
                 PotatoFileMonitor.stopMonitoring();
                 PropertiesWatcher.stopMonitoring();
             } catch (Exception ignored) {
@@ -205,22 +194,8 @@ public class EuphoriaPatcher {
         }));
     }
 
-    public static boolean isSpacEagle() {
-        try {
-            boolean containsSpacEagle = shaderpacks.toString().toLowerCase(Locale.ROOT).contains("spaceagle");
-            debugLog("Contains SpacEagle in Path: " + containsSpacEagle);
-            Path euphoriaFolder = shaderpacks.resolve("Euphoria-Patches");
-            boolean hasEuphoriaFolder = Files.exists(euphoriaFolder) && Files.isDirectory(euphoriaFolder);
-            debugLog("Euphoria-Patches folder exists: " + hasEuphoriaFolder);
-            return containsSpacEagle && hasEuphoriaFolder;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir, boolean isAlreadyInstalled) {
-        // Get the installed shader path
-        Path shader = findInstalledShaderPath(baseFile, installedDir);
+    public void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined, Path installedDir, boolean isAlreadyInstalled) {
+        Path shader = shaderDetector.findInstalledShaderPath(baseFile, installedDir);
 
         if (shader != null) {
             BootShaderModificator.applyShaderModifications(shader, styleUnbound, styleReimagined, isAlreadyInstalled);
@@ -231,104 +206,11 @@ public class EuphoriaPatcher {
         }
     }
 
-    private Path findInstalledShaderPath(Path baseFile, Path installedDir) {
-        if (installedDir != null) {
-            debugLog("Using already detected installed directory: " + installedDir);
-            return installedDir;
-        }
-
-        if (baseFile != null) {
-            return namingService.getPatchedShaderPath(baseFile);
-        }
-
-        return shaderDetector.findPatchedShaderDirectory();
-    }
-
     private void displayFinalMessage() {
-        if (isSpacEagle()) {
+        if (SpacEagle17.check()) {
             log(1, "Have fun developing Euphoria Patches!\n\n ");
         } else {
             log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
-        }
-    }
-
-    public void startShaderpacksWatcher() {
-        if (shaderpacksWatcher != null && shaderpacksWatcher.isRunning()) return;
-
-        shaderpacksWatcher = ShaderpacksWatcher.createAndStart(this, true);
-        if (shaderpacksWatcher != null) {
-            log(0, "Watching shaderpacks folder for changes...");
-        }
-    }
-
-    public ShaderpacksWatcher getShaderpacksWatcher() {
-        return shaderpacksWatcher;
-    }
-
-    private void stopShaderpacksWatcher() {
-        if (shaderpacksWatcher != null) {
-            shaderpacksWatcher.stopWatching();
-        }
-    }
-
-    public void startWatcherAfterByteSizeFailure() {
-        if (shaderpacksWatcher != null) {
-            shaderpacksWatcher.resetAfterByeSizeFailure();
-        } else {
-            startShaderpacksWatcher();
-        }
-    }
-
-    public synchronized boolean processNewShaderpack(Path baseFile) {
-        try {
-            log(0, "Processing newly detected shader pack: " + baseFile.getFileName());
-
-            // Create shader info object
-            ShaderInfo shaderInfo = new ShaderInfo();
-            shaderInfo.baseFile = baseFile;
-            String name = baseFile.getFileName().toString();
-
-            // Check if this is a newer dev version first - if so, just accept it
-            if (shaderDetector.isNewerDevVersion(baseFile, shaderInfo)) {
-                debugLog("Accepted newer dev version: " + baseFile.getFileName());
-
-                stopShaderpacksWatcher();
-                thankYouMessage(baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, true);
-                return true;
-            }
-
-            // Not a dev version, proceed with normal patching
-            // Create temporary directory
-            Path temp = ArchiveOperations.createTempDirectory();
-            if (temp == null) return false;
-
-            // Determine style from filename or common.glsl
-            if (name.contains("Reimagined")) {
-                shaderInfo.styleReimagined = true;
-            } else if (name.contains("Unbound")) {
-                shaderInfo.styleUnbound = true;
-            } else {
-                // If not clear from filename, check common.glsl
-                String detectedStyle = ShaderPropertyReader.detectStyleFromCommonFile(baseFile, COMMON_LOCATION);
-                shaderInfo.styleReimagined = "Reimagined".equals(detectedStyle);
-                shaderInfo.styleUnbound = "Unbound".equals(detectedStyle);
-            }
-
-            // Use the common method for patching
-            boolean success = completeShaderPatching(shaderInfo, temp);
-
-            // Stop watching only if successful
-            if (success) {
-                stopShaderpacksWatcher();
-            } else if (shaderpacksWatcher != null) {
-                // Track this file as having an invalid byte size
-                shaderpacksWatcher.trackInvalidByteSizeFile(baseFile.getFileName().toString());
-            }
-
-            return success;
-        } catch (Exception e) {
-            log(3, "Error processing newly detected shader pack: " + e.getMessage());
-            return false;
         }
     }
 }

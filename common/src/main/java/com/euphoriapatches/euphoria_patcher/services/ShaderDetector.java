@@ -386,7 +386,7 @@ public class ShaderDetector {
         } else {
             // This is a base shader file
             if (namingService != null) {
-                potentialInstallPath = namingService.getPatchedShaderPath(path);
+                potentialInstallPath = getPatchedShaderPath(path);
             } else {
                 // Fallback if namingService is not available
                 potentialInstallPath = null;
@@ -959,6 +959,43 @@ public class ShaderDetector {
         }
 
         return null;
+    }
+
+    /**
+     * Gets the path for a patched shader based on the base shader file
+     *
+     * @param baseFile Path to the base shader file or directory
+     * @return Path to the patched shader, or null if baseFile is null
+     */
+    public Path getPatchedShaderPath(Path baseFile) {
+        if (baseFile == null) {
+            log(3, "Cannot create patched shader path - base file is null");
+            return null;
+        }
+
+        try {
+            String fileName = baseFile.getFileName().toString();
+            String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
+            baseName = ShaderNamingService.cleanBaseName(baseName);
+
+            return baseFile.resolveSibling(baseName + " + " + patchName + patchVersion);
+        } catch (Exception e) {
+            log(3, "Error creating patched shader path: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public Path findInstalledShaderPath(Path baseFile, Path installedDir) {
+        if (installedDir != null) {
+            debugLog("Using already detected installed directory: " + installedDir);
+            return installedDir;
+        }
+
+        if (baseFile != null) {
+            return getPatchedShaderPath(baseFile);
+        }
+
+        return findPatchedShaderDirectory();
     }
 
     /**
