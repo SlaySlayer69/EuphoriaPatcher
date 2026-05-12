@@ -3,8 +3,8 @@ package com.euphoriapatches.euphoria_patcher.monitoring;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
-import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderPropertyReader;
 
 import java.nio.file.Path;
 

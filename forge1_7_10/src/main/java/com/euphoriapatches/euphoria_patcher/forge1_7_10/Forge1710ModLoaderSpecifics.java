@@ -1,7 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.forge1_7_10;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import cpw.mods.fml.common.Loader;
 
 import java.io.File;

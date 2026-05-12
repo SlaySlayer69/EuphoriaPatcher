@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.neoforge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.neoforge.NeoforgeModLoaderSpecifics;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

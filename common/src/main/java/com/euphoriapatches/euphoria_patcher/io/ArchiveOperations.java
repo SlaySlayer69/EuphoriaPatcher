@@ -1,8 +1,11 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.io;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.HashUtils;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
+import com.euphoriapatches.euphoria_patcher.util.UserInstallErrorMessages;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.FileUtils;
 

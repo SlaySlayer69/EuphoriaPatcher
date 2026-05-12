@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.forge1_7_10;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.PatchInfo;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import cpw.mods.fml.common.Mod;
 
 @Mod(modid= ClientEuphoriaPatcher.MODID, name = ClientEuphoriaPatcher.NAME, version = PatchInfo.PATCH_VERSION)

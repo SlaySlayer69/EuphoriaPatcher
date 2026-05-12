@@ -5,6 +5,8 @@ import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcherUtils;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 
 import java.nio.file.Path;
 

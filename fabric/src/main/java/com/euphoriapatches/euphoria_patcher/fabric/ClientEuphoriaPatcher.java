@@ -1,7 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.fabric;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.fabricmc.api.ModInitializer;
 
 public class ClientEuphoriaPatcher implements ModInitializer {

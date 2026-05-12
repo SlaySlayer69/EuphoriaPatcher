@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.util.mod;
 
 import java.nio.file.Path;
 

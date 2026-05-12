@@ -1,9 +1,10 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
-import com.euphoriapatches.euphoria_patcher.util.FileOperations;
-import com.euphoriapatches.euphoria_patcher.util.ShaderData;
-import com.euphoriapatches.euphoria_patcher.util.ShaderPropertyReader;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.io.FileOperations;
+import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;
+import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
@@ -60,7 +61,7 @@ public class ShaderDetector {
         // Circular dependency will be resolved by setter
         this.shaderValidator = new ShaderValidator();
 
-        this.buildDateStr = com.euphoriapatches.euphoria_patcher.util.JsonUtilReader.getString("buildDate");
+        this.buildDateStr = JsonUtilReader.getString("buildDate");
         this.currentBuildDate = parseBuildDate(buildDateStr);
     }
 
@@ -872,12 +873,12 @@ public class ShaderDetector {
         }
 
         // Load current installation state from data.json
-        if (!ShaderData.dataFileExists()) {
+        if (!UserPersistentData.dataFileExists()) {
             debugLog("No data file exists, cannot check for missing styles");
             return false;
         }
 
-        ShaderData.PersistentShaderData data = ShaderData.load();
+        UserPersistentData.PersistentShaderData data = UserPersistentData.load();
 
         if (data.styleReimagined == null || data.styleUnbound == null) {
             debugLog("Could not load data.json, cannot check for missing styles");

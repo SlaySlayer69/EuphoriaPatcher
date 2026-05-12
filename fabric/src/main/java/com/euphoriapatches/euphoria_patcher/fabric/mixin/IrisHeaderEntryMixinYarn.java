@@ -4,10 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
-import com.euphoriapatches.euphoria_patcher.util.ShaderData;
-import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
-import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
+import com.euphoriapatches.euphoria_patcher.util.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -93,7 +90,7 @@ public class IrisHeaderEntryMixinYarn {
 
         boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
 
-        ShaderData.PersistentShaderData data = ShaderData.load();
+        UserPersistentData.PersistentShaderData data = UserPersistentData.load();
         boolean userAllowsSupportButton = false;
         if (data.supportEPButtonVisible == null || data.supportEPButtonVisible) {
             euphoriaPatcher$debugLog("User has not dismissed EP support button");
@@ -368,7 +365,7 @@ public class IrisHeaderEntryMixinYarn {
             // Check if shift is held
             if (euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown()) {
                 euphoriaPatcher$debugLog("Pressed Shift while clicking EP button - removing button");
-                ShaderData.save(ShaderData.SaveData.of(ShaderData.DataField.SUPPORT_EP_BUTTON, false));
+                UserPersistentData.save(UserPersistentData.SaveData.of(UserPersistentData.DataField.SUPPORT_EP_BUTTON, false));
                 euphoriaPatcher$refreshOptionListAfterDismiss();
                 return;
             }

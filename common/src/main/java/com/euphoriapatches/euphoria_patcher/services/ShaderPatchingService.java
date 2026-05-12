@@ -2,8 +2,8 @@ package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveUtils;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;

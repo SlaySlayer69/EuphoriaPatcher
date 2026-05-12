@@ -5,12 +5,18 @@ import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.*;
 import com.euphoriapatches.euphoria_patcher.features.properties.PropertiesWatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcherUtils;
 import com.euphoriapatches.euphoria_patcher.services.*;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.util.*;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.shader.BootShaderModificator;
+import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 
 import java.nio.file.Path;
 
@@ -57,8 +63,8 @@ public class EuphoriaPatcher {
 
         ConfigHandler.configStuff();
 
-        ShaderData.validateShaderDataHash();
-        if (ShaderData.isIncorrectVersion()) ShaderData.resetShaderStyles();
+        UserPersistentData.validateShaderDataHash();
+        if (UserPersistentData.isIncorrectVersion()) UserPersistentData.resetShaderStyles();
 
         if (ModFolderVersionChecker.existsNewerModInFolder()) return;
 
@@ -86,8 +92,8 @@ public class EuphoriaPatcher {
             }
         } else {
             // Load shader style data from persistent storage if styles weren't detected
-            if (!shaderInfo.styleReimagined && !shaderInfo.styleUnbound && ShaderData.dataFileExists()) {
-                ShaderData.PersistentShaderData data = ShaderData.load();
+            if (!shaderInfo.styleReimagined && !shaderInfo.styleUnbound && UserPersistentData.dataFileExists()) {
+                UserPersistentData.PersistentShaderData data = UserPersistentData.load();
                 if (data.styleReimagined == null || data.styleUnbound == null) {
                     debugLog("Could not load data.json, cannot check for missing styles");
                 } else {
@@ -155,7 +161,7 @@ public class EuphoriaPatcher {
         if (ConfigHandler.doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
         if (ConfigHandler.doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
-        ShaderData.saveShaderStyles(shaderInfo.styleReimagined, shaderInfo.styleUnbound);
+        UserPersistentData.saveShaderStyles(shaderInfo.styleReimagined, shaderInfo.styleUnbound);
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined, shaderInfo.installedDir, shaderInfo.isAlreadyInstalled);
         return true;

@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.util.shader;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
@@ -7,6 +7,9 @@ import com.euphoriapatches.euphoria_patcher.features.properties.PropertiesWatche
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderNamingService;
+import com.euphoriapatches.euphoria_patcher.util.SpacEagle17;
+import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 
 import java.io.IOException;
 import java.nio.file.Path;

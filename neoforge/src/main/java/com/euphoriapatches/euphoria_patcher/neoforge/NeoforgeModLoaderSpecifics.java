@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.neoforge;
 
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;

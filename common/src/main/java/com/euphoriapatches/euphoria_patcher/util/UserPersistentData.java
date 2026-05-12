@@ -19,7 +19,7 @@ import java.util.TreeSet;
 /**
  * Handles persistent storage of shader data in a JSON file
  */
-public class ShaderData {
+public class UserPersistentData {
     private static final Path DATA_FILE = Config.CONFIG_DIR.resolve(".data.json");
     private static final Path LEGACY_DATA_FILE = Config.CONFIG_DIR.resolve("data.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -28,7 +28,7 @@ public class ShaderData {
     private static PersistentShaderData cachedData = null;
 
     private static void debugLog(String message) {
-        EuphoriaLogger.debugLog("[ShaderData] " + message);
+        EuphoriaLogger.debugLog("[UserPersistentData] " + message);
     }
 
     /**

@@ -2,9 +2,9 @@ package com.euphoriapatches.euphoria_patcher.integration;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ModChecker;
-import com.euphoriapatches.euphoria_patcher.util.ModsDirectory;
-import com.euphoriapatches.euphoria_patcher.util.ShaderVersionComparator;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModsDirectory;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
 import java.io.BufferedReader;

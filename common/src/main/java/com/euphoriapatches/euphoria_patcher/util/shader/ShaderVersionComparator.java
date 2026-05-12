@@ -1,6 +1,7 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.util.shader;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

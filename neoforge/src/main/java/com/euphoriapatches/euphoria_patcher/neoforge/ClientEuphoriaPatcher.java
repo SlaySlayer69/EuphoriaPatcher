@@ -1,7 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.neoforge;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.neoforged.fml.common.Mod;
 
 @Mod("euphoria_patcher")

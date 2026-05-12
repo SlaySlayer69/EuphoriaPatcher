@@ -1,7 +1,8 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.util.mod;
 
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 
 import java.util.EnumMap;
 

@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.integration.iris;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ModChecker;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 
 /**
  * Centralizes all functionality related to Iris shader reloading

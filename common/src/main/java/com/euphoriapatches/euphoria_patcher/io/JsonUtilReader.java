@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.io;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

@@ -1,5 +1,6 @@
-package com.euphoriapatches.euphoria_patcher.util;
+package com.euphoriapatches.euphoria_patcher.util.shader;
 
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.apache.commons.io.FileUtils;
 

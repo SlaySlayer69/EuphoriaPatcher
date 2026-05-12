@@ -4,7 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 
 import java.io.IOException;
 import java.nio.file.*;

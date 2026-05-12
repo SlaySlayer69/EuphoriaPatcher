@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;

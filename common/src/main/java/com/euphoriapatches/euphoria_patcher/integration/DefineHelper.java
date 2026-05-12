@@ -6,8 +6,8 @@ import com.euphoriapatches.euphoria_patcher.features.UpdateShaderConfig;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.ModChecker;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.SpacEagle17;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
 

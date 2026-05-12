@@ -5,8 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.sigpipe.jbsdiff.ui.FileUI;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.ArchiveUtils;
-import com.euphoriapatches.euphoria_patcher.util.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.HashUtils;
 import org.apache.commons.io.FileUtils;
 
