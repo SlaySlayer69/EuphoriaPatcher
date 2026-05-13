@@ -173,7 +173,7 @@ tasks.register('buildAll') {
     doLast {
         Thread.sleep(2000)
         def libsDir = file("${rootProject.buildDir}/libs")
-        def zipFile = file("${libsDir}/EuphoriaPatcherMod.zip")
+        def zipFile = file("${libsDir}/EuphoriaPatcherMod_UNZIP_ME.zip")
 
         if (libsDir.exists()) {
             ant.zip(destfile: zipFile) {
