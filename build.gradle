@@ -172,6 +172,19 @@ tasks.register('buildAll') {
     }
     doLast {
         Thread.sleep(2000)
+        def libsDir = file("${rootProject.buildDir}/libs")
+        def zipFile = file("${libsDir}/EuphoriaPatcherMod.zip")
+
+        if (libsDir.exists()) {
+            ant.zip(destfile: zipFile) {
+                fileset(dir: libsDir) {
+                    exclude(name: zipFile.name)
+                }
+            }
+
+            println "Created ${zipFile.absolutePath}"
+        }
+
         println "\n" + "=" * 60
         println "\u001B[32mAll mod loader variants built successfully!\u001B[0m"
         println "=" * 60
