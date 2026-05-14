@@ -22,13 +22,35 @@ public class ArchiveUtils {
         EuphoriaLogger.debugLog("[ArchiveUtils] " + message);
     }
 
+    private static boolean hasZipSignature(Path p) {
+        try (InputStream is = Files.newInputStream(p)) {
+            byte[] sig = new byte[4];
+
+            if (is.read(sig) != 4) {
+                return false;
+            }
+
+            boolean isZip = sig[0] == 0x50 &&
+                   sig[1] == 0x4B && (
+                   (sig[2] == 0x03 && sig[3] == 0x04) ||
+                   (sig[2] == 0x05 && sig[3] == 0x06) ||
+                   (sig[2] == 0x07 && sig[3] == 0x08));
+
+            debugLog(String.format("Checked ZIP signature %-50s : %s", p.getFileName(), isZip ? "VALID" : "INVALID"));
+
+            return isZip;
+        } catch (IOException e) {
+            debugLog("Failed to read signature for " + p + " : " + e.getMessage());
+            return false;
+        }
+    }
+
     /**
      * Extracts the contents of an archive to the specified output directory.
      *
      * @param in  Path to the input archive file.
      * @param out Path to the output directory where files should be extracted.
-     * @throws IOException if there's an issue with file operations
-     * @throws ArchiveException if there's an issue with archive processing
+     * @throws Exception if there's an issue with reading the archive or writing files
      */
     public static void extract(Path in, Path out) throws IOException, ArchiveException {
         debugLog("Starting extraction from " + in + " to " + out);
@@ -36,6 +58,13 @@ public class ArchiveUtils {
         // Create the output directory if it doesn't exist
         Files.createDirectories(out);
         debugLog("Created output directory: " + out);
+
+        // If the input is named as a ZIP, do a quick signature check and skip if it doesn't match
+        if (in != null && in.toString().toLowerCase().endsWith(".zip") && !hasZipSignature(in)) {
+            debugLog("Skipping extraction: file has .zip extension but lacks ZIP signature: " + in);
+            EuphoriaPatcher.log(2,0, "Skipping corrupt or non-ZIP file: " + in);
+            return;
+        }
 
         // Start the extraction process
         try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(
@@ -95,11 +124,11 @@ public class ArchiveUtils {
             debugLog(completionMessage);
         } catch (Exception e) {
             debugLog("Error during extraction: " + e.getMessage());
-            EuphoriaPatcher.log(3, "Archive extraction failed: " + e.getMessage());
+            EuphoriaPatcher.log(3,0, "Archive extraction failed: " + e.getMessage());
             if (e.getCause() != null) {
                 debugLog("Caused by: " + e.getCause().getMessage());
             }
-            EuphoriaPatcher.log(3, EuphoriaLogger.getStackTrace(e));
+            EuphoriaPatcher.log(3,0, EuphoriaLogger.getStackTrace(e));
         }
     }
 
