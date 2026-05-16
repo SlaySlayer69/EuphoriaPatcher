@@ -292,13 +292,28 @@ public class UpdateShaderConfig {
                 // Check for identifiers
                 boolean mainIdentifierExists = false;
                 String existingVersionIdentifier = null;
+                int versionIdentifierCount = 0;
 
                 // First scan the file to check what identifiers exist
                 for (String line : lines) {
-                    if (line.trim().equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
+                    String trimmed = line.trim();
+
+                    if (trimmed.equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
                         mainIdentifierExists = true;
-                    } else if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                        existingVersionIdentifier = line;
+                    } else if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                        versionIdentifierCount++;
+
+                        // Keep highest embedded version if multiple markers are present.
+                        if (existingVersionIdentifier == null) {
+                            existingVersionIdentifier = trimmed;
+                        } else {
+                            String existingVersion = extractVersionFromIdentifier(existingVersionIdentifier);
+                            String candidateVersion = extractVersionFromIdentifier(trimmed);
+                            if (existingVersion != null && candidateVersion != null &&
+                                compareVersionParts(candidateVersion.substring(1), existingVersion.substring(1)) > 0) {
+                                existingVersionIdentifier = trimmed;
+                            }
+                        }
                     }
                 }
 
@@ -306,13 +321,16 @@ public class UpdateShaderConfig {
                 // 1. No settings were changed
                 // 2. Identifiers are already correct AND are at the top of the file after comments
                 boolean identifiersAtTop = areIdentifiersAtTop(lines);
+                boolean hasDuplicateVersionIdentifiers = versionIdentifierCount > 1;
                 if (!settingsChanged && mainIdentifierExists &&
                     (versionIdentifierToAdd == null ||
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
-                    identifiersAtTop) {
+                    identifiersAtTop && !hasDuplicateVersionIdentifiers) {
 
                     debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
                     return; // Nothing to do
+                } else if (hasDuplicateVersionIdentifiers) {
+                    debugLog("Found duplicate version identifiers - will collapse to one marker for: " + configFile.getFileName());
                 } else if (!identifiersAtTop) {
                     debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
                 }
@@ -569,18 +587,31 @@ public class UpdateShaderConfig {
         try {
             List<String> lines = Files.readAllLines(file);
             boolean foundMainIdentifier = false;
+            String highestVersion = null;
 
             for (String line : lines) {
-                if (line.trim().equals(EUPHORIA_IDENTIFIER)) {
+                String trimmed = line.trim();
+
+                if (trimmed.equals(EUPHORIA_IDENTIFIER)) {
                     foundMainIdentifier = true;
                     debugLog("Found main identifier in file: " + file.getFileName());
                 } else if (foundMainIdentifier &&
-                        line.startsWith(VERSION_IDENTIFIER_PREFIX) &&
-                        line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                    String version = extractVersionFromIdentifier(line);
-                    debugLog("Found version identifier in file: " + file.getFileName() + " - " + version);
-                    return version;
+                        trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) &&
+                        trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                    String version = extractVersionFromIdentifier(trimmed);
+                    if (version != null) {
+                        debugLog("Found version identifier in file: " + file.getFileName() + " - " + version);
+                        if (highestVersion == null ||
+                            compareVersionParts(version.substring(1), highestVersion.substring(1)) > 0) {
+                            highestVersion = version;
+                        }
+                    }
                 }
+            }
+
+            if (highestVersion != null) {
+                debugLog("Using highest version identifier in file: " + file.getFileName() + " - " + highestVersion);
+                return highestVersion;
             }
 
             if (foundMainIdentifier) {
