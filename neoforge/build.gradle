@@ -84,7 +84,10 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
-    shade 'com.google.guava:guava:33.6.0-jre'
+    shade('com.google.guava:guava:33.6.0-jre') {
+		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
+		transitive = false
+	}
 }
 
 // Disable the default jar task

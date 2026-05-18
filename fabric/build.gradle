@@ -51,7 +51,10 @@ dependencies {
 	shade project(':common')
 	shade 'io.sigpipe:jbsdiff:1.0'
 	shade 'com.google.code.gson:gson:2.8.9'
-	shade 'com.google.guava:guava:33.6.0-jre'
+	shade('com.google.guava:guava:33.6.0-jre') {
+		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
+		transitive = false
+	}
 
 	// Apache Commons dependencies - these need to be shadowed
 	shade 'org.apache.commons:commons-compress:1.21'
