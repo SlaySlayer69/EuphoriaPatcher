@@ -3,7 +3,7 @@ plugins {
 	id 'idea'
 	id 'maven-publish'
 	id 'com.github.johnrengelman.shadow' version '7.1.2'
-	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
+	id "me.modmuss50.mod-publish-plugin"
 }
 
 // Use versionProps from root project
@@ -160,7 +160,7 @@ publishMods {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
             start = "1.14"
-            end = "latest"
+            end = "latestRelease"
         }
 		clientRequired = true
 		serverRequired = false
@@ -170,7 +170,7 @@ publishMods {
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
             start = "1.14"
-            end = "latest"
+            end = "latestRelease"
 			includeSnapshots = true
         }
     }

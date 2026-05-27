@@ -1,4 +1,8 @@
+// Before first compile: comment out include 'forge1_7_10' and run buildAll once to generate common module, then uncomment it again and run the build again to include it in the project
+
 pluginManagement {
+	includeBuild(file("build-logic/mod-publish-plugin")) // Locally include the mod-publish-plugin code to have latestRelease available on Gradle 8
+
 	repositories {
 		maven {
 			name = 'Fabric'

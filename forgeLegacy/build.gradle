@@ -12,7 +12,7 @@ buildscript {
 plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
-	id "me.modmuss50.mod-publish-plugin" version "1.1.0"
+	id "me.modmuss50.mod-publish-plugin"
 }
 
 apply plugin: "net.minecraftforge.gradle"
