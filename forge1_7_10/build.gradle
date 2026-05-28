@@ -49,39 +49,37 @@ processResources {
     }
 }
 
+configurations {
+    shade
+    compileOnly.extendsFrom shade
+}
+
 dependencies {
-    // Common project - regular implementation
-    implementation(project(':common'))
+    // Common module dependency - compileOnly since it's shaded in to prevent a first-compile circular dependency issue
+    compileOnly(project(':common'))
 
     // Dependencies to be shadowed - using standard implementation
-    implementation('io.sigpipe:jbsdiff:1.0')
-    implementation('com.google.code.gson:gson:2.8.9')
-    implementation('org.apache.commons:commons-compress:1.21')
-    implementation('commons-io:commons-io:2.11.0')
-    implementation('commons-codec:commons-codec:1.15')
+    shade('io.sigpipe:jbsdiff:1.0')
+    shade('com.google.code.gson:gson:2.8.9')
+    shade('org.apache.commons:commons-compress:1.21')
+    shade('commons-io:commons-io:2.11.0')
+    shade('commons-codec:commons-codec:1.15')
 }
 
 // Shadow configuration - bundle specific dependencies
 shadowJar {
     archiveClassifier.set('dev')
 
-    // Just shadow the specific dependencies we need
-    dependencies {
-        include(project(':common'))
-        include(dependency('io.sigpipe:jbsdiff:.*'))
-        include(dependency('com.google.code.gson:gson:.*'))
-        include(dependency('org.apache.commons:commons-compress:.*'))
-        include(dependency('commons-io:commons-io:.*'))
-        include(dependency('commons-codec:commons-codec:.*'))
-    }
+    configurations = [project.configurations.shade]
+
+    from(project(':common').sourceSets.main.output)
 
     // Relocate shadowed dependencies to avoid conflicts
     relocate 'io.sigpipe', "${project.group}.shadow.io.sigpipe"
     relocate 'com.google.gson', "${project.group}.shadow.com.google.gson"
     relocate 'org.apache.commons', "${project.group}.shadow.org.apache.commons"
 
-    // Minimize to remove unused classes
-    minimize()
+    // Don't minimize as common module is shaded in, which breaks minimization
 
     exclude 'META-INF/maven/**'
     exclude 'META-INF/*.SF'
@@ -132,6 +130,12 @@ tasks.register('copyToRootBuild', Copy) {
 }
 
 build.dependsOn copyToRootBuild
+
+tasks.named('clean').configure {
+    delete = fileTree(buildDir).matching {
+        exclude 'rfg/**'
+    }
+}
 
 publishMods {
     file = tasks.reobfJar.archiveFile

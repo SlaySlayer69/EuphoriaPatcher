@@ -3,8 +3,8 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.133'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'net.neoforged.moddev' version '2.0.141'
+    id 'com.gradleup.shadow' version '8.3.6'
 	id "me.modmuss50.mod-publish-plugin"
 }
 
@@ -23,7 +23,7 @@ base {
 def neoforgeProps = new Properties()
 file("gradle.properties").withInputStream { neoforgeProps.load(it) }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 // Fix the duplicate JavaCompile task configuration
 tasks.withType(JavaCompile).configureEach {
@@ -40,28 +40,34 @@ tasks.register('compileMainClass', JavaCompile) {
     targetCompatibility = '1.8'
 }
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
-        modSource project.sourceSets.main
+neoForge {
+    // Specify your target versions here
+    version = "21.0.143"
+
+    // If using Parchment mappings, configure them here instead of properties:
+    // validateAccessTransformers = true
+
+    runs {
+        client {
+            type = "client"
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
+        }
+        server {
+            type = "server"
+            programArgument '--nogui'
+        }
+        data {
+            type = "data"
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
     }
 
-    client {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
-
-    gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    mods {
+        // Automatically registers your mod's main sourceSet
+        "${project.mod_id}" {
+            sourceSet sourceSets.main
+        }
     }
 }
 
@@ -75,7 +81,6 @@ configurations {
 
 dependencies {
     implementation project(':common')
-    implementation "net.neoforged:neoforge:${neo_version}"
 
     // Dependencies to be shadowed
     shade project(':common')
@@ -84,7 +89,7 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
-    shade('com.google.guava:guava:33.6.0-jre') {
+    shade('com.google.guava:guava:32.1.2-jre') {
 		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
 		transitive = false
 	}
@@ -212,7 +217,7 @@ publishMods {
         projectId = curseforge_project_id
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
-            start = "1.20.5"
+            start = "1.21.0"
             end = "latestRelease"
         }
         clientRequired = true
@@ -222,7 +227,7 @@ publishMods {
         projectId = modrinth_project_id
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
-            start = "1.20.5"
+            start = "1.21.0"
             end = "latestRelease"
             includeSnapshots = true
         }

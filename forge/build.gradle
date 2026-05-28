@@ -145,7 +145,7 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
-    shade('com.google.guava:guava:33.6.0-jre') {
+    shade('com.google.guava:guava:32.1.2-jre') {
 		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
 		transitive = false
 	}
@@ -257,7 +257,12 @@ publishing {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.encoding = 'UTF-8'
+
+    options.compilerArgs.addAll([
+            "-AdisableTargetValidator=true",
+            "-Xlint:-processing"
+    ])
 }
 
 eclipse {

@@ -5,6 +5,7 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.minecraft.client.MinecraftClient;
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,6 +25,7 @@ public class ReloadShadersOnDimensionChangeMixinYarn {
     /**
      * This injects at the end of the setWorld method, which is called when changing dimensions
      */
+    @Dynamic("Bypasses compiler checks for alternative mapping variants")
     @Inject(
             method = {
                 "setWorld",

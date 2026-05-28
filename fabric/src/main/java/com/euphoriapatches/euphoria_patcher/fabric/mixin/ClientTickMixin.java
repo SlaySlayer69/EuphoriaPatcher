@@ -2,6 +2,7 @@ package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
 import org.spongepowered.asm.mixin.Debug;
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -10,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Debug(export = true)
 @Mixin(targets = "net.minecraft.client.Minecraft", remap = false)
 public class ClientTickMixin {
+    @Dynamic("Bypasses compiler checks for alternative mapping variants")
     @Inject(
             method = {
                     "tick",

@@ -4,6 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,6 +24,7 @@ public class ReloadShadersOnDimensionChangeMixin {
     /**
      * This injects at the end of the setWorld/setLevel method, which is called when changing dimensions
      */
+    @Dynamic("Bypasses compiler checks for alternative mapping variants")
     @Inject(
             method = {
                     "setLevel"
