@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -90,10 +91,10 @@ public class ModifyOutdatedPatches {
 
         boolean result;
         if (renameFile) {
-            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
+            result = name.contains(EuphoriaPatcher.PATCH_NAME) && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.toLowerCase(Locale.ROOT).contains("dev");
         } else {
             result = (name.contains(EuphoriaPatcher.PATCH_NAME) || name.matches(".*Outdated.*" + EuphoriaPatcher.BRAND_NAME + ".* \\+ EP.*"))
-                    && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.contains("earlyDev");
+                    && !name.contains(EuphoriaPatcher.PATCH_VERSION) && !name.contains("ErrorShader") && !name.toLowerCase(Locale.ROOT).contains("dev");
         }
 
         debugLog("Patch " + name + " is " + (result ? "outdated" : "current"));
