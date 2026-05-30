@@ -164,6 +164,11 @@ public final class DefineHelper {
                 debugLog("Adding EUPHORIA_PATCHES_IS_3D_SKIN_LAYERS_INSTALLED define");
             }
 
+            if (ModChecker.isModPresent(ModChecker.ModNames.CAELUM)) {
+                emitter.define("EUPHORIA_PATCHES_IS_CAELUM_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_CAELUM_INSTALLED define");
+            }
+
             if (isSkyboxModInstalled()){
                 emitter.define("EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_SKYBOX_MOD_INSTALLED define");
@@ -228,7 +233,8 @@ public final class DefineHelper {
 
     private static boolean isSpaceModInstalled() {
         return ModChecker.isModPresent(ModChecker.ModNames.ASTROCRAFT) ||
-               ModChecker.isModPresent(ModChecker.ModNames.STELLAR_VIEW);
+               ModChecker.isModPresent(ModChecker.ModNames.STELLAR_VIEW) ||
+               ModChecker.isModPresent(ModChecker.ModNames.CAELUM);
     }
 
     private static void appendMacroLine(StringBuilder sb, String name) {
