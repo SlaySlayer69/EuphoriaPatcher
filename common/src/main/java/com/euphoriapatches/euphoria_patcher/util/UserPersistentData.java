@@ -117,8 +117,6 @@ public class UserPersistentData {
 
         debugLog("Saving " + updates.length + " field(s) to data file");
 
-        boolean shouldRelockFile = false;
-
         try {
             removeLegacyDataFileIfPresent();
 
@@ -182,8 +180,7 @@ public class UserPersistentData {
             }
 
             // Write to file
-            setDataFileWritable(true);
-            shouldRelockFile = true;
+            setDataFileWritable();
             try (Writer writer = new OutputStreamWriter(
                     Files.newOutputStream(DATA_FILE), StandardCharsets.UTF_8)) {
                 GSON.toJson(jsonObject, writer);
@@ -196,9 +193,7 @@ public class UserPersistentData {
         } catch (ClassCastException e) {
             debugLog("Invalid type for field update: " + e.getMessage());
         } finally {
-            if (shouldRelockFile && Files.exists(DATA_FILE)) {
-                setDataFileWritable(false);
-            }
+            setDataFileWritable();
         }
     }
 
@@ -255,7 +250,7 @@ public class UserPersistentData {
         debugLog("Deleting data file: " + DATA_FILE);
         try {
             if (Files.exists(DATA_FILE)) {
-                setDataFileWritable(true);
+                setDataFileWritable();
                 Files.delete(DATA_FILE);
                 debugLog("Successfully deleted data file");
                 cachedData = null; // Invalidate cache after delete
@@ -268,20 +263,20 @@ public class UserPersistentData {
     }
 
     /**
-     * Toggle writability of .data.json to discourage user edits while allowing internal saves.
+     * Ensure file is writeable to fix the mess I did in 1.9.0
      */
-    private static void setDataFileWritable(boolean writable) {
+    private static void setDataFileWritable() {
         File file = DATA_FILE.toFile();
         if (!file.exists()) {
             return;
         }
 
-        boolean isSetWriteable = file.setWritable(writable, false);
+        boolean isSetWriteable = file.setWritable(true, false);
 
         if (isSetWriteable) {
-            debugLog("Set writable state to " + writable + " for " + DATA_FILE);
+            debugLog("Set writable state to " + true + " for " + DATA_FILE);
         }  else {
-            debugLog("Could not set data file writable=" + writable + ": " + DATA_FILE);
+            debugLog("Could not set data file writable=" + true + ": " + DATA_FILE);
         }
     }
 
@@ -478,6 +473,7 @@ public class UserPersistentData {
      */
     public static void validateShaderDataHash() {
         debugLog("Validating shaderpacks directory hash");
+        setDataFileWritable();
 
         String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
         debugLog("Current shaderpacks directory: " + currentShadersDir);
