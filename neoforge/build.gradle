@@ -217,7 +217,7 @@ publishMods {
         projectId = curseforge_project_id
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersionRange {
-            start = "1.21.0"
+            start = "1.21"
             end = "latestRelease"
         }
         clientRequired = true
@@ -227,7 +227,7 @@ publishMods {
         projectId = modrinth_project_id
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersionRange {
-            start = "1.21.0"
+            start = "1.21"
             end = "latestRelease"
             includeSnapshots = true
         }
