@@ -24,6 +24,9 @@
     "ClientTickMixin",
     "ClientTickMixinYarn",
     "ReloadShadersOnDimensionChangeMixin",
-    "ReloadShadersOnDimensionChangeMixinYarn"
+    "ReloadShadersOnDimensionChangeMixinYarn",
+    "RenderTypeMixin",
+    "RenderTypeMixinYarn",
+    "EnderDragonRendererMixinYarn"
   ]
 }
