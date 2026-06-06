@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.fabric.mixin;
+package com.euphoriapatches.euphoria_patcher.neoforge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
@@ -12,14 +12,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.ENDER_DRAGON_RENDERER_YARN_CLASS;
-import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.RENDER_STATE_SHARD_CLASS;
+import static com.euphoriapatches.euphoria_patcher.neoforge.mixin.EuphoriaMixinPlugin.ENDER_DRAGON_RENDERER_CLASS;
+import static com.euphoriapatches.euphoria_patcher.neoforge.mixin.EuphoriaMixinPlugin.RENDER_STATE_SHARD_CLASS;
 
 // This Mixin is responsible for giving the dragon death beams an entity ID
 // This one works from 1.21-1.21.10
+@SuppressWarnings("MixinAnnotationTarget")
 @Pseudo
-@Mixin(targets = ENDER_DRAGON_RENDERER_YARN_CLASS)
-public class EnderDragonRendererMixinYarn {
+@Mixin(targets = ENDER_DRAGON_RENDERER_CLASS)
+public class EnderDragonRendererMixin {
 
     @Unique
     private static final String euphoriaPatcher$DEATH_RAYS_ID = "dragon_death_rays";
@@ -41,15 +42,14 @@ public class EnderDragonRendererMixinYarn {
     @Unique
     private static int euphoriaPatcher$backupEntityId = -1;
 
-    // This injection is 1.21+, method_61158 is renderDeathAnimation and after 1.21 it has a dedicated method for it
-    @Inject(method = "method_61158", at = @At("HEAD"), remap = false, require = 0)
+    @Inject(method = {"renderRays" ,"submitRays"} , at = @At("HEAD"), remap = false, require = 0)
     private static void euphoriaPatcher$installDeathRayHooks(CallbackInfo ci) {
         if (euphoriaPatcher$injectedAlready) return;
         euphoriaPatcher$injectedAlready = true;
 
         try {
-            Object dragonRays = ReflectionUtils.getFieldValue("net.minecraft.class_1921", "field_52255");
-            Object dragonRaysDepth = ReflectionUtils.getFieldValue("net.minecraft.class_1921", "field_52307");
+            Object dragonRays = ReflectionUtils.getFieldValue("net.minecraft.client.renderer.RenderType", "DRAGON_RAYS");
+            Object dragonRaysDepth = ReflectionUtils.getFieldValue("net.minecraft.client.renderer.RenderType", "DRAGON_RAYS_DEPTH");
 
             int wrapped = 0;
             wrapped += euphoriaPatcher$wrapActions(dragonRays) ? 1 : 0;
@@ -65,8 +65,8 @@ public class EnderDragonRendererMixinYarn {
         if (renderLayer == null) return false;
         try {
             Class<?> renderPhase = Class.forName(RENDER_STATE_SHARD_CLASS);
-            Field beginField = renderPhase.getDeclaredField("field_21361");
-            Field endField = renderPhase.getDeclaredField("field_21362");
+            Field beginField = renderPhase.getDeclaredField("setupState");
+            Field endField = renderPhase.getDeclaredField("clearState");
             beginField.setAccessible(true);
             endField.setAccessible(true);
 
@@ -153,69 +153,4 @@ public class EnderDragonRendererMixinYarn {
     private static void euphoriaPatcher$debugLog(String message) {
         EuphoriaLogger.debugLog("[EnderDragonRendererMixinYarn] " + message);
     }
-
-    // Before 1.21 the death beam code is directly in the render method and uses the lightning render layer:
-    //VertexConsumer consumer = vertexConsumerProvider.getBuffer(RenderLayer.getLightning());
-
-    // Code is commented out as I did not manage to get it working :(
-
-    /*
-    @Inject(
-     method = "method_3918",
-     at = @At(
-             value = "INVOKE",
-             target = "net/minecraft/class_1921.method_23593()Lnet/minecraft/class_1921;",
-             shift = At.Shift.BEFORE
-     ),
-     remap = false,
-     require = 0
-    )
-     private void euphoriaPatcher$beforeDeathRays(CallbackInfo ci) {
-         euphoriaPatcher$setRenderStage();
-         euphoriaPatcher$beginDeathRays();
-     }
-
-     // END: after the pop that closes the death ray loop
-    @Inject(
-     method = "method_3918",
-     at = @At(
-             value = "INVOKE",
-             target = "net/minecraft/class_4587.method_22909()V",
-             ordinal = 0,
-             shift = At.Shift.AFTER
-
-     ),
-     remap = false,
-     require = 0
-     )
-     private void euphoriaPatcher$afterDeathRays(CallbackInfo ci) {
-         euphoriaPatcher$setRenderStage();
-         euphoriaPatcher$endDeathRays();
-     }
-
-
-    @Unique
-    private static void euphoriaPatcher$setRenderStage(){
-        try {
-            Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");
-            Object currentDimension = irisClass.getMethod("getCurrentDimension").invoke(null);
-
-            Object pipelineManager = irisClass.getMethod("getPipelineManager").invoke(null);
-
-            Object pipeline = pipelineManager.getClass()
-                    .getMethod("preparePipeline", currentDimension.getClass())
-                    .invoke(pipelineManager, currentDimension);
-
-            Class<?> phaseClass = Class.forName("net.irisshaders.iris.pipeline.WorldRenderingPhase");
-            Object dragonDeathBeams = phaseClass.getField("TRIPWIRE").get(null);
-
-            pipeline.getClass()
-                    .getMethod("setPhase", phaseClass)
-                    .invoke(pipeline, dragonDeathBeams);
-
-            euphoriaPatcher$debugLog("set render stage to " + dragonDeathBeams);
-        } catch (Exception e) {
-            euphoriaPatcher$debugLog("setRenderStage failed: " + e);
-        }
-    }*/
 }
