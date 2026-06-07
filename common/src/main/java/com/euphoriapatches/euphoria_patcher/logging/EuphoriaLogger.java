@@ -52,6 +52,8 @@ public class EuphoriaLogger {
     private final boolean doErrorClipboardCopy;
     private boolean errorURLAlreadyCopied = false;
 
+    private static final int SPAM_PROTECTION_QUEUE_SIZE = 100; // Maximum number of messages to track for spam protection
+    private final LogMessageQueue logMessageQueue = new LogMessageQueue(SPAM_PROTECTION_QUEUE_SIZE);
 
     public EuphoriaLogger() {
         this.isSodiumInstalled = false;
@@ -76,6 +78,10 @@ public class EuphoriaLogger {
      * Main logging method with custom fade timer
      */
     public void log(int messageLevel, int messageFadeTimer, String message) {
+        if (shouldSuppressMessage(message)) {
+            return;
+        }
+
         String loggingMessage = "EuphoriaPatcher: " + message;
         if (messageLevel == -1) loggingMessage = "\n \n" + loggingMessage + "\n\n ";
 
@@ -143,6 +149,21 @@ public class EuphoriaLogger {
         int messageFadeTimer = messageLevel >= 0 && messageLevel < fadeTimers.length ?
                 fadeTimers[messageLevel] : 0;
         log(messageLevel, messageFadeTimer, message);
+    }
+
+    /**
+     * Checks if a message should be suppressed based on recent duplicates within the defined time window
+     */
+    private boolean shouldSuppressMessage(String message) {
+        LogMessage logMessage = new LogMessage(message);
+        int count = logMessageQueue.getOccurrenceCount(logMessage);
+
+        if (count == -1) {
+            logMessageQueue.add(logMessage);
+            return false;
+        }
+
+        return count > 3;
     }
 
     /**
