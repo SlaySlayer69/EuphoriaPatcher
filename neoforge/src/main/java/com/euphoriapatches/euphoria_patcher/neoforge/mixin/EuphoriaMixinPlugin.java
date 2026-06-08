@@ -16,6 +16,9 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String IRIS_OPTION_MENU_CONTAINER_CLASS = "net.irisshaders.iris.shaderpack.option.menu.OptionMenuContainer";
     public static final String IRIS_PROFILE_ELEMENT_WIDGET_CLASS = "net.irisshaders.iris.gui.element.widget.ProfileElementWidget";
     public static final String IRIS_PACK_RENDER_TARGETS_CLASS = "net.irisshaders.iris.shaderpack.properties.PackRenderTargetDirectives";
+    public static final String RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.RenderType";
+    public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.client.renderer.entity.EnderDragonRenderer";
+    public static final String RENDER_STATE_SHARD_CLASS = "net.minecraft.client.renderer.RenderStateShard";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -58,6 +61,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
         }
         if (mixinClassName.contains("IrisModernPackRenderTargetDirectivesMixin")) {
             return checkClassExists(IRIS_PACK_RENDER_TARGETS_CLASS);
+        }
+
+        if  (mixinClassName.contains("EnderDragonRendererMixin")) {
+            return checkClassExists(ENDER_DRAGON_RENDERER_CLASS) && checkClassExists(RENDER_STATE_SHARD_CLASS);
+        }
+
+        if (mixinClassName.contains("RenderTypeMixin")) {
+            return checkClassExists(RENDER_TYPE_CLASS) && !checkClassExists(RENDER_STATE_SHARD_CLASS);
         }
 
         // Apply other mixins by default

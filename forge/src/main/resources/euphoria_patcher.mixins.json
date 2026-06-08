@@ -26,7 +26,8 @@
     "ClientTickMixin",
     "IrisHeaderEntryMixin",
     "ReloadShadersOnDimensionChangeMixin",
-    "IrisElementRowMixin"
+    "IrisElementRowMixin",
+    "EnderDragonRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 0
