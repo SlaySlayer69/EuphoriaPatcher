@@ -100,9 +100,12 @@ public final class DefineHelper {
                 debugLog("Adding SPACEAGLE17 define");
             }
 
-            String currentVersion = formatVersion(EuphoriaPatcher.PATCH_VERSION);
+            String currentVersion = formatVersionAsGLSLString(EuphoriaPatcher.PATCH_VERSION);
             emitter.define("CURRENT_EUPHORIA_PATCHES_VERSION", currentVersion);
             debugLog("Adding CURRENT_EUPHORIA_PATCHES_VERSION = " + currentVersion + " define");
+
+            emitter.define("EUPHORIA_PATCHES_VERSION_DEFINE", getFormattedEPVersion());
+            debugLog("Adding EUPHORIA_PATCHES_VERSION_DEFINE = " + getFormattedEPVersion() + " define");
 
             emitter.define("EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
@@ -185,7 +188,7 @@ public final class DefineHelper {
                 debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
 
                 if (UpdateChecker.getNewModVersion() != null) {
-                    String nextVersionFormatted = formatVersion(UpdateChecker.getNewModVersion());
+                    String nextVersionFormatted = formatVersionAsGLSLString(UpdateChecker.getNewModVersion());
                     emitter.define("NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
                     debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
                 }
@@ -211,7 +214,7 @@ public final class DefineHelper {
         }
     }
 
-    public static String formatVersion(String version) {
+    private static String formatVersionAsGLSLString(String version) {
         String[] versionParts = version.replace("_", "").split("\\.");
         StringBuilder versionBuilder = new StringBuilder();
         for (int i = 0; i < versionParts.length; i++) {
@@ -221,6 +224,14 @@ public final class DefineHelper {
             }
         }
         return versionBuilder.toString();
+    }
+
+    private static String getFormattedEPVersion() {
+        String[] parts = EuphoriaPatcher.PATCH_VERSION.replace("_", "").split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        int minor = Integer.parseInt(parts[1]);
+        int patch = Integer.parseInt(parts[2]);
+        return String.format("%d%02d%02d", major, minor, patch);
     }
 
     private static boolean isSkyboxModInstalled() {
