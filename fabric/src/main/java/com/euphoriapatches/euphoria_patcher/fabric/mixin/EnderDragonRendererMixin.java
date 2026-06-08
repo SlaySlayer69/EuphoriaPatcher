@@ -12,14 +12,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.ENDER_DRAGON_RENDERER_YARN_CLASS;
+import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.ENDER_DRAGON_RENDERER_CLASS;
 import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.RENDER_STATE_SHARD_CLASS;
 
 // This Mixin is responsible for giving the dragon death beams an entity ID
-// This one works from 1.20.1-1.21.10
+// This one works from 1.18.2 (or earlier, didn't test) until 1.21.10
 @Pseudo
-@Mixin(targets = ENDER_DRAGON_RENDERER_YARN_CLASS)
-public class EnderDragonRendererMixinYarn {
+@Mixin(targets = ENDER_DRAGON_RENDERER_CLASS)
+public class EnderDragonRendererMixin {
 
     @Unique
     private static final String euphoriaPatcher$DEATH_RAYS_ID = "dragon_death_rays";
@@ -142,33 +142,46 @@ public class EnderDragonRendererMixinYarn {
         }
         try {
             Object worldRenderingSettings = ReflectionUtils.getFieldValue("net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings", "INSTANCE");
+            if (worldRenderingSettings == null)
+                worldRenderingSettings = ReflectionUtils.getFieldValue("net.coderbot.iris.block_rendering.BlockRenderingSettings", "INSTANCE");
             if (worldRenderingSettings == null) return false;
+
             Object entityIds = worldRenderingSettings.getClass().getMethod("getEntityIds").invoke(worldRenderingSettings);
             if (entityIds == null) return false;
 
             Object capturedRenderingState = ReflectionUtils.getFieldValue("net.irisshaders.iris.uniforms.CapturedRenderingState", "INSTANCE");
+            if (capturedRenderingState == null)
+                capturedRenderingState = ReflectionUtils.getFieldValue("net.coderbot.iris.uniforms.CapturedRenderingState", "INSTANCE");
             if (capturedRenderingState == null) return false;
 
-            Object deathRaysId = Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId")
+            String namespacedIdClass = ReflectionUtils.checkClassExists("net.irisshaders.iris.shaderpack.materialmap.NamespacedId")
+                    ? "net.irisshaders.iris.shaderpack.materialmap.NamespacedId"
+                    : "net.coderbot.iris.shaderpack.materialmap.NamespacedId";
+            Object deathRaysId = Class.forName(namespacedIdClass)
                     .getConstructor(String.class, String.class).newInstance("minecraft", euphoriaPatcher$DEATH_RAYS_ID);
+
             int id = (int) entityIds.getClass().getMethod("applyAsInt", Object.class).invoke(entityIds, deathRaysId);
+
+            String gbufferProgramsClass = ReflectionUtils.checkClassExists("net.irisshaders.iris.layer.GbufferPrograms")
+                    ? "net.irisshaders.iris.layer.GbufferPrograms"
+                    : "net.coderbot.iris.layer.GbufferPrograms";
 
             euphoriaPatcher$getCurrentEntity = capturedRenderingState.getClass().getMethod("getCurrentRenderedEntity");
             euphoriaPatcher$setCurrentEntity = capturedRenderingState.getClass().getMethod("setCurrentEntity", int.class);
-            euphoriaPatcher$runFallbackListener = Class.forName("net.irisshaders.iris.layer.GbufferPrograms").getMethod("runFallbackEntityListener");
+            euphoriaPatcher$runFallbackListener = Class.forName(gbufferProgramsClass).getMethod("runFallbackEntityListener");
 
             euphoriaPatcher$capturedRenderingState = capturedRenderingState;
             euphoriaPatcher$deathRaysEntityId = id;
             euphoriaPatcher$debugLog("resolved dragon_death_rays entity id = " + id);
             return true;
         } catch (Throwable t) {
-            euphoriaPatcher$debugLog("resoleIris error: " + t);
+            euphoriaPatcher$debugLog("resolveIris error: " + t);
             return false;
         }
     }
 
     @Unique
     private static void euphoriaPatcher$debugLog(String message) {
-        EuphoriaLogger.debugLog("[EnderDragonRendererMixinYarn] " + message);
+        EuphoriaLogger.debugLog("[EnderDragonRendererMixin] " + message);
     }
 }

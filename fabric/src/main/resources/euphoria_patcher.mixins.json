@@ -27,6 +27,6 @@
     "ReloadShadersOnDimensionChangeMixinYarn",
     "RenderTypeMixin",
     "RenderTypeMixinYarn",
-    "EnderDragonRendererMixinYarn"
+    "EnderDragonRendererMixin"
   ]
 }

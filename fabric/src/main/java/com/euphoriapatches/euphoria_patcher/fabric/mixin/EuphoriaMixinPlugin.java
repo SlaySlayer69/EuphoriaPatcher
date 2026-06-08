@@ -26,7 +26,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String PHOTONICS_RAYTRACER_CLASS = "at.redi2go.photonic.client.Raytracer";
     public static final String RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.RenderType";
     public static final String RENDER_TYPE_CLASS_YARN = "net.minecraft.class_1921";
-    public static final String ENDER_DRAGON_RENDERER_YARN_CLASS = "net.minecraft.class_895";
+    public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.class_895";
     public static final String RENDER_STATE_SHARD_CLASS = "net.minecraft.class_4668";
 
     @Override
@@ -119,8 +119,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
             return checkClassExists(PHOTONICS_RAYTRACER_CLASS);
         }
 
-        if  (mixinClassName.contains("EnderDragonRendererMixinYarn")) {
-            return checkClassExists(ENDER_DRAGON_RENDERER_YARN_CLASS) && checkClassExists(MINECRAFT_CLIENT_YARN_CLASS) && checkClassExists(RENDER_STATE_SHARD_CLASS);
+        if  (mixinClassName.contains("EnderDragonRendererMixin")) {
+            return checkClassExists(ENDER_DRAGON_RENDERER_CLASS) && checkClassExists(MINECRAFT_CLIENT_YARN_CLASS) && checkClassExists(RENDER_STATE_SHARD_CLASS);
         }
 
         if (mixinClassName.contains("RenderTypeMixinYarn")) {
