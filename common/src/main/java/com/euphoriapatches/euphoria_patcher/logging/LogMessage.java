@@ -37,5 +37,3 @@ public class LogMessage {
     @Override
     public int hashCode() { return message.hashCode(); }
 }
-
-

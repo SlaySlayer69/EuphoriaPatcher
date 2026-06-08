@@ -9,10 +9,10 @@ public class LogMessageQueue {
 
     public LogMessageQueue(int maxSize) {
         this.maxSize = maxSize;
-        this.map = new LinkedHashMap<>(maxSize, 0.75f, true);
+        this.map = new LinkedHashMap<>(maxSize, 0.75f, false);
     }
 
-    public int getOccurrenceCount(LogMessage message) {
+    public synchronized int getOccurrenceCount(LogMessage message) {
         long now = System.currentTimeMillis();
         LogMessage existing = map.get(message.getMessage());
 
@@ -28,7 +28,7 @@ public class LogMessageQueue {
         return -1;
     }
 
-    public void add(LogMessage message) {
+    public synchronized void add(LogMessage message) {
         evictExpired();
         if (map.size() >= maxSize) {
             map.remove(map.keySet().iterator().next());
