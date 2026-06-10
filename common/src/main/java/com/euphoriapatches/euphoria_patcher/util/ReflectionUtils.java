@@ -28,6 +28,13 @@ public class ReflectionUtils {
         }
     }
 
+    /**
+     * Retrieves the value of a field from an object.
+     *
+     * @param target    The object from which to retrieve the field value
+     * @param fieldName The name of the field to retrieve
+     * @return The value of the field, or null if not found
+     */
     public static Object getFieldValue(Object target, String fieldName) {
         Class<?> clazz;
         Object instance = target;
