@@ -79,7 +79,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     @Override
     public boolean isTimeAdvancing() {
-        return true;
+        return GameRuleChecker.getInstance().isTimeAdvancing();
     }
 
     private String getCurrentDimensionID() {
