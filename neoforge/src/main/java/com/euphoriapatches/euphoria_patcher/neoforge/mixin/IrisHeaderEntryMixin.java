@@ -266,7 +266,6 @@ public class IrisHeaderEntryMixin {
         try {
             euphoriaPatcher$playButtonClickSound();
 
-            // Check if shift is held
             if (euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown()) {
                 euphoriaPatcher$debugLog("Pressed Shift while clicking EP button - removing button");
                 UserPersistentData.save(UserPersistentData.SaveData.of(UserPersistentData.DataField.SUPPORT_EP_BUTTON, false));
@@ -274,23 +273,48 @@ public class IrisHeaderEntryMixin {
                 return;
             }
 
-            @SuppressWarnings("null")
             ConfirmLinkScreen confirmScreen = new ConfirmLinkScreen(
-                confirmed -> {
-                    if (confirmed) {
-                        euphoriaPatcher$openUrl();
-                    }
-                    minecraft.setScreen((Screen) screen);
-                },
+                    confirmed -> {
+                        if (confirmed) {
+                            euphoriaPatcher$openUrl();
+                        }
+                        try {
+                            euphoriaPatcher$setScreen(minecraft, screen);
+                        } catch (Exception e) {
+                            euphoriaPatcher$debugLog("Error returning to previous screen: " + e.getMessage());
+                        }
+                    },
                     euphoriaPatcher$EuphoriaURL,
-                true
+                    true
             );
 
-            minecraft.setScreen(confirmScreen);
+            euphoriaPatcher$setScreen(minecraft, confirmScreen);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error handling button click: " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
         }
+    }
+
+    @Unique
+    private void euphoriaPatcher$setScreen(Object minecraft, Object screen) throws Exception {
+        Class<?> screenClass = Screen.class;
+
+        // Try modern path first: minecraft.gui.setScreen(screen)
+        try {
+            Object gui = minecraft.getClass().getField("gui").get(minecraft);
+            gui.getClass().getMethod("setScreen", screenClass).invoke(gui, screen);
+            euphoriaPatcher$debugLog("setScreen succeeded via minecraft.gui.setScreen");
+            return;
+        } catch (NoSuchFieldException | NoSuchMethodException ignored) {}
+
+        // Fallback: legacy direct minecraft.setScreen(screen)
+        try {
+            minecraft.getClass().getMethod("setScreen", screenClass).invoke(minecraft, screen);
+            euphoriaPatcher$debugLog("setScreen succeeded via minecraft.setScreen");
+            return;
+        } catch (NoSuchMethodException ignored) {}
+
+        throw new Exception("Could not find a working setScreen method on Minecraft or Minecraft.gui");
     }
 
     @Unique

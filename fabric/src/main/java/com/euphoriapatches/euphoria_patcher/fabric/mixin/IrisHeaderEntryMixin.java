@@ -334,8 +334,29 @@ public class IrisHeaderEntryMixin {
 
     @Unique
     private void euphoriaPatcher$setScreen(Object minecraft, Object screen) throws Exception {
-        Class<?> screenClass = Class.forName("net.minecraft.client.gui.screens.Screen");
-        minecraft.getClass().getMethod("setScreen", screenClass).invoke(minecraft, screen);
+        Class<?> screenClass;
+        try {
+            screenClass = Class.forName("net.minecraft.client.gui.screens.Screen");
+        } catch (ClassNotFoundException e) {
+            screenClass = Class.forName("net.minecraft.client.gui.screen.Screen");
+        }
+
+        // Try modern path first: minecraft.gui.setScreen(screen)
+        try {
+            Object gui = minecraft.getClass().getField("gui").get(minecraft);
+            gui.getClass().getMethod("setScreen", screenClass).invoke(gui, screen);
+            euphoriaPatcher$debugLog("setScreen succeeded via minecraft.gui.setScreen");
+            return;
+        } catch (NoSuchFieldException | NoSuchMethodException ignored) {}
+
+        // Fallback: legacy direct minecraft.setScreen(screen)
+        try {
+            minecraft.getClass().getMethod("setScreen", screenClass).invoke(minecraft, screen);
+            euphoriaPatcher$debugLog("setScreen succeeded via minecraft.setScreen");
+            return;
+        } catch (NoSuchMethodException ignored) {}
+
+        throw new Exception("Could not find a working setScreen method on Minecraft or Minecraft.gui");
     }
 
     @Unique
@@ -526,6 +547,6 @@ public class IrisHeaderEntryMixin {
 
     @Unique
     private static void euphoriaPatcher$debugLog(String message) {
-        EuphoriaLogger.debugLog("[IrisHeaderEntryMixinModern] " + message);
+        EuphoriaLogger.debugLog("[IrisHeaderEntryMixin] " + message);
     }
 }
