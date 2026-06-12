@@ -219,7 +219,14 @@ public final class DefineHelper {
         String[] versionParts = version.replace("_", "").split("\\.");
         StringBuilder versionBuilder = new StringBuilder();
         for (int i = 0; i < versionParts.length; i++) {
-            versionBuilder.append("_").append(versionParts[i]);
+            // Split each part into individual digits
+            String part = versionParts[i];
+            for (int j = 0; j < part.length(); j++) {
+                if (j > 0) {
+                    versionBuilder.append(", ");
+                }
+                versionBuilder.append("_").append(part.charAt(j));
+            }
             if (i < versionParts.length - 1) {
                 versionBuilder.append(", _dot, ");
             }
