@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -58,6 +59,13 @@ public class RenderTypeMixin {
     private void euphoriaPatcher$endDraw(@Coerce Object  mesh, CallbackInfo ci) {
         if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
         euphoriaPatcher$endDeathRays();
+    }
+
+    // This method is needed for 26.2 capture
+    @Inject(method = "prepare", at = @At("RETURN"), remap = false, require = 0)
+    private void euphoriaPatcher$captureNameOnPrepare(CallbackInfoReturnable<Object> cir) {
+        Object prepared = cir.getReturnValue();
+        com.euphoriapatches.euphoria_patcher.integration.iris.RenderTypeTracker.put(prepared, this.name);
     }
 
     @Unique

@@ -17,6 +17,7 @@
     "IrisHeaderEntryMixin",
     "RenderTypeMixin",
     "EnderDragonRendererMixin",
-    "IrisModernExclusiveUniformsMixin"
+    "IrisModernExclusiveUniformsMixin",
+    "PreparedRenderTypeMixin"
   ]
 }

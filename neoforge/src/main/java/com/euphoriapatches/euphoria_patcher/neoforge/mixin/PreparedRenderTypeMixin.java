@@ -1,30 +1,26 @@
-package com.euphoriapatches.euphoria_patcher.fabric.mixin;
+package com.euphoriapatches.euphoria_patcher.neoforge.mixin;
 
+import com.euphoriapatches.euphoria_patcher.integration.iris.RenderTypeTracker;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
-import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.RENDER_TYPE_CLASS;
+import static com.euphoriapatches.euphoria_patcher.neoforge.mixin.EuphoriaMixinPlugin.PREPARED_RENDER_TYPE_CLASS;
 
 // This Mixin is responsible for giving the dragon death beams an entity ID
-// This one works on 26.1.X
+// This one works on 26.2+
 @Pseudo
-@Mixin(targets = RENDER_TYPE_CLASS)
-public class RenderTypeMixin {
+@Mixin(targets = PREPARED_RENDER_TYPE_CLASS, remap = false)
+public class PreparedRenderTypeMixin {
 
     @Unique
     private static final String euphoriaPatcher$DEATH_RAYS_ID = "dragon_death_rays";
@@ -45,32 +41,31 @@ public class RenderTypeMixin {
     @Unique
     private static int euphoriaPatcher$backupEntityId = -1;
 
-    @Shadow
-    private String name;
-
     @Unique
-    private static final Set<String> euphoriaPatcher$DEATH_RAY_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    "dragon_rays", "dragon_rays_depth"
-            )));
+    private static final Set<String> euphoriaPatcher$DEATH_RAY_TYPES = Set.of("dragon_rays", "dragon_rays_depth");
 
-    @Inject(method = "draw", at = @At("HEAD"))
-    private void euphoriaPatcher$beginDraw(@Coerce Object mesh, CallbackInfo ci) {
-        if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
+    @Inject(
+            method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V",
+            at = @At("HEAD"),
+            remap = false
+    )
+    private void euphoriaPatcher$beginDraw(@Coerce Object vertexBuffer, @Coerce Object indexBuffer, @Coerce Object indexType, int baseVertex, int firstIndex, int indexCount, CallbackInfo ci) {
+        String name = RenderTypeTracker.getName(this);
+        if (name == null || !euphoriaPatcher$DEATH_RAY_TYPES.contains(name)) return;
+
         euphoriaPatcher$beginDeathRays();
     }
 
-    @Inject(method = "draw", at = @At("TAIL"))
-    private void euphoriaPatcher$endDraw(@Coerce Object  mesh, CallbackInfo ci) {
-        if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
-        euphoriaPatcher$endDeathRays();
-    }
+    @Inject(
+            method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V",
+            at = @At("TAIL"),
+            remap = false
+    )
+    private void euphoriaPatcher$endDraw(@Coerce Object vertexBuffer, @Coerce Object indexBuffer, @Coerce Object indexType, int baseVertex, int firstIndex, int indexCount, CallbackInfo ci) {
+        String name = RenderTypeTracker.getName(this);
+        if (name == null || !euphoriaPatcher$DEATH_RAY_TYPES.contains(name)) return;
 
-    // This method is needed for 26.2 capture
-    @Inject(method = "prepare", at = @At("RETURN"), remap = false, require = 0)
-    private void euphoriaPatcher$captureNameOnPrepare(CallbackInfoReturnable<Object> cir) {
-        Object prepared = cir.getReturnValue();
-        com.euphoriapatches.euphoria_patcher.integration.iris.RenderTypeTracker.put(prepared, this.name);
+        euphoriaPatcher$endDeathRays();
     }
 
     @Unique
@@ -136,6 +131,6 @@ public class RenderTypeMixin {
 
     @Unique
     private static void euphoriaPatcher$debugLog(String message) {
-        EuphoriaLogger.debugLog("[RenderTypeMixin] " + message);
+        EuphoriaLogger.debugLog("[PreparedRenderTypeMixin] " + message);
     }
 }
