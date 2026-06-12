@@ -81,6 +81,12 @@ public abstract class ModLoaderSpecifics {
      */
     public abstract boolean setClipboard(String str);
 
+    /**
+     * Check if the game rule advance_time/doDaylightCycle is enabled.
+     * @return true if enabled, false if time is frozen
+     */
+    public abstract boolean isTimeAdvancing();
+
     // Convenience static methods that delegate to the instance
 
     /**
@@ -144,5 +150,13 @@ public abstract class ModLoaderSpecifics {
      */
     public static boolean setClipboardStatic(String str) {
         return getInstance().setClipboard(str);
+    }
+
+    /**
+     * Check if the game rule advance_time/doDaylightCycle is enabled.
+     * @return true if enabled, false if time is frozen
+     */
+    public static boolean isTimeAdvancingStatic() {
+        return getInstance().isTimeAdvancing();
     }
 }

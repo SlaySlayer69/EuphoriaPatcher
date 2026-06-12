@@ -93,6 +93,11 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
         return false;
     }
 
+    @Override
+    public boolean isTimeAdvancing() {
+        return true;
+    }
+
     private String getCurrentDimensionID() {
         try {
             debugLog("Getting current dimension ID");

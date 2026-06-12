@@ -152,6 +152,11 @@ public class DevPatchGenerator {
             public boolean setClipboard(String str) {
                 return false;
             }
+
+            @Override
+            public boolean isTimeAdvancing() {
+                return true;
+            }
         });
     }
 

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
-    public static final String LEGACY_IRIS_CLASS = "net.coderbot.iris.gl.shader.StandardMacros";
     public static final String MODERN_IRIS_CLASS = "net.irisshaders.iris.gl.shader.StandardMacros";
     public static final String IRIS_HEADER_ENTRY_CLASS = "net.irisshaders.iris.gui.element.ShaderPackOptionList$HeaderEntry";
     public static final String IRIS_SHADER_PROPERTIES_CLASS = "net.irisshaders.iris.shaderpack.properties.ShaderProperties";
@@ -19,6 +18,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.RenderType";
     public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.client.renderer.entity.EnderDragonRenderer";
     public static final String RENDER_STATE_SHARD_CLASS = "net.minecraft.client.renderer.RenderStateShard";
+    public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -32,10 +32,6 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (mixinClassName.contains("IrisLegacyStandardMacrosMixin")) {
-            return checkClassExists(LEGACY_IRIS_CLASS);
-        }
-
         if (mixinClassName.contains("IrisModernStandardMacrosMixin")) {
             return checkClassExists(MODERN_IRIS_CLASS);
         }
@@ -69,6 +65,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("RenderTypeMixin")) {
             return checkClassExists(RENDER_TYPE_CLASS) && !checkClassExists(RENDER_STATE_SHARD_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernExclusiveUniformsMixin")) {
+            return checkClassExists(IRIS_EXCLUSIVE_UNIFORMS_CLASS);
         }
 
         // Apply other mixins by default

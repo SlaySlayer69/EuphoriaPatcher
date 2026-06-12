@@ -2,11 +2,13 @@ package com.euphoriapatches.euphoria_patcher.fabric;
 
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.GameRules;
 
 import java.nio.file.Path;
 
@@ -15,6 +17,8 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path shaderpacksPath;
     private final Path configDirectory;
     private static Boolean useYarnMappings = null; // null = not yet determined
+    private static boolean serverSideGamerules = false;
+    private static boolean isServerSideGamerulesNewer = false;
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -106,6 +110,11 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Error setting clipboard: " + e.getMessage());
         }
         return false;
+    }
+
+    @Override
+    public boolean isTimeAdvancing() {
+        return GameRuleChecker.getInstance().isTimeAdvancing();
     }
 
     private String getCurrentDimensionID(){

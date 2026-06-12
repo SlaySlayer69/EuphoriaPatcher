@@ -17,11 +17,6 @@ import java.util.Locale;
 import java.util.function.BiConsumer;
 
 public final class DefineHelper {
-    public enum Target {
-        IRIS_MODERN,
-        IRIS_LEGACY,
-        OPTIFINE
-    }
 
     public interface DefineEmitter {
         void define(String key);
@@ -109,6 +104,12 @@ public final class DefineHelper {
 
             emitter.define("EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
+
+            // Currently uniform support only on Iris/Oculus
+            if (!isOptifine) {
+                emitter.define("EUPHORIA_PATCHES_UNIFORMS");
+                debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
+            }
 
             if (ModLoaderSpecifics.isCurrentDimensionInMappingsStatic()) {
                 emitter.define("EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES");

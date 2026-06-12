@@ -5,7 +5,6 @@
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisModernStandardMacrosMixin",
-    "IrisLegacyStandardMacrosMixin",
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",
@@ -17,6 +16,7 @@
     "ClientTickMixin",
     "IrisHeaderEntryMixin",
     "RenderTypeMixin",
-    "EnderDragonRendererMixin"
+    "EnderDragonRendererMixin",
+    "IrisModernExclusiveUniformsMixin"
   ]
 }

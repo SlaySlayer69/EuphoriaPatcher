@@ -28,6 +28,7 @@ dependencies {
 	// These are compileOnly because the actual implementation comes from Minecraft/loader
 	compileOnly 'org.apache.logging.log4j:log4j-api:2.17.1'
 	compileOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
+	implementation 'org.joml:joml:1.10.5'
 }
 
 tasks.withType(JavaCompile).configureEach {

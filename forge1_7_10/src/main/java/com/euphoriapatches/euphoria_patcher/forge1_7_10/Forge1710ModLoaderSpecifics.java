@@ -53,6 +53,11 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
         return false;
     }
 
+    @Override
+    public boolean isTimeAdvancing() {
+        return true;
+    }
+
     @SuppressWarnings("unused")
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[Forge1710ModLoaderSpecifics] " + message);

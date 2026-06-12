@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.forge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.DefineHelper;
+import com.euphoriapatches.euphoria_patcher.integration.Target;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,6 +14,6 @@ public class OptifineShaderMacrosMixin {
 
    @Inject(method = "getFixedMacroLines", at = @At("RETURN"), cancellable = true)
    private static void euphoriaPatcher$appendFixedMacroLines(CallbackInfoReturnable<String> original) {
-      original.setReturnValue(DefineHelper.addEuphoriaDefines(original.getReturnValue(), DefineHelper.Target.OPTIFINE));
+      original.setReturnValue(DefineHelper.addEuphoriaDefines(original.getReturnValue(), Target.OPTIFINE));
    }
 }

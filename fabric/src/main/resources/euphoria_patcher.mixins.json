@@ -27,6 +27,8 @@
     "ReloadShadersOnDimensionChangeMixinYarn",
     "RenderTypeMixin",
     "RenderTypeMixinYarn",
-    "EnderDragonRendererMixin"
+    "EnderDragonRendererMixin",
+    "IrisModernExclusiveUniformsMixin",
+    "IrisLegacyExclusiveUniformsMixin"
   ]
 }

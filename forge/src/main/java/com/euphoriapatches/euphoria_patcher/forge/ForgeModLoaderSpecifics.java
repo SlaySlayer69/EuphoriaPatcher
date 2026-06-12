@@ -77,6 +77,11 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         return false;
     }
 
+    @Override
+    public boolean isTimeAdvancing() {
+        return true;
+    }
+
     private String getCurrentDimensionID() {
         if (mappingBranch == 0) discoverMappingBranch();
 
