@@ -490,7 +490,7 @@ public class IrisHeaderEntryMixinYarn {
     }
 
     @Dynamic
-    @Inject(method = "method_25343", at = @At("HEAD"), remap = false, require = 0)
+    @Inject(method = "method_25343(Lnet/minecraft/class_332;IIIIIIIZF)V", at = @At("HEAD"), remap = false, require = 0)
     private void euphoriaPatcher$captureRenderParams(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
         this.euphoriaPatcher$capturedX = x;
         this.euphoriaPatcher$capturedY = y;
