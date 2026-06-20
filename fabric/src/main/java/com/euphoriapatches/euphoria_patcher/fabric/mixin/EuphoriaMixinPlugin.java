@@ -31,6 +31,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
     public static final String PREPARED_RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.PreparedRenderType";
+    public static final String IRIS_ELEMENT_ROW_CLASS = "net.irisshaders.iris.gui.element.IrisElementRow";
+    public static final String LEGACY_IRIS_ELEMENT_ROW_CLASS = "net.coderbot.iris.gui.element.IrisElementRow";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -140,6 +142,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("PreparedRenderTypeMixin")) {
             return checkClassExists(PREPARED_RENDER_TYPE_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisElementRowMixin")) {
+            return (checkClassExists(IRIS_ELEMENT_ROW_CLASS));
+        }
+
+        if (mixinClassName.contains("IrisLegacyElementRowMixin")) {
+            return (checkClassExists(LEGACY_IRIS_ELEMENT_ROW_CLASS));
         }
 
         // Apply other mixins by default

@@ -19,7 +19,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.nio.file.Path;
@@ -42,6 +44,10 @@ public class IrisHeaderEntryMixinYarn {
 
     @Unique
     private static boolean euphoriaPatcher$hasShownExtendedTooltip = false;
+
+    @Unique private int euphoriaPatcher$capturedX;
+    @Unique private int euphoriaPatcher$capturedY;
+    @Unique private int euphoriaPatcher$capturedEntryWidth;
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
@@ -482,4 +488,96 @@ public class IrisHeaderEntryMixinYarn {
     private static void euphoriaPatcher$debugLog(String message) {
         EuphoriaLogger.debugLog("[IrisHeaderEntryMixinYarn] " + message);
     }
+
+    @Dynamic
+    @Inject(method = "method_25343", at = @At("HEAD"), remap = false, require = 0)
+    private void euphoriaPatcher$captureRenderParams(@Coerce Object guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo ci) {
+        this.euphoriaPatcher$capturedX = x;
+        this.euphoriaPatcher$capturedY = y;
+        this.euphoriaPatcher$capturedEntryWidth = entryWidth;
+    }
+
+    @Dynamic
+    @Redirect(method = "method_25343", at = @At(value = "INVOKE", target = "Lnet/minecraft/class_332;method_27534(Lnet/minecraft/class_327;Lnet/minecraft/class_2561;III)V"), remap = false, require = 0)
+    private void euphoriaPatcher$redirectDrawCenteredString(@Coerce Object guiGraphics, @Coerce Object font, @Coerce Object text, int x, int y, int color) {
+        try {
+            Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
+            if (utilityButtons != null) {
+                // Try to find the getter width from either our mixin or Euphoria Patcher's mixin wrapper
+                int utilityButtonsWidth = (int) utilityButtons.getClass().getMethod("euphoriaPatcher$getWidth").invoke(utilityButtons);
+
+                int minX = this.euphoriaPatcher$capturedX + 5;
+                int minY = this.euphoriaPatcher$capturedY + 5;
+                int maxX = ((this.euphoriaPatcher$capturedX + this.euphoriaPatcher$capturedEntryWidth) - 10) - utilityButtonsWidth;
+                int maxY = this.euphoriaPatcher$capturedY + 15;
+
+                // Call our freshly converted 1:1 local scrolling calculation
+                euphoriaPatcher$renderScrollingString(guiGraphics, font, text, x, minX, minY, maxX, maxY, 0xFFFFFF);
+                return;
+            }
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error in euphoriaPatcher$redirectDrawCenteredString redirection layer: " + e.getMessage());
+        }
+
+        // Vanilla fallback loop execution if utilities are absent or reflection properties error out
+        try {
+            Class<?> guiGraphicsClass = Class.forName("net.minecraft.class_332");
+            Class<?> fontClass = Class.forName("net.minecraft.class_327");
+            Class<?> componentClass = Class.forName("net.minecraft.class_2561");
+            guiGraphicsClass.getMethod("method_27534", fontClass, componentClass, int.class, int.class, int.class).invoke(guiGraphics, font, text, x, y, color);
+        } catch (Exception fallbackEx) {
+            euphoriaPatcher$debugLog("Critical rendering fallback failed: " + fallbackEx.getMessage());
+        }
+    }
+
+    @Unique
+    private static void euphoriaPatcher$renderScrollingString(Object guiGraphics, Object font, Object text, int centerX, int minX, int minY, int maxX, int maxY, int color) {
+        try {
+            // Get text width: font.width(text)
+            int textWidth = (int) font.getClass().getMethod("method_27525", Class.forName("net.minecraft.class_5348")).invoke(font, text);
+            int yPos = (minY + maxY - 9) / 2 + 1;
+            int availableWidth = maxX - minX;
+
+            Class<?> guiGraphicsClass = Class.forName("net.minecraft.class_332");
+            Class<?> fontClass = Class.forName("net.minecraft.class_327");
+            Class<?> componentClass = Class.forName("net.minecraft.class_2561");
+
+
+            if (textWidth > availableWidth) {
+                // Text is too wide, scroll it with smooth sine wave animation
+                int scrollRange = textWidth - availableWidth;
+
+                // Get current time: Util.getMillis()
+                Class<?> utilClass = Class.forName("net.minecraft.class_156");
+                long currentTimeMillis = (long) utilClass.getMethod("method_658").invoke(null);
+                double currentTime = (double) currentTimeMillis / 1000.0;
+
+                double scrollDuration = Math.max((double) scrollRange * 0.5, 3.0);
+                double scrollProgress = Math.sin(Math.PI / 2 * Math.cos(Math.PI * 2 * currentTime / scrollDuration)) / 2.0 + 0.5;
+
+                // Mth.lerp()
+                Class<?> mthClass = Class.forName("net.minecraft.class_3532");
+                double scrollOffset = (double) mthClass.getMethod("method_16436", double.class, double.class, double.class).invoke(null, scrollProgress, 0.0, (double) scrollRange);
+
+                // guiGraphics.enableScissor()
+                guiGraphicsClass.getMethod("method_44379", int.class, int.class, int.class, int.class).invoke(guiGraphics, minX, minY, maxX, maxY);
+
+                // guiGraphics.drawString(font, text, x, y, color)
+                guiGraphicsClass.getMethod("method_27535", fontClass, componentClass, int.class, int.class, int.class)
+                        .invoke(guiGraphics, font, text, minX - (int) scrollOffset, yPos, color);
+
+                // guiGraphics.disableScissor()
+                guiGraphicsClass.getMethod("method_44380").invoke(guiGraphics);
+                euphoriaPatcher$debugLog("Finished rendering scrolling text.");
+            } else {
+                // Text fits, center it at the specified centerX position using drawCenteredString
+                guiGraphicsClass.getMethod("method_27534", fontClass, componentClass, int.class, int.class, int.class)
+                        .invoke(guiGraphics, font, text, centerX, yPos, color);
+            }
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error inside converted renderScrollingString: " + e.getMessage());
+        }
+    }
+
+
 }
