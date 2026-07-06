@@ -38,28 +38,39 @@ public class PotatoFileMonitor {
     /**
      * Checks if the current shaderpack has potato.png
      * @param shaderpackPath The path to the current shaderpack
-     * @return true if potato.png exists, false otherwise
+     * @return false if potato.png is missing, true otherwise
      */
     public static boolean checkPotatoExists(Path shaderpackPath) {
         if (shaderpackPath == null) {
             debugLog("Shaderpack path is null");
-            return false;
+            return true;
         }
 
         String pathKey = shaderpackPath.toString();
         Boolean initialState = shaderpackInitialStates.get(pathKey);
 
-        // If this shaderpack initially didn't have potato.png, use cached result (always false)
-        // This avoids expensive file system checks for the majority of shaderpacks
-        if (initialState != null && !initialState) {
-            debugLog("Using cached result for shaderpack that never had potato.png");
+        // If we have a cached initial state of false and it's a ZIP shaderpack, we can skip the check
+        if (initialState != null && !initialState && !Files.isDirectory(shaderpackPath)) {
+            debugLog("Using cached result for zip shaderpack that never had potato.png");
             return false;
         }
 
-        // For shaderpacks that have/had potato.png, always perform fresh check
-        // This detects changes made while using other shaderpacks
+        // For directories, and for shaderpacks that have/had potato.png, always perform fresh check
         boolean exists = performPotatoCheck(shaderpackPath);
         debugLog("Fresh check for potato.png: " + exists);
+
+        // If the shaderpack is a directory and we previously thought it had potato.png, but now it doesn't, perform a recheck to avoid transient false negatives
+        if (!exists && Files.isDirectory(shaderpackPath) && Boolean.TRUE.equals(shaderpackStates.get(pathKey))) {
+            boolean recheck = performPotatoCheck(shaderpackPath);
+            if (recheck) {
+                debugLog("Ignored transient false reading for potato.png, confirmed still present on recheck");
+                return true;
+            }
+        }
+
+        if (Files.isDirectory(shaderpackPath)) {
+            shaderpackStates.put(pathKey, exists);
+        }
 
         return exists;
     }
@@ -266,14 +277,6 @@ public class PotatoFileMonitor {
     private static boolean performPotatoCheck(Path shaderpackPath) {
         String potatoRelativePath = "shaders/lib/textures/potato.png";
 
-        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
-        ShaderDetector shaderDetector = instance.getShaderDetector();
-
-        if (!shaderDetector.isEuphoriaPatchesShader(shaderpackPath)) {
-            debugLog("Shaderpack is not recognized as Euphoria Patches shader");
-            return false;
-        }
-
         try {
             // Check if it's a directory
             if (Files.isDirectory(shaderpackPath)) {
@@ -290,10 +293,10 @@ public class PotatoFileMonitor {
             }
 
             debugLog("Shaderpack is neither a directory nor a ZIP file");
-            return false;
+            return true;
         } catch (Exception e) {
             debugLog("Exception checking for potato.png: " + e.getMessage());
-            return false;
+            return true;
         }
     }
 
