@@ -195,7 +195,7 @@ public class EuphoriaPatcher {
                 ShaderpacksWatcherUtils.getInstance().getShaderpacksWatcher().stopWatching();
                 PotatoFileMonitor.stopMonitoring();
                 PropertiesWatcher.stopMonitoring();
-            } catch (Exception ignored) {
+            } catch (Throwable ignored) {
             }
         }));
     }
