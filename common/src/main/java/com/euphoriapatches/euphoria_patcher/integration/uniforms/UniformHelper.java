@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
 import java.lang.reflect.Method;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +65,15 @@ public class UniformHelper {
         registrar.uniform1b(Frequency.PER_FRAME, "euphoriaPatchesIsDayAdvancing", ModLoaderSpecifics::isTimeAdvancingStatic);
         debugLog("Registered 'euphoriaPatchesIsDayAdvancing' with PER_FRAME frequency. Uniform type: boolean");
 
+        registrar.uniform1i(Frequency.PER_FRAME, "euphoriaPatchesCurrentDayMillis", () -> (int) (System.currentTimeMillis() % 86400000));
+        debugLog("Registered 'euphoriaPatchesCurrentDayMillis' with PER_FRAME frequency. Uniform type: int");
 
+        registrar.uniform1i(Frequency.PER_FRAME, "euphoriaPatchesCurrentDayMillisLocal", UniformHelper::msSinceMidnightLocal);
+        debugLog("Registered 'euphoriaPatchesCurrentDayMillisLocal' with PER_FRAME frequency. Uniform type: int");
+    }
+
+    private static int msSinceMidnightLocal() {
+        LocalDateTime now = LocalDateTime.now();
+        return (now.getHour() * 3600000) + (now.getMinute() * 60000) + (now.getSecond() * 1000) + (now.getNano() / 1000000);
     }
 }
