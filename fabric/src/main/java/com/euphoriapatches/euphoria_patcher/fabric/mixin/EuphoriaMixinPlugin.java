@@ -33,6 +33,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String PREPARED_RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.PreparedRenderType";
     public static final String IRIS_ELEMENT_ROW_CLASS = "net.irisshaders.iris.gui.element.IrisElementRow";
     public static final String LEGACY_IRIS_ELEMENT_ROW_CLASS = "net.coderbot.iris.gui.element.IrisElementRow";
+    public static final String MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.irisshaders.iris.vertices.ExtendedDataHelper";
+    public static final String LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.coderbot.iris.vertices.ExtendedDataHelper";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -150,6 +152,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisLegacyElementRowMixin")) {
             return (checkClassExists(LEGACY_IRIS_ELEMENT_ROW_CLASS));
+        }
+
+        if (mixinClassName.contains("IrisModernExtendedDataHelperMixin")) {
+            return checkClassExists(MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyExtendedDataHelperMixin")) {
+            return checkClassExists(LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS);
         }
 
         // Apply other mixins by default

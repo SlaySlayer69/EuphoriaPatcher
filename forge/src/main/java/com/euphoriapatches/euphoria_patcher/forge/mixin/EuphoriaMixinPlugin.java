@@ -30,6 +30,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.client.renderer.entity.EnderDragonRenderer";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
+    public static final String MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.irisshaders.iris.vertices.ExtendedDataHelper";
+    public static final String LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.coderbot.iris.vertices.ExtendedDataHelper";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -129,6 +131,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisLegacyExclusiveUniformsMixin")) {
             return checkClassExists(IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY);
+        }
+
+        if (mixinClassName.contains("IrisModernExtendedDataHelperMixin")) {
+            return checkClassExists(MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyExtendedDataHelperMixin")) {
+            return checkClassExists(LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS);
         }
 
         // Apply other mixins by default

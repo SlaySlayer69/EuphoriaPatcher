@@ -5,6 +5,7 @@
   "mixins": [
     "EuphoriaPatcherMixin",
     "IrisModernStandardMacrosMixin",
+    "IrisModernExtendedDataHelperMixin",
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",

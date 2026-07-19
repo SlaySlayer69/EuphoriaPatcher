@@ -20,6 +20,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String RENDER_STATE_SHARD_CLASS = "net.minecraft.client.renderer.RenderStateShard";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String PREPARED_RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.PreparedRenderType";
+    public static final String IRIS_EXTENDED_DATA_HELPER_CLASS = "net.irisshaders.iris.vertices.ExtendedDataHelper";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -74,6 +75,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("PreparedRenderTypeMixin")) {
             return checkClassExists(PREPARED_RENDER_TYPE_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernExtendedDataHelperMixin")) {
+            return checkClassExists(IRIS_EXTENDED_DATA_HELPER_CLASS);
         }
 
         // Apply other mixins by default

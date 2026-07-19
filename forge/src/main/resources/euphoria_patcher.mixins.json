@@ -10,6 +10,8 @@
     "IrisLegacyOptionMenuElementMixin",
     "IrisLegacyOptionMenuContainerMixin",
     "IrisLegacyProfileElementWidgetMixin",
+    "IrisLegacyExtendedDataHelperMixin",
+    "IrisModernExtendedDataHelperMixin",
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",
