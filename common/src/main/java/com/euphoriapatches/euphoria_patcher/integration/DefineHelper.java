@@ -111,6 +111,10 @@ public final class DefineHelper {
                 debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
             }
 
+            // Thanks to GeForceLegend for finding this bug fix! https://github.com/IrisShaders/Iris/pull/3246
+            emitter.define("EUPHORIA_PATCHES_AT_MIDBLOCK_FIX");
+            debugLog("Adding EUPHORIA_PATCHES_AT_MIDBLOCK_FIX define");
+
             if (ModLoaderSpecifics.isCurrentDimensionInMappingsStatic()) {
                 emitter.define("EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES");
                 debugLog("Adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define");
