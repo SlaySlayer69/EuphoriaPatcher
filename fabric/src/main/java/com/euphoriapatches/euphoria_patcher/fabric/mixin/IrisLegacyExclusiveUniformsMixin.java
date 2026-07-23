@@ -1,7 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.Target;
-import com.euphoriapatches.euphoria_patcher.integration.uniforms.UniformHelper;
+import com.euphoriapatches.euphoria_patcher.integration.uniforms.IrisUniformBridge;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -26,7 +26,7 @@ public class IrisLegacyExclusiveUniformsMixin {
     private static void onAddIrisExclusiveUniformsTwoArgs(@Coerce Object uniforms, @Coerce Object updateNotifier, CallbackInfo ci) {
         Target target = Target.IRIS_LEGACY;
         euphoriaPatcher$debugLog("Adding Euphoria uniforms to " + target + " (2-arg variant)");
-        UniformHelper.addEuphoriaUniforms(uniforms, target);
+        IrisUniformBridge.addEuphoriaUniforms(uniforms, target);
     }
 
     @Inject(
@@ -38,7 +38,7 @@ public class IrisLegacyExclusiveUniformsMixin {
     private static void onAddIrisExclusiveUniformsOneArg(@Coerce Object uniforms, CallbackInfo ci) {
         Target target = Target.IRIS_LEGACY;
         euphoriaPatcher$debugLog("Adding Euphoria uniforms to " + target + " (1-arg variant)");
-        UniformHelper.addEuphoriaUniforms(uniforms, target);
+        IrisUniformBridge.addEuphoriaUniforms(uniforms, target);
     }
 
     @Unique

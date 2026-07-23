@@ -12,7 +12,7 @@ public class IrisVectorBridge {
     }
 
     // Avoids version-dependent JOML class mismatches by reading the target vector class
-    // directly from Iris's live UniformHelper signature.
+    // directly from Iris's live method signature (see IrisUniformBridge.init).
 
     // --- Vector2f ---
     public static class ReusableVector2f {

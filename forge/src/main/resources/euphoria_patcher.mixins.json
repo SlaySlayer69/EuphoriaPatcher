@@ -31,7 +31,8 @@
     "IrisElementRowMixin",
     "EnderDragonRendererMixin",
     "IrisModernExclusiveUniformsMixin",
-    "IrisLegacyExclusiveUniformsMixin"
+    "IrisLegacyExclusiveUniformsMixin",
+    "OptifineShadersUniformsMixin"
   ],
   "injectors": {
     "defaultRequire": 0

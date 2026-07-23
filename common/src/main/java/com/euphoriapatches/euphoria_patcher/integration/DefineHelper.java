@@ -105,11 +105,8 @@ public final class DefineHelper {
             emitter.define("EUPHORIA_PATCHES_MOD_INSTALLED");
             debugLog("Adding EUPHORIA_PATCHES_MOD_INSTALLED define");
 
-            // Currently uniform support only on Iris/Oculus
-            if (!isOptifine) {
-                emitter.define("EUPHORIA_PATCHES_UNIFORMS");
-                debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
-            }
+            emitter.define("EUPHORIA_PATCHES_UNIFORMS");
+            debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
 
             // Thanks to GeForceLegend for finding this bug fix! https://github.com/IrisShaders/Iris/pull/3246
             emitter.define("EUPHORIA_PATCHES_AT_MIDBLOCK_FIX");
