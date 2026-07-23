@@ -4,8 +4,6 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 public class IrisVectorBridge {
 
@@ -13,38 +11,35 @@ public class IrisVectorBridge {
         EuphoriaLogger.debugLog("[IrisVectorBridge] " + message);
     }
 
-    private static Class<?> resolveClass(String modernB64, String legacyB64) throws Exception {
-        String modernTarget = new String(Base64.getDecoder().decode(modernB64), StandardCharsets.UTF_8);
-        String legacyTarget = new String(Base64.getDecoder().decode(legacyB64), StandardCharsets.UTF_8);
-        try {
-            return Class.forName(modernTarget);
-        } catch (ClassNotFoundException e) {
-            return Class.forName(legacyTarget);
-        }
-    }
+    // Avoids version-dependent JOML class mismatches by reading the target vector class
+    // directly from Iris's live UniformHelper signature.
 
     // --- Vector2f ---
     public static class ReusableVector2f {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector2f" and "net.coderbot.iris.vendor.joml.Vector2f"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yMmY=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3IyZg==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
                 ready = true;
+                debugLog("Cached Vector2f binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector2f bind: " + e.getMessage()); }
         }
 
-        public ReusableVector2f() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector2f(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
         public void update(float x, float y) {
             if (!ready) return;
@@ -55,26 +50,30 @@ public class IrisVectorBridge {
 
     // --- Vector2i ---
     public static class ReusableVector2i {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector2i" and "net.coderbot.iris.vendor.joml.Vector2i"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yMmk=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3IyaQ==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
                 ready = true;
+                debugLog("Cached Vector2i binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector2i bind: " + e.getMessage()); }
         }
 
-        public ReusableVector2i() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector2i(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
         public void update(int x, int y) {
             if (!ready) return;
@@ -85,27 +84,31 @@ public class IrisVectorBridge {
 
     // --- Vector3f ---
     public static class ReusableVector3f {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY, setterZ;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector3f" and "net.coderbot.iris.vendor.joml.Vector3f"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yM2Y=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3IzZg==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
-                setterZ = lookup.unreflectSetter(cls.getField("z"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
+                setterZ = lookup.unreflectSetter(vectorClass.getField("z"));
                 ready = true;
+                debugLog("Cached Vector3f binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector3f bind: " + e.getMessage()); }
         }
 
-        public ReusableVector3f() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector3f(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
         public void update(float x, float y, float z) {
             if (!ready) return;
@@ -116,27 +119,31 @@ public class IrisVectorBridge {
 
     // --- Vector3i ---
     public static class ReusableVector3i {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY, setterZ;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector3i" and "net.coderbot.iris.vendor.joml.Vector3i"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yM2k=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3IzaQ==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
-                setterZ = lookup.unreflectSetter(cls.getField("z"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
+                setterZ = lookup.unreflectSetter(vectorClass.getField("z"));
                 ready = true;
+                debugLog("Cached Vector3i binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector3i bind: " + e.getMessage()); }
         }
 
-        public ReusableVector3i() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector3i(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
         public void update(int x, int y, int z) {
             if (!ready) return;
@@ -147,59 +154,67 @@ public class IrisVectorBridge {
 
     // --- Vector3d ---
     public static class ReusableVector3d {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY, setterZ;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector3d" and "net.coderbot.iris.vendor.joml.Vector3d"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yM2Q=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3IzZA==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
-                setterZ = lookup.unreflectSetter(cls.getField("z"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
+                setterZ = lookup.unreflectSetter(vectorClass.getField("z"));
                 ready = true;
+                debugLog("Cached Vector3d binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector3d bind: " + e.getMessage()); }
         }
 
-        public ReusableVector3d() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector3d(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
-        public void update(double x, double y, double doubleZ) {
+        public void update(double x, double y, double z) {
             if (!ready) return;
-            try { setterX.invoke(this.actualVector, x); setterY.invoke(this.actualVector, y); setterZ.invoke(this.actualVector, doubleZ); } catch (Throwable ignored) {}
+            try { setterX.invoke(this.actualVector, x); setterY.invoke(this.actualVector, y); setterZ.invoke(this.actualVector, z); } catch (Throwable ignored) {}
         }
         public Object getActualIrisVector() { return this.actualVector; }
     }
 
     // --- Vector4f ---
     public static class ReusableVector4f {
-        private static Constructor<?> ctor;
+        private static Class<?> resolvedForClass;
+        private static Constructor<?> constructor;
         private static MethodHandle setterX, setterY, setterZ, setterW;
         private static boolean ready = false;
         private final Object actualVector;
 
-        static {
+        private static synchronized void ensureResolved(Class<?> vectorClass) {
+            if (resolvedForClass == vectorClass) return;
+            resolvedForClass = vectorClass;
+            ready = false;
+            if (vectorClass == null) return;
             try {
-                // Base64 obfuscated strings to completely hide them from the Shadow plugin
-                // "org.joml.Vector4f" and "net.coderbot.iris.vendor.joml.Vector4f"
-                Class<?> cls = resolveClass("b3JnLmpvbWwuVmVjdG9yNGY=", "bmV0LmNvZGVyYm90LmlyaXMudmVuZG9yZWQuam9tbC5WZWN0b3I0Zg==");
-                ctor = cls.getConstructor();
+                constructor = vectorClass.getConstructor();
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
-                setterX = lookup.unreflectSetter(cls.getField("x"));
-                setterY = lookup.unreflectSetter(cls.getField("y"));
-                setterZ = lookup.unreflectSetter(cls.getField("z"));
-                setterW = lookup.unreflectSetter(cls.getField("w"));
+                setterX = lookup.unreflectSetter(vectorClass.getField("x"));
+                setterY = lookup.unreflectSetter(vectorClass.getField("y"));
+                setterZ = lookup.unreflectSetter(vectorClass.getField("z"));
+                setterW = lookup.unreflectSetter(vectorClass.getField("w"));
                 ready = true;
+                debugLog("Cached Vector4f binding for class: " + vectorClass.getName());
             } catch (Exception e) { debugLog("Failed Vector4f bind: " + e.getMessage()); }
         }
 
-        public ReusableVector4f() {
-            try { this.actualVector = ctor.newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+        public ReusableVector4f(Class<?> vectorClass) {
+            ensureResolved(vectorClass);
+            try { this.actualVector = ready ? constructor.newInstance() : null; } catch (Exception e) { throw new RuntimeException(e); }
         }
         public void update(float x, float y, float z, float w) {
             if (!ready) return;

@@ -1,7 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import org.joml.*;
 
 import java.lang.reflect.Method;
 import java.util.function.BooleanSupplier;
@@ -21,10 +20,10 @@ public class Registrar {
         Object irisFreq = UniformHelper.irisFrequencies[freq.ordinal()];
         if (irisFreq == null) return;
 
-        Method m = UniformHelper.methodCache.get(methodName + "_" + supplierTypeName);
-        if (m != null) {
+        Method targetMethod = UniformHelper.methodCache.get(methodName + "_" + supplierTypeName);
+        if (targetMethod != null) {
             try {
-                m.invoke(uniforms, irisFreq, name, supplier);
+                targetMethod.invoke(uniforms, irisFreq, name, supplier);
             } catch (Exception e) {
                 debugLog("Failed to invoke " + methodName + " for uniform '" + name + "': " + e.getMessage());
             }
@@ -53,75 +52,59 @@ public class Registrar {
         invoke("uniform1f", "IntSupplier", freq, name, value);
     }
 
-    // --- JOML Vector & Object Supplier Overloads ---
+    // --- Vector Overloads ---
+    // Sets vectors via primitives directly into Iris's runtime JOML class,
+    // avoiding compile-time dependencies (signature resolved via UniformHelper.vectorClasses).
 
-    public void uniform2f(UniformHelper.Frequency freq, String name, Supplier<Vector2f> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector2f bridge = new IrisVectorBridge.ReusableVector2f();
+    public void uniform2f(UniformHelper.Frequency freq, String name, DoubleSupplier x, DoubleSupplier y) {
+        IrisVectorBridge.ReusableVector2f bridge = new IrisVectorBridge.ReusableVector2f(UniformHelper.vectorClasses.get("uniform2f"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector2f internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y());
-            }
+            bridge.update((float) x.getAsDouble(), (float) y.getAsDouble());
             return bridge.getActualIrisVector();
         };
         invoke("uniform2f", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform2i(UniformHelper.Frequency freq, String name, Supplier<Vector2i> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector2i bridge = new IrisVectorBridge.ReusableVector2i();
+    public void uniform2i(UniformHelper.Frequency freq, String name, IntSupplier x, IntSupplier y) {
+        IrisVectorBridge.ReusableVector2i bridge = new IrisVectorBridge.ReusableVector2i(UniformHelper.vectorClasses.get("uniform2i"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector2i internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y());
-            }
+            bridge.update(x.getAsInt(), y.getAsInt());
             return bridge.getActualIrisVector();
         };
         invoke("uniform2i", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3f(UniformHelper.Frequency freq, String name, Supplier<Vector3f> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector3f bridge = new IrisVectorBridge.ReusableVector3f();
+    public void uniform3f(UniformHelper.Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
+        IrisVectorBridge.ReusableVector3f bridge = new IrisVectorBridge.ReusableVector3f(UniformHelper.vectorClasses.get("uniform3f"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector3f internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y(), internalMath.z());
-            }
+            bridge.update((float) x.getAsDouble(), (float) y.getAsDouble(), (float) z.getAsDouble());
             return bridge.getActualIrisVector();
         };
         invoke("uniform3f", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3i(UniformHelper.Frequency freq, String name, Supplier<Vector3i> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector3i bridge = new IrisVectorBridge.ReusableVector3i();
+    public void uniform3i(UniformHelper.Frequency freq, String name, IntSupplier x, IntSupplier y, IntSupplier z) {
+        IrisVectorBridge.ReusableVector3i bridge = new IrisVectorBridge.ReusableVector3i(UniformHelper.vectorClasses.get("uniform3i"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector3i internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y(), internalMath.z());
-            }
+            bridge.update(x.getAsInt(), y.getAsInt(), z.getAsInt());
             return bridge.getActualIrisVector();
         };
         invoke("uniform3i", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3d(UniformHelper.Frequency freq, String name, Supplier<Vector3d> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector3d bridge = new IrisVectorBridge.ReusableVector3d();
+    public void uniform3d(UniformHelper.Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
+        IrisVectorBridge.ReusableVector3d bridge = new IrisVectorBridge.ReusableVector3d(UniformHelper.vectorClasses.get("uniform3d"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector3d internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y(), internalMath.z());
-            }
+            bridge.update(x.getAsDouble(), y.getAsDouble(), z.getAsDouble());
             return bridge.getActualIrisVector();
         };
         invoke("uniform3d", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform4f(UniformHelper.Frequency freq, String name, Supplier<Vector4f> shadowedVectorSupplier) {
-        IrisVectorBridge.ReusableVector4f bridge = new IrisVectorBridge.ReusableVector4f();
+    public void uniform4f(UniformHelper.Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, DoubleSupplier w) {
+        IrisVectorBridge.ReusableVector4f bridge = new IrisVectorBridge.ReusableVector4f(UniformHelper.vectorClasses.get("uniform4f"));
         Supplier<Object> runtimeSupplier = () -> {
-            Vector4f internalMath = shadowedVectorSupplier.get();
-            if (internalMath != null) {
-                bridge.update(internalMath.x(), internalMath.y(), internalMath.z(), internalMath.w());
-            }
+            bridge.update((float) x.getAsDouble(), (float) y.getAsDouble(), (float) z.getAsDouble(), (float) w.getAsDouble());
             return bridge.getActualIrisVector();
         };
         invoke("uniform4f", "Supplier", freq, name, runtimeSupplier);

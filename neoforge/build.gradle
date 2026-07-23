@@ -89,7 +89,6 @@ dependencies {
     shade 'org.apache.commons:commons-compress:1.21'
     shade 'commons-io:commons-io:2.11.0'
     shade 'commons-codec:commons-codec:1.15'
-    shade 'org.joml:joml:1.10.5'
     shade('com.google.guava:guava:32.1.2-jre') {
 		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
 		transitive = false
@@ -121,7 +120,6 @@ shadowJar {
     relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
     relocate 'io.sigpipe.jbsdiff', 'com.euphoriapatches.shadow.io.sigpipe.jbsdiff'
     relocate 'com.google', 'com.euphoriapatches.shadow.com.google'
-    relocate 'org.joml', 'com.euphoriapatches.shadow.org.joml'
 
     // Include license file if exists
     from("LICENSE") {

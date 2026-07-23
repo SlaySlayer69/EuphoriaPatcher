@@ -43,6 +43,6 @@ public class IrisLegacyExclusiveUniformsMixin {
 
     @Unique
     private static void euphoriaPatcher$debugLog(String message) {
-        EuphoriaLogger.debugLog("[IrisModernExclusiveUniformsMixin] " + message);
+        EuphoriaLogger.debugLog("[IrisLegacyExclusiveUniformsMixin] " + message);
     }
 }

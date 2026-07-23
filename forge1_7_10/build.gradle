@@ -64,7 +64,6 @@ dependencies {
     shade('org.apache.commons:commons-compress:1.21')
     shade('commons-io:commons-io:2.11.0')
     shade('commons-codec:commons-codec:1.15')
-    shade 'org.joml:joml:1.10.5'
 }
 
 // Shadow configuration - bundle specific dependencies
@@ -79,7 +78,6 @@ shadowJar {
     relocate 'io.sigpipe', "${project.group}.shadow.io.sigpipe"
     relocate 'com.google.gson', "${project.group}.shadow.com.google.gson"
     relocate 'org.apache.commons', "${project.group}.shadow.org.apache.commons"
-    relocate 'org.joml',"${project.group}.shadow.org.joml"
 
     // Don't minimize as common module is shaded in, which breaks minimization
 

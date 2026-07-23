@@ -1,9 +1,12 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.euphoriapatches.euphoria_patcher.integration.Target;
 
@@ -19,6 +22,7 @@ public class UniformHelper {
     private static boolean initialized = false;
     public static final Object[] irisFrequencies = new Object[4];
     public static final Map<String, Method> methodCache = new HashMap<>();
+    public static final Map<String, Class<?>> vectorClasses = new HashMap<>();
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[UniformHelper] " + message);
@@ -40,11 +44,26 @@ public class UniformHelper {
             }
 
             // Reflectively cache all uniform registration methods
-            for (Method m : uniforms.getClass().getMethods()) {
-                String name = m.getName();
-                if (name.startsWith("uniform") && m.getParameterCount() == 3) {
-                    String signature = name + "_" + m.getParameterTypes()[2].getSimpleName();
-                    methodCache.put(signature, m);
+            for (Method method : uniforms.getClass().getMethods()) {
+                String name = method.getName();
+                if (name.startsWith("uniform") && method.getParameterCount() == 3) {
+                    Class<?> paramType = method.getParameterTypes()[2];
+                    String signature = name + "_" + paramType.getSimpleName();
+                    methodCache.put(signature, method);
+                    debugLog("Cached uniform method '" + signature + "' -> " + method);
+
+                    // For vector uniforms (Supplier<Vector2f/3f/...>), read the actual vector class Iris expects
+                    if (paramType == Supplier.class) {
+                        Type genericParameterType = method.getGenericParameterTypes()[2];
+                        if (genericParameterType instanceof ParameterizedType) {
+                            Type[] actualTypeArguments = ((ParameterizedType) genericParameterType).getActualTypeArguments();
+                            if (actualTypeArguments.length == 1 && actualTypeArguments[0] instanceof Class) {
+                                Class<?> vectorClass = (Class<?>) actualTypeArguments[0];
+                                vectorClasses.put(name, vectorClass);
+                                debugLog("Resolved vector class for '" + name + "': " + vectorClass.getName());
+                            }
+                        }
+                    }
                 }
             }
 
@@ -70,6 +89,12 @@ public class UniformHelper {
 
         registrar.uniform1i(Frequency.PER_FRAME, "euphoriaPatchesCurrentDayMillisLocal", UniformHelper::msSinceMidnightLocal);
         debugLog("Registered 'euphoriaPatchesCurrentDayMillisLocal' with PER_FRAME frequency. Uniform type: int");
+
+        registrar.uniform3f(Frequency.PER_FRAME, "euphoriaPatchesTime",
+                () -> LocalDateTime.now().getHour(),
+                () -> LocalDateTime.now().getMinute(),
+                () -> LocalDateTime.now().getSecond());
+        debugLog("Registered 'euphoriaPatchesTime' with PER_FRAME frequency. Uniform type: vec3");
     }
 
     private static int msSinceMidnightLocal() {
