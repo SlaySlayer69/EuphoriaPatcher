@@ -13,6 +13,7 @@
     "IrisLegacyOptionMenuElementMixin",
     "IrisLegacyPackRenderTargetDirectivesMixin",
     "IrisLegacyProfileElementWidgetMixin",
+    "IrisLegacyShaderPackMixin",
     "IrisLegacyShaderPropertiesMixin",
     "IrisLegacyStandardMacrosMixin",
     "IrisModernExtendedDataHelperMixin",
@@ -20,6 +21,7 @@
     "IrisModernOptionMenuElementMixin",
     "IrisModernPackRenderTargetDirectivesMixin",
     "IrisModernProfileElementWidgetMixin",
+    "IrisModernShaderPackMixin",
     "IrisModernShaderPropertiesMixin",
     "IrisModernStandardMacrosMixin",
     "PhotonicsRaytracerMixin"

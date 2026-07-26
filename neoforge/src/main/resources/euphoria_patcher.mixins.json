@@ -6,6 +6,7 @@
     "EuphoriaPatcherMixin",
     "IrisModernStandardMacrosMixin",
     "IrisModernExtendedDataHelperMixin",
+    "IrisModernShaderPackMixin",
     "IrisModernShaderPropertiesMixin",
     "IrisModernOptionMenuElementMixin",
     "IrisModernOptionMenuContainerMixin",

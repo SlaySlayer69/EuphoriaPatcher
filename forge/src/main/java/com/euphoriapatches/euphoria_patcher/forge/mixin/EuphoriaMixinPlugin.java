@@ -33,6 +33,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
     public static final String MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.irisshaders.iris.vertices.ExtendedDataHelper";
     public static final String LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.coderbot.iris.vertices.ExtendedDataHelper";
+    public static final String MODERN_SHADER_PACK_CLASS = "net.irisshaders.iris.shaderpack.ShaderPack";
+    public static final String LEGACY_SHADER_PACK_CLASS = "net.coderbot.iris.shaderpack.ShaderPack";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -144,6 +146,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisLegacyExtendedDataHelperMixin")) {
             return checkClassExists(LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernShaderPackMixin")) {
+            return checkClassExists(MODERN_SHADER_PACK_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyShaderPackMixin")) {
+            return checkClassExists(LEGACY_SHADER_PACK_CLASS);
         }
 
         // Apply other mixins by default
