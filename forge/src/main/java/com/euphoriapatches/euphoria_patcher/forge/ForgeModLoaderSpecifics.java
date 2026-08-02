@@ -120,7 +120,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
             org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             debugLog("Error setting clipboard (obfuscated): " + e.getMessage());
             return false;
         }
@@ -151,9 +151,16 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
                 windowHandle = (long) windowClass.getMethod("getWindow").invoke(window);
             }
 
-            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            try {
+                org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            } catch (Throwable t) {
+                // Modern Minecraft versions switched their windowing backend from GLFW to SDL3
+                debugLog("GLFW clipboard failed, trying SDL3: " + t.getMessage());
+                Class<?> sdlClipboardClass = Class.forName("org.lwjgl.sdl.SDLClipboard");
+                sdlClipboardClass.getMethod("SDL_SetClipboardText", CharSequence.class).invoke(null, str);
+            }
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             debugLog("Error setting clipboard (modern): " + e.getMessage());
             return false;
         }
@@ -183,7 +190,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
             org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             debugLog("Error setting clipboard (pre-1.16.5): " + e.getMessage());
             return false;
         }

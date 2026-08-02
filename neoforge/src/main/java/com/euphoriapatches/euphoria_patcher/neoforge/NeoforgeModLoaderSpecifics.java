@@ -85,9 +85,16 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
                 debugLog("Using getWindow() method to get window handle");
             }
 
-            org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            try {
+                org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            } catch (Throwable t) {
+                // Modern Minecraft versions switched their windowing backend from GLFW to SDL3
+                debugLog("GLFW clipboard failed, trying SDL3: " + t.getMessage());
+                Class<?> sdlClipboardClass = Class.forName("org.lwjgl.sdl.SDLClipboard");
+                sdlClipboardClass.getMethod("SDL_SetClipboardText", CharSequence.class).invoke(null, str);
+            }
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             debugLog("Error setting clipboard: " + e.getMessage());
         }
         return false;
