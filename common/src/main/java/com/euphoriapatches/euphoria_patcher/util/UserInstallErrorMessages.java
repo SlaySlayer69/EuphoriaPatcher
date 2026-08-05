@@ -52,6 +52,9 @@ public class UserInstallErrorMessages {
                 EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports version " + detectedVersion);
                 EuphoriaPatcher.log(3, 8, "SOLUTION 2: Manually check if a newer " + EuphoriaPatcher.PATCH_NAME + " version is available.");
                 EuphoriaPatcher.log(3, 8, "SOLUTION 3: Download the compatible shader version " + EuphoriaPatcher.VERSION);
+
+                EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+                copyLinkMessage();
             } else {
                 // Check for older version
                 Path highestOlderVersion = versionComparator.findHighestOlderComplementaryVersion();
@@ -63,17 +66,24 @@ public class UserInstallErrorMessages {
                     EuphoriaPatcher.log(3, 8, "Found: " + highestOlderVersion.getFileName().toString());
                     EuphoriaPatcher.log(3, 8, "You have an older version installed.");
                     EuphoriaPatcher.log(3, 8, "");
-                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download and install " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                    EuphoriaPatcher.log(3, 8, "SOLUTION:");
+                    EuphoriaPatcher.log(3, 8, "Step 1: Download and install " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                    EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+                    copyLinkMessage();
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
                 } else {
                     EuphoriaPatcher.log(3, 8, "");
                     EuphoriaPatcher.log(3, 8, "No " + EuphoriaPatcher.BRAND_NAME + " shader found in your shaderpacks folder.");
                     EuphoriaPatcher.log(3, 8, "");
-                    EuphoriaPatcher.log(3, 8, "SOLUTION: Download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                    EuphoriaPatcher.log(3, 8, "SOLUTION:");
+                    EuphoriaPatcher.log(3, 8, "Step 1: Download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
+                    EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+                    copyLinkMessage();
+                    EuphoriaPatcher.log(3, 8, "");
+                    EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
                 }
-
             }
-            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
-            copyLinkMessage();
         }
 
         // Start watching for the shader to be added
@@ -115,9 +125,15 @@ public class UserInstallErrorMessages {
 
         if (UpdateChecker.isNewerCompVersionAvailable()) {
             EuphoriaPatcher.log(3, 8, "");
-            EuphoriaPatcher.log(3, 8, "SOLUTION: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
+            EuphoriaPatcher.log(3, 8, "SOLUTION:");
+            EuphoriaPatcher.log(3, 8, "Step 1: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
             EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
             copyLinkMessage();
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "Step 2: Download the compatible shader version: Complementary_r" + UpdateChecker.getComplementaryVersion());
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "Step 3: Paste the downloaded zip file into your shaderpacks folder.");
         } else {
             EuphoriaPatcher.log(3, 8, "");
             EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports version " + detectedVersion);
@@ -136,10 +152,12 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "This file appears to be incomplete or has been modified.");
         EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
         EuphoriaPatcher.log(3, 8, "");
-        EuphoriaPatcher.log(3, 8, "SOLUTION: Re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+        EuphoriaPatcher.log(3, 8, "SOLUTION:");
+        EuphoriaPatcher.log(3, 8, "Step 1: Re-download " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
         copyLinkMessage();
-
+        EuphoriaPatcher.log(3, 8, "");
+        EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
     }
 
     /**
@@ -150,9 +168,12 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "Found: " + originalFileName);
         EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "");
-        EuphoriaPatcher.log(3, 8, "SOLUTION: Download the correct shader version " + EuphoriaPatcher.VERSION);
+        EuphoriaPatcher.log(3, 8, "SOLUTION:");
+        EuphoriaPatcher.log(3, 8, "Step 1: Download the correct shader version " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
         copyLinkMessage();
+        EuphoriaPatcher.log(3, 8, "");
+        EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
     }
 
     /**
@@ -163,9 +184,12 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "Found: " + originalFileName);
         EuphoriaPatcher.log(3, 8, "This appears to be a test, dev, or pre-release version.");
         EuphoriaPatcher.log(3, 8, "");
-        EuphoriaPatcher.log(3, 8, "SOLUTION: Download the official " + EuphoriaPatcher.BRAND_NAME + " release version: " + EuphoriaPatcher.VERSION);
+        EuphoriaPatcher.log(3, 8, "SOLUTION:");
+        EuphoriaPatcher.log(3, 8, "Step 1: Download the official " + EuphoriaPatcher.BRAND_NAME + " release version: " + EuphoriaPatcher.VERSION);
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
         copyLinkMessage();
+        EuphoriaPatcher.log(3, 8, "");
+        EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
 
         startWatcherAndTrackFile(fileName);
     }
@@ -180,9 +204,12 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "This can happen if the shader was manually edited or if it's from an unofficial source.");
         EuphoriaPatcher.log(3, 8, "File size matches but content hash does not.");
         EuphoriaPatcher.log(3, 8, "");
-        EuphoriaPatcher.log(3, 8, "SOLUTION: Download the original unmodified " + EuphoriaPatcher.BRAND_NAME + " shader");
+        EuphoriaPatcher.log(3, 8, "SOLUTION:");
+        EuphoriaPatcher.log(3, 8, "Step 1: Download the original unmodified " + EuphoriaPatcher.BRAND_NAME + " shader");
         EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
         copyLinkMessage();
+        EuphoriaPatcher.log(3, 8, "");
+        EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
 
         startWatcherAndTrackFile(fileName);
     }
