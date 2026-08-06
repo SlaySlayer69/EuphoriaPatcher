@@ -26,7 +26,7 @@ public class EuphoriaPatcher {
     public static final String VERSION = PatchInfo.VERSION;
     public static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
 
-    public static final String COMP_DOWNLOAD_URL = "https://www.complementary.dev/";
+    public static final String COMP_DOWNLOAD_URL = "https://www.complementary.dev/manual-download/";
     public static final String EP_DOWNLOAD_URL = "https://euphoriapatches.com/download";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
     public static final String LANG_LOCATION = "shaders/lang";
