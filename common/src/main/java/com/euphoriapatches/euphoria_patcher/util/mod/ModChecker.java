@@ -6,11 +6,13 @@ import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 
 import java.util.EnumMap;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class ModChecker {
 	private static final String IRIS = ShaderLoader.IRIS;
 	private static final String OCULUS = ShaderLoader.OCULUS;
 	private static final String OPTIFINE = ShaderLoader.OPTIFINE;
 	private static final String ANGELICA = ShaderLoader.ANGELICA;
+	private static final String NEOCULUS = ShaderLoader.NEOCULUS;
 
 	private static Class<?> cachedIrisClass = null;
 	private static boolean irisClassSearched = false;
@@ -24,6 +26,7 @@ public class ModChecker {
 		IRIS(Registers.irisLike(ModChecker.IRIS)),
 		OCULUS(Registers.irisLike(ModChecker.OCULUS)),
 		ANGELICA(Registers.irisLike(ModChecker.ANGELICA)),
+		NEOCULUS(Registers.irisLike(ModChecker.NEOCULUS)),
 		PHOTONICS(Registers.classes("at.redi2go.photonics.client.Photonics", "at.redi2go.photonic.client.Photonic")),
 		ASTROCRAFT(Registers.classes("mod.lwhrvw.astrocraft.Astrocraft")),
 		OPTIFINE(Registers.classes("optifine.OptiFineTweaker")),
@@ -164,6 +167,9 @@ public class ModChecker {
 						case "AngelicaShaders":
 							debugLog("Detected Angelica via MODNAME='AngelicaShaders'");
 							return ANGELICA;
+						case "NeOculus":
+							debugLog("Detected NeOculus  via MODNAME='NeOculus'");
+							return NEOCULUS;
 					}
 				}
 			} catch (NoSuchFieldException e) {
@@ -200,6 +206,10 @@ public class ModChecker {
 			} else if (ANGELICA.equals(modId)) {
 				debugLog("Detected ANGELICA via class check and MODNAME field");
 				cachedIrisLikeLoader = ANGELICA;
+				return cachedIrisLikeLoader;
+			}  else if (NEOCULUS.equals(modId)) {
+				debugLog("Detected NEOCULUS via class check and MODNAME field");
+				cachedIrisLikeLoader = NEOCULUS;
 				return cachedIrisLikeLoader;
 			} else {
 				debugLog("Found Iris-like class but MODNAME was: " + modId);

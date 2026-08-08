@@ -185,22 +185,33 @@ public final class DefineHelper {
             }
 
             int injectedCountAmount = isOptifine ? 100 : 2; //Yeah... OptiFine does MANY Macro injections
-            if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage && injectCount <= injectedCountAmount) {
-                emitter.define("NEW_EUPHORIA_PATCHES_UPDATE");
-                debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
+            if (injectCount <= injectedCountAmount) {
+                emitter.define("EUPHORIA_PATCHES_FIRST_LOADED");
+                debugLog("Adding EUPHORIA_PATCHES_FIRST_LOADED define");
 
-                if (UpdateChecker.getNewModVersion() != null) {
-                    String nextVersionFormatted = formatVersionAsGLSLString(UpdateChecker.getNewModVersion());
-                    emitter.define("NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
-                    debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
-                }
-            } else {
-                if (injectCount > injectedCountAmount) {
-                    debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected " + injectCount + " times");
+                if (UpdateChecker.shouldUserUpdate() && ConfigHandler.doDisplayShaderInGameMessage) {
+                    emitter.define("NEW_EUPHORIA_PATCHES_UPDATE");
+                    debugLog("Adding NEW_EUPHORIA_PATCHES_UPDATE define");
+
+                    if (UpdateChecker.getNewModVersion() != null) {
+                        String nextVersionFormatted = formatVersionAsGLSLString(UpdateChecker.getNewModVersion());
+                        emitter.define("NEXT_EUPHORIA_PATCHES_VERSION", nextVersionFormatted);
+                        debugLog("Adding NEXT_EUPHORIA_PATCHES_VERSION: " + nextVersionFormatted + " define");
+                    }
                 } else if (!ConfigHandler.doDisplayShaderInGameMessage) {
                     debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - in-game messages disabled");
                 } else {
                     debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - no update available");
+                }
+
+                if (ShaderLoader.getShaderLoader().equals(ShaderLoader.NEOCULUS)) {
+                    emitter.define("EUPHORIA_PATCHES_NEOCULUS_WARNING");
+                    debugLog("Adding EUPHORIA_PATCHES_NEOCULUS_WARNING define");
+                }
+            } else {
+                debugLog("Not adding NEW_EUPHORIA_PATCHES_UPDATE define - already injected " + injectCount + " times");
+                if (ShaderLoader.getShaderLoader().equals(ShaderLoader.NEOCULUS)) {
+                    debugLog("Not adding EUPHORIA_PATCHES_NEOCULUS_WARNING define - already injected " + injectCount + " times");
                 }
             }
 

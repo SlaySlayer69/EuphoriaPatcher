@@ -35,6 +35,7 @@ public class ShaderLoader {
     public static final String OCULUS = "oculus";
     public static final String OPTIFINE = "optifine";
     public static final String ANGELICA = "angelica";
+    public static final String NEOCULUS = "neoculus";
     public static final String UNKNOWN = "unknown";
 
     // Cache variables
@@ -85,6 +86,9 @@ public class ShaderLoader {
         } else if (fileName.startsWith("angelica")) {
             debugLog("Detected ANGELICA via filename");
             return ANGELICA;
+        } else if (fileName.startsWith("neoculus")) {
+            debugLog("Detected NEOCULUS via filename");
+            return NEOCULUS;
         }
 
         debugLog("Could not determine shader loader type from filename");
@@ -122,6 +126,7 @@ public class ShaderLoader {
                         fileName.startsWith("oculus-mc") ||
                         fileName.startsWith("mekalus-mc") ||
                         fileName.startsWith("optifine_") ||
+                        fileName.startsWith("neoculus-mc") ||
                         fileName.startsWith("angelica")) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
@@ -210,6 +215,12 @@ public class ShaderLoader {
                 // Angelica is specifically for 1.7.10
                 extractedVersion = "1.7.10";
                 debugLog("Set version to 1.7.10 for Angelica");
+            }
+            else if (lowerFileName.startsWith("neoculus")) {
+                debugLog("Detected NeOculus format - always for Minecraft 1.21.1");
+                // NeOculus is specifically for 1.21.1
+                extractedVersion = "1.21.1";
+                debugLog("Set version to 1.21.1 for NeOculus");
             }
             // Handle OptiFine format: OptiFine_1.18.1_HD_U_H6.jar
             else if (lowerFileName.startsWith("optifine_")) {
@@ -384,6 +395,17 @@ public class ShaderLoader {
                 cachedShaderLoaderVersion = 0;
                 return cachedShaderLoaderVersion;
             }
+            // Handle NeOculus - neoculus-mc1.21.1-1.8.7.jar
+            else if (lowerFileName.startsWith("neoculus")) {
+                debugLog("Detected NeOculus format");
+                // Find the last dash before .jar to get the version
+                int lastDashIndex = fileName.lastIndexOf('-');
+                int jarIndex = lowerFileName.indexOf(".jar");
+                if (lastDashIndex != -1 && jarIndex != -1 && jarIndex > lastDashIndex) {
+                    extractedVersion = fileName.substring(lastDashIndex + 1, jarIndex);
+                    debugLog("Extracted NeOculus version: " + extractedVersion);
+                }
+            }
 
             // Convert the extracted version to integer
             if (extractedVersion != null) {
@@ -425,6 +447,8 @@ public class ShaderLoader {
                 return new String[]{"EUPHORIA_PATCHES_OCULUS_VERSION", String.valueOf(version)};
             case ANGELICA:
                 return new String[]{"EUPHORIA_PATCHES_ANGELICA_VERSION", String.valueOf(version)};
+            case NEOCULUS:
+                return new String[]{"EUPHORIA_PATCHES_NEOCULUS_VERSION", String.valueOf(version)};
             default:
                 return null;
         }
@@ -455,9 +479,10 @@ public class ShaderLoader {
                 }
                 break;
             case OCULUS:
+            case NEOCULUS:
                 configPath = EuphoriaPatcher.configDirectory.resolve("oculus.properties");
                 if (Files.exists(configPath)) {
-                    debugLog("Found Oculus config at: " + configPath);
+                    debugLog("Found" + (shaderLoader.equals(NEOCULUS) ? " NeOculus" : " Oculus") + " config at: " + configPath);
                     shaderLoaderConfigPath = configPath;
                     return shaderLoaderConfigPath;
                 }
