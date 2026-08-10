@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
@@ -26,6 +27,48 @@ public class ReflectionUtils {
             debugLog("Exception checking class " + className + ": " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Finds a method in the given class that matches the specified name and has a single parameter
+     * that is assignable from the provided argument instance's class.
+     * @param declaringClass
+     * @param methodName
+     * @param argInstance
+     * @return
+     * @throws NoSuchMethodException
+     */
+    public static Method findMethodForInstance(Class<?> declaringClass, String methodName, Object argInstance) throws NoSuchMethodException {
+        for (Method method : declaringClass.getMethods()) {
+            if (method.getName().equals(methodName) && method.getParameterCount() == 1
+                    && method.getParameterTypes()[0].isAssignableFrom(argInstance.getClass())) {
+                return method;
+            }
+        }
+        throw new NoSuchMethodException(declaringClass.getName() + "." + methodName + "(" + argInstance.getClass().getName() + ")");
+    }
+
+    /**
+     * Tries each candidate no-arg method name in order on {@code declaringClass}, returning the
+     * first one that resolves. Useful when the same method can appear under different names
+     * depending on mapping/obfuscation state (e.g. named vs. intermediary vs. SRG), when you
+     * already know the exact declaring class and just don't know which name it's using here.
+     *
+     * @param declaringClass the class to search
+     * @param methodNames    candidate no-arg method names to try, in priority order
+     * @return the first resolvable method
+     * @throws NoSuchMethodException if none of the candidates resolve
+     */
+    public static Method tryMethods(Class<?> declaringClass, String... methodNames) throws NoSuchMethodException {
+        NoSuchMethodException lastFailure = null;
+        for (String methodName : methodNames) {
+            try {
+                return declaringClass.getMethod(methodName);
+            } catch (NoSuchMethodException e) {
+                lastFailure = e;
+            }
+        }
+        throw lastFailure != null ? lastFailure : new NoSuchMethodException(declaringClass.getName() + ": no candidate method names provided");
     }
 
     /**

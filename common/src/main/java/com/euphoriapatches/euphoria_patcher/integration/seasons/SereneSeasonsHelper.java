@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.seasons;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 
@@ -10,8 +11,11 @@ import java.lang.reflect.Method;
 public final class SereneSeasonsHelper {
 
     private static boolean initialized = false;
+    private static boolean modPresent = false;
+    private static boolean methodsBound = false;
     private static boolean available = false;
 
+    private static Class<?> seasonHelperClass;
     private static Method GET_SEASON_STATE;
     private static Method GET_SEASON;
     private static Method GET_SUB_SEASON;
@@ -40,9 +44,21 @@ public final class SereneSeasonsHelper {
         }
 
         try {
-            Class<?> seasonHelperClass = Class.forName("sereneseasons.api.season.SeasonHelper");
-            Class<?> levelClass = Class.forName("net.minecraft.world.level.Level");
-            GET_SEASON_STATE = seasonHelperClass.getMethod("getSeasonState", levelClass);
+            seasonHelperClass = Class.forName("sereneseasons.api.season.SeasonHelper");
+            modPresent = true;
+        } catch (Exception e) {
+            debugLog("Failed to load Serene Seasons' SeasonHelper class: " + e.getMessage());
+        }
+    }
+
+    // getSeasonState(Level) can't be resolved until we have a live level instance to match its
+    // parameter type against
+    private static boolean bindMethods(Object level) {
+        if (methodsBound) return available;
+        methodsBound = true;
+
+        try {
+            GET_SEASON_STATE = ReflectionUtils.findMethodForInstance(seasonHelperClass, "getSeasonState", level);
 
             Class<?> seasonStateClass = GET_SEASON_STATE.getReturnType();
             GET_SEASON = seasonStateClass.getMethod("getSeason");
@@ -56,6 +72,7 @@ public final class SereneSeasonsHelper {
             available = false;
             debugLog("Failed to bind to Serene Seasons: " + e.getMessage());
         }
+        return available;
     }
 
     private static Object getSeasonState() {
@@ -66,9 +83,9 @@ public final class SereneSeasonsHelper {
 
         init();
         Object state = null;
-        if (available) {
+        if (modPresent) {
             Object level = ModLoaderSpecifics.getLevelStatic();
-            if (level != null) {
+            if (level != null && bindMethods(level)) {
                 try {
                     state = GET_SEASON_STATE.invoke(null, level);
                 } catch (Exception e) {

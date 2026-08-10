@@ -40,7 +40,8 @@ public class ModChecker {
 		THREE_D_SKIN_LAYERS(Registers.classes("dev.tr7zw.skinlayers.SkinLayersMod")),
 		CAELUM(Registers.classes("nuparu.caelum.Caelum", "space.ajcool.Caelum")),
 		SERENE_SEASONS(Registers.classes("sereneseasons.api.season.SeasonHelper")),
-		FABRIC_SEASONS(Registers.classes("io.github.lucaargolo.seasons.FabricSeasons"));
+		FABRIC_SEASONS(Registers.classes("io.github.lucaargolo.seasons.FabricSeasons")),
+		ECLIPTIC_SEASONS(Registers.classes("com.teamtea.eclipticseasons.api.EclipticSeasonsApi"));
 
 		private final Registers register;
 

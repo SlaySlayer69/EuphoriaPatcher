@@ -275,7 +275,8 @@ public final class DefineHelper {
 
     private static boolean isSeasonsModInstalled() {
         return ModChecker.isModPresent(ModChecker.ModNames.SERENE_SEASONS) ||
-               ModChecker.isModPresent(ModChecker.ModNames.FABRIC_SEASONS);
+               ModChecker.isModPresent(ModChecker.ModNames.FABRIC_SEASONS) ||
+               ModChecker.isModPresent(ModChecker.ModNames.ECLIPTIC_SEASONS);
     }
 
     private static void appendMacroLine(StringBuilder sb, String name) {

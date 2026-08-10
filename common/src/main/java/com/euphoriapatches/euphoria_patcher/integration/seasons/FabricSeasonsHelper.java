@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.seasons;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 
@@ -8,15 +9,15 @@ import java.lang.reflect.Method;
 
 // Reflection bridge into Fabric Seasons (io.github.lucaargolo.seasons). Unlike Serene
 // Seasons, it has no subseason concept and its 4 season lengths are independently
-// configurable rather than always equal - getSeasonDuration() below approximates using the
-// CURRENT season's own length, which is exact when all 4 are set equal (the common case)
-// and only approximate otherwise, since the shared uniform contract assumes one uniform
-// length across the whole cycle.
+// configurable rather than always equal
 public final class FabricSeasonsHelper {
 
     private static boolean initialized = false;
+    private static boolean modPresent = false;
+    private static boolean methodsBound = false;
     private static boolean available = false;
 
+    private static Class<?> fabricSeasonsClass;
     private static Object config;
     private static Method GET_CURRENT_SEASON;
     private static Method GET_TIME_TO_NEXT_SEASON;
@@ -47,10 +48,7 @@ public final class FabricSeasonsHelper {
         }
 
         try {
-            Class<?> fabricSeasonsClass = Class.forName("io.github.lucaargolo.seasons.FabricSeasons");
-            Class<?> worldClass = resolveWorldClass();
-            GET_CURRENT_SEASON = fabricSeasonsClass.getMethod("getCurrentSeason", worldClass);
-            GET_TIME_TO_NEXT_SEASON = fabricSeasonsClass.getMethod("getTimeToNextSeason", worldClass);
+            fabricSeasonsClass = Class.forName("io.github.lucaargolo.seasons.FabricSeasons");
 
             config = fabricSeasonsClass.getField("CONFIG").get(null);
             Class<?> configClass = config.getClass();
@@ -59,22 +57,29 @@ public final class FabricSeasonsHelper {
             GET_FALL_LENGTH = configClass.getMethod("getFallLength");
             GET_WINTER_LENGTH = configClass.getMethod("getWinterLength");
 
+            modPresent = true;
+        } catch (Exception e) {
+            debugLog("Failed to bind to Fabric Seasons' config: " + e.getMessage());
+        }
+    }
+
+    // getCurrentSeason(World)/getTimeToNextSeason(World) can't be resolved until we have a live
+    // level instance to match their parameter type against
+    private static boolean bindLevelMethods(Object level) {
+        if (methodsBound) return available;
+        methodsBound = true;
+
+        try {
+            GET_CURRENT_SEASON = ReflectionUtils.findMethodForInstance(fabricSeasonsClass, "getCurrentSeason", level);
+            GET_TIME_TO_NEXT_SEASON = ReflectionUtils.findMethodForInstance(fabricSeasonsClass, "getTimeToNextSeason", level);
+
             available = true;
             debugLog("Bound to Fabric Seasons' API");
         } catch (Exception e) {
             available = false;
             debugLog("Failed to bind to Fabric Seasons: " + e.getMessage());
         }
-    }
-
-    // Depending on the environment, World may still be under its Yarn name or only under
-    // its raw intermediary name (class_1937) - try Yarn first since that's the common case.
-    private static Class<?> resolveWorldClass() throws ClassNotFoundException {
-        try {
-            return Class.forName("net.minecraft.world.World");
-        } catch (ClassNotFoundException e) {
-            return Class.forName("net.minecraft.class_1937");
-        }
+        return available;
     }
 
     // Fabric Seasons only exposes "current season" + "ticks until next season" (plus each
@@ -94,10 +99,12 @@ public final class FabricSeasonsHelper {
         cachedSeasonDuration = 0;
         cachedTotalSeasonDuration = 0;
 
-        if (!available) return;
+        if (!modPresent) return;
 
         Object level = ModLoaderSpecifics.getLevelStatic();
         if (level == null) return;
+
+        if (!bindLevelMethods(level)) return;
 
         try {
             // Spring-first order, matching Season's declared enum ordinals (SPRING, SUMMER, FALL, WINTER).
