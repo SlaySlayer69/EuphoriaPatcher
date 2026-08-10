@@ -65,7 +65,7 @@ public class IrisUniformBridge implements UniformDeclarer {
                     Class<?> paramType = method.getParameterTypes()[2];
                     String signature = name + "_" + paramType.getSimpleName();
                     methodCache.put(signature, method);
-                    debugLog("Cached uniform method '" + signature + "' -> " + method);
+                    // debugLog("Cached uniform method '" + signature + "' -> " + method);
 
                     // For vector uniforms (Supplier<Vector2f/3f/...>), read the actual vector
                     // class Iris expects straight off its own method signature instead of
@@ -77,7 +77,7 @@ public class IrisUniformBridge implements UniformDeclarer {
                             if (actualTypeArguments.length == 1 && actualTypeArguments[0] instanceof Class) {
                                 Class<?> vectorClass = (Class<?>) actualTypeArguments[0];
                                 vectorClasses.put(name, vectorClass);
-                                debugLog("Resolved vector class for '" + name + "': " + vectorClass.getName());
+                                // debugLog("Resolved vector class for '" + name + "': " + vectorClass.getName());
                             }
                         }
                     }

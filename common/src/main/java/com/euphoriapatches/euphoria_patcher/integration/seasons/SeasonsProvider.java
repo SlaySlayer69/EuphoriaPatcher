@@ -48,4 +48,11 @@ public final class SeasonsProvider {
         if (backend == Backend.FABRIC_SEASONS) return FabricSeasonsHelper.getSeasonDuration();
         return 0;
     }
+
+    public static int getTotalSeasonDuration() {
+        init();
+        if (backend == Backend.SERENE_SEASONS) return SereneSeasonsHelper.getTotalSeasonDuration();
+        if (backend == Backend.FABRIC_SEASONS) return FabricSeasonsHelper.getTotalSeasonDuration();
+        return 0;
+    }
 }

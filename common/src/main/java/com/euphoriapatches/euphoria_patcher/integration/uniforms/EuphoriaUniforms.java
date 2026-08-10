@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
 import com.euphoriapatches.euphoria_patcher.integration.seasons.SeasonsProvider;
+import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 
 import java.time.LocalDateTime;
@@ -13,18 +14,32 @@ public final class EuphoriaUniforms {
 
     public static void declareAll(UniformDeclarer declarer) {
         declarer.uniform1b("euphoriaPatchesIsDayAdvancing", ModLoaderSpecifics::isTimeAdvancingStatic);
+        debugLog("Declared uniform 'euphoriaPatchesIsDayAdvancing'");
 
         declarer.uniform1i("euphoriaPatchesCurrentDayMillis", () -> (int) (System.currentTimeMillis() % 86400000));
+        debugLog("Declared uniform 'euphoriaPatchesCurrentDayMillis'");
 
         declarer.uniform1i("euphoriaPatchesCurrentDayMillisLocal", EuphoriaUniforms::msSinceMidnightLocal);
+        debugLog("Declared uniform 'euphoriaPatchesCurrentDayMillisLocal'");
 
-        declarer.uniform1i("euphoriaPatchesSeason", SeasonsProvider::getSeasonOrdinal);
 
-        declarer.uniform1i("euphoriaPatchesSubSeason", SeasonsProvider::getSubSeasonOrdinal);
+        // Season-related uniforms
 
-        declarer.uniform1i("euphoriaPatchesSeasonCycleTicks", SeasonsProvider::getSeasonCycleTicks);
+        // Get current tick of the season cycle
+        declarer.uniform1i("euphoriaPatchesCurrentSeasonTick", SeasonsProvider::getSeasonCycleTicks);
+        debugLog("Declared uniform 'euphoriaPatchesCurrentSeasonTick'");
 
+        // Get current season duration in ticks
         declarer.uniform1i("euphoriaPatchesSeasonDuration", SeasonsProvider::getSeasonDuration);
+        debugLog("Declared uniform 'euphoriaPatchesSeasonDuration'");
+
+        // Get total season duration in ticks of all 4 seasons
+        declarer.uniform1i("euphoriaPatchesTotalSeasonDuration", SeasonsProvider::getTotalSeasonDuration);
+        debugLog("Declared uniform 'euphoriaPatchesTotalSeasonDuration'");
+    }
+
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[EuphoriaUniforms] " + message);
     }
 
     private static int msSinceMidnightLocal() {

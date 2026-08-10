@@ -30,6 +30,7 @@ public final class FabricSeasonsHelper {
     private static int cachedSeasonOrdinal;
     private static int cachedSeasonCycleTicks;
     private static int cachedSeasonDuration;
+    private static int cachedTotalSeasonDuration;
 
     private FabricSeasonsHelper() {}
 
@@ -91,6 +92,7 @@ public final class FabricSeasonsHelper {
         cachedSeasonOrdinal = 0;
         cachedSeasonCycleTicks = 0;
         cachedSeasonDuration = 0;
+        cachedTotalSeasonDuration = 0;
 
         if (!available) return;
 
@@ -128,6 +130,7 @@ public final class FabricSeasonsHelper {
             cachedSeasonOrdinal = ordinal;
             cachedSeasonCycleTicks = (int) (ticksBeforeCurrentSeason + elapsedInCurrent);
             cachedSeasonDuration = (int) currentLength;
+            cachedTotalSeasonDuration = (int) (lengths[0] + lengths[1] + lengths[2] + lengths[3]);
         } catch (Exception e) {
             debugLog("Failed to read season state: " + e.getMessage());
         }
@@ -158,5 +161,10 @@ public final class FabricSeasonsHelper {
     public static int getSeasonDuration() {
         refresh();
         return cachedSeasonDuration;
+    }
+
+    public static int getTotalSeasonDuration() {
+        refresh();
+        return cachedTotalSeasonDuration;
     }
 }

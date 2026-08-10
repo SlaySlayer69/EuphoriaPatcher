@@ -119,4 +119,10 @@ public final class SereneSeasonsHelper {
         Object state = getSeasonState();
         return state == null ? 0 : intOf(GET_SEASON_DURATION, state);
     }
+
+    // Serene Seasons always uses 4 equal-length seasons (3 equal subseasons each), so the
+    // full cycle is just the current season's duration times 4.
+    public static int getTotalSeasonDuration() {
+        return getSeasonDuration() * 4;
+    }
 }
