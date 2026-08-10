@@ -123,6 +123,19 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         return GameRuleChecker.getInstance().isTimeAdvancing();
     }
 
+    @Override
+    public Object getLevel() {
+        if (useYarnMappings == null) discoverMappingBranch();
+
+        // Use cached result
+        if (useYarnMappings != null && useYarnMappings) {
+            return getLevelYarn();
+        } else if (useYarnMappings != null && !useYarnMappings) {
+            return getLevelModern();
+        }
+        return null;
+    }
+
     private String getCurrentDimensionID(){
         if (useYarnMappings == null) discoverMappingBranch();
 
@@ -173,14 +186,14 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private String getCurrentDimensionIDYarn() {
         debugLog("Getting current dimension (Yarn)");
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Object world = getLevelYarn();
 
-            if (client == null || client.world == null) {
+            if (world == null) {
                 debugLog("Client or world is null, defaulting to 'minecraft:overworld'");
                 return "minecraft:overworld";
             }
 
-            Identifier dimensionId = client.world.getRegistryKey().getValue();
+            Identifier dimensionId = ((net.minecraft.world.World) world).getRegistryKey().getValue();
             String currentDimensionId = dimensionId.toString();
             debugLog("Current dimension ID: " + currentDimensionId);
 
@@ -195,15 +208,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         debugLog("Getting current dimension (Reflection for net.minecraft.client.Minecraft)");
 
         try {
-            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
-            Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
-
-            if (mcInstance == null) {
-                debugLog("Minecraft instance is null, defaulting to 'minecraft:overworld'");
-                return "minecraft:overworld";
-            }
-
-            Object level = mcClass.getField("level").get(mcInstance);
+            Object level = getLevelModern();
             if (level == null) {
                 debugLog("Level is null, defaulting to 'minecraft:overworld'");
                 return "minecraft:overworld";
@@ -228,6 +233,32 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         } catch (Exception e) {
             debugLog("Error in reflection method: " + e.getMessage());
             return "minecraft:overworld";
+        }
+    }
+
+    private Object getLevelYarn() {
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            return client != null ? client.world : null;
+        } catch (Exception e) {
+            debugLog("Error getting level (Yarn): " + e.getMessage());
+            return null;
+        }
+    }
+
+    private Object getLevelModern() {
+        try {
+            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+            Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
+
+            if (mcInstance == null) {
+                return null;
+            }
+
+            return mcClass.getField("level").get(mcInstance);
+        } catch (Exception e) {
+            debugLog("Error getting level (reflection): " + e.getMessage());
+            return null;
         }
     }
 

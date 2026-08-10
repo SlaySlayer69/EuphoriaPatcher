@@ -105,12 +105,21 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
         return GameRuleChecker.getInstance().isTimeAdvancing();
     }
 
+    @Override
+    public Object getLevel() {
+        try {
+            return Minecraft.getInstance().level;
+        } catch (Throwable t) {
+            debugLog("Error getting level: " + t.getMessage());
+            return null;
+        }
+    }
+
     private String getCurrentDimensionID() {
         try {
             debugLog("Getting current dimension ID");
-            Minecraft minecraft = Minecraft.getInstance();
 
-            Level level = minecraft.level;
+            Level level = (Level) getLevel();
             if (level == null) {
                 debugLog("Minecraft or level is null, defaulting to 'minecraft:overworld'");
                 return "minecraft:overworld";

@@ -38,7 +38,9 @@ public class ModChecker {
 		HORIZON(Registers.classes("com.jeff.horizon.SkyboxManager")),
 		SPYGLASS_ASTRONOMY(Registers.classes("com.nettakrim.spyglass_astronomy.SpyglassAstronomyClient")),
 		THREE_D_SKIN_LAYERS(Registers.classes("dev.tr7zw.skinlayers.SkinLayersMod")),
-		CAELUM(Registers.classes("nuparu.caelum.Caelum", "space.ajcool.Caelum"));
+		CAELUM(Registers.classes("nuparu.caelum.Caelum", "space.ajcool.Caelum")),
+		SERENE_SEASONS(Registers.classes("sereneseasons.api.season.SeasonHelper")),
+		FABRIC_SEASONS(Registers.classes("io.github.lucaargolo.seasons.FabricSeasons"));
 
 		private final Registers register;
 

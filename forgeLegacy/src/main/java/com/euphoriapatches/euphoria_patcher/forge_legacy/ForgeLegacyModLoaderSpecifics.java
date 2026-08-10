@@ -67,6 +67,11 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
         return true;
     }
 
+    @Override
+    public Object getLevel() {
+        return null;
+    }
+
     @SuppressWarnings("unused")
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[ForgeLegacyModLoaderSpecifics] " + message);

@@ -87,6 +87,13 @@ public abstract class ModLoaderSpecifics {
      */
     public abstract boolean isTimeAdvancing();
 
+    /**
+     * Get the current client-side level/world object, for use with reflection-based
+     * integrations that need a Level instance.
+     * @return the current level object, or null if unavailable
+     */
+    public abstract Object getLevel();
+
     // Convenience static methods that delegate to the instance
 
     /**
@@ -158,5 +165,13 @@ public abstract class ModLoaderSpecifics {
      */
     public static boolean isTimeAdvancingStatic() {
         return getInstance().isTimeAdvancing();
+    }
+
+    /**
+     * Get the current client-side level/world object.
+     * @return the current level object, or null if unavailable
+     */
+    public static Object getLevelStatic() {
+        return getInstance().getLevel();
     }
 }

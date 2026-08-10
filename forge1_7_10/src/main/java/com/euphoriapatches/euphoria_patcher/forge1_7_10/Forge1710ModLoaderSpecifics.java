@@ -58,6 +58,11 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
         return true;
     }
 
+    @Override
+    public Object getLevel() {
+        return null;
+    }
+
     @SuppressWarnings("unused")
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[Forge1710ModLoaderSpecifics] " + message);

@@ -157,6 +157,11 @@ public class DevPatchGenerator {
             public boolean isTimeAdvancing() {
                 return true;
             }
+
+            @Override
+            public Object getLevel() {
+                return null;
+            }
         });
     }
 
