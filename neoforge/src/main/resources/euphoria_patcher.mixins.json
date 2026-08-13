@@ -20,6 +20,8 @@
     "RenderTypeMixin",
     "EnderDragonRendererMixin",
     "IrisModernExclusiveUniformsMixin",
-    "PreparedRenderTypeMixin"
+    "PreparedRenderTypeMixin",
+    "NativeImageMixin",
+    "IrisShaderPackScreenMixin"
   ]
 }

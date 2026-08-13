@@ -60,10 +60,50 @@ public class ReflectionUtils {
      * @throws NoSuchMethodException if none of the candidates resolve
      */
     public static Method tryMethods(Class<?> declaringClass, String... methodNames) throws NoSuchMethodException {
+        return tryMethods(declaringClass, new Class<?>[0], methodNames);
+    }
+
+    /**
+     * Same as {@link #tryMethods(Class, String...)} but for methods that take arguments -
+     * tries each candidate name with the given parameter types, in priority order.
+     *
+     * @param declaringClass the class to search
+     * @param parameterTypes the parameter types shared by every candidate
+     * @param methodNames    candidate method names to try, in priority order
+     * @return the first resolvable method
+     * @throws NoSuchMethodException if none of the candidates resolve
+     */
+    public static Method tryMethods(Class<?> declaringClass, Class<?>[] parameterTypes, String... methodNames) throws NoSuchMethodException {
         NoSuchMethodException lastFailure = null;
         for (String methodName : methodNames) {
             try {
-                return declaringClass.getMethod(methodName);
+                return declaringClass.getMethod(methodName, parameterTypes);
+            } catch (NoSuchMethodException e) {
+                lastFailure = e;
+            }
+        }
+        throw lastFailure != null ? lastFailure : new NoSuchMethodException(declaringClass.getName() + ": no candidate method names provided");
+    }
+
+    /**
+     * Same as {@link #tryMethods(Class, Class[], String...)}, but also finds non-public methods
+     * (e.g. an internal accessor that was never meant to be called from outside the class),
+     * forcing each one accessible via reflection before returning it. Useful when the only
+     * implementation available under a given name isn't public.
+     *
+     * @param declaringClass the class to search
+     * @param parameterTypes the parameter types shared by every candidate
+     * @param methodNames    candidate method names to try, in priority order
+     * @return the first resolvable method, already made accessible
+     * @throws NoSuchMethodException if none of the candidates resolve
+     */
+    public static Method tryDeclaredMethods(Class<?> declaringClass, Class<?>[] parameterTypes, String... methodNames) throws NoSuchMethodException {
+        NoSuchMethodException lastFailure = null;
+        for (String methodName : methodNames) {
+            try {
+                Method method = declaringClass.getDeclaredMethod(methodName, parameterTypes);
+                method.setAccessible(true);
+                return method;
             } catch (NoSuchMethodException e) {
                 lastFailure = e;
             }

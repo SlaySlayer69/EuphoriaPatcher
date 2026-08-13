@@ -16,6 +16,7 @@ public class ConfigHandler {
     public static boolean doDebugLogging = false;
     public static String alternativeShaderNames = "";
     public static boolean autoMergeBlockProperties = false;
+    public static String doEmbedShaderSettingsInScreenshots = EmbedShaderSettingsMode.ENABLED; // enabled, disabled, debug
 
     public static void configStuff() {
         // Initialize config system (handles migration on first call)
@@ -77,6 +78,14 @@ public class ConfigHandler {
                         "\nDefault = false");
         handleJVMArgumentDebugLogging(configDebugLogging);
 
+        doEmbedShaderSettingsInScreenshots = Config.readWriteConfig("advanced", "doEmbedShaderSettingsInScreenshots", EmbedShaderSettingsMode.ENABLED,
+                "Option that controls embedding the current shaderpack's settings into screenshots you take with that shader, invisibly." +
+                "\n(yes, it is guaranteed 100% invisible to the human eye in 'enabled' mode, done via LSB steganography in the pixel data)." +
+                "\nThis lets a screenshot double as a shareable settings file - dropping it onto the Iris/Oculus shader options screen imports the embedded settings, same as dropping a regular settings .txt file." +
+                "\nModes: 'enabled' (embeds invisibly), 'disabled' (no embedding), 'debug' (embeds normally and saves a visual -debug screenshot to verify bit placement. Purely a visual check, no extra data stored)." +
+                "\nDefault = enabled",
+                new String[]{EmbedShaderSettingsMode.ENABLED, EmbedShaderSettingsMode.DISABLED, EmbedShaderSettingsMode.DEBUG}).toLowerCase(Locale.ROOT);
+
         boolean configAutoMergeBlockProperties = Config.readWriteConfig("advanced", "autoMergeBlockProperties", false,
                 "Option that enables or disables automatic merging of the fragmented block.properties files into the main block.properties file." +
                 "\nThe properties files inside \"Euphoria Patches/shaders/properties/\" will be merged into a single block.properties file at the specified interval if any of them have changed." +
@@ -128,6 +137,13 @@ public class ConfigHandler {
         public static final String ALL = "all";
         public static final String NONE = "none";
         private UpdateMode() {}
+    }
+
+    public static final class EmbedShaderSettingsMode {
+        public static final String ENABLED = "enabled";
+        public static final String DISABLED = "disabled";
+        public static final String DEBUG = "debug";
+        private EmbedShaderSettingsMode() {}
     }
 
 }

@@ -34,7 +34,10 @@
     "EnderDragonRendererMixin",
     "IrisModernExclusiveUniformsMixin",
     "IrisLegacyExclusiveUniformsMixin",
-    "OptifineShadersUniformsMixin"
+    "OptifineShadersUniformsMixin",
+    "NativeImageMixin",
+    "IrisShaderPackScreenMixin",
+    "IrisLegacyShaderPackScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 0
