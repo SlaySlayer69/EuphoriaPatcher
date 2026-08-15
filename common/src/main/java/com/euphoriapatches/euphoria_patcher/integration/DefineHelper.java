@@ -174,6 +174,11 @@ public final class DefineHelper {
                 debugLog("Adding EUPHORIA_PATCHES_IS_CAELUM_INSTALLED define");
             }
 
+            if (ModChecker.isModPresent(ModChecker.ModNames.STELLAR_VIEW)) {
+                emitter.define("EUPHORIA_PATCHES_IS_STELLAR_VIEW_INSTALLED");
+                debugLog("Adding EUPHORIA_PATCHES_IS_STELLAR_VIEW_INSTALLED define");
+            }
+
             if (isSeasonsModInstalled()) {
                 emitter.define("EUPHORIA_PATCHES_IS_SEASONS_MOD_INSTALLED");
                 debugLog("Adding EUPHORIA_PATCHES_IS_SEASONS_MOD_INSTALLED define");
