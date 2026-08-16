@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.neoforge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.features.steganography.ShaderSteganography;
+import com.euphoriapatches.euphoria_patcher.features.shader_settings.SettingsConverterUtil;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -33,14 +35,26 @@ public class IrisShaderPackScreenMixin {
             require = 0
     )
     private InputStream euphoriaPatcher$redirectNewInputStream(Path settingFile, OpenOption[] options) throws IOException {
+        String decoded = null;
         if (settingFile.toString().toLowerCase(Locale.ROOT).endsWith(".png")) {
-            String decoded = ShaderSteganography.decodeFromPngFile(settingFile);
+            decoded = ShaderSteganography.decodeFromPngFile(settingFile);
             if (decoded != null) {
                 euphoriaPatcher$debugLog("Substituting decoded preset text for dropped PNG: " + settingFile.getFileName());
-                return new ByteArrayInputStream(decoded.getBytes(StandardCharsets.UTF_8));
             }
         }
-        return Files.newInputStream(settingFile, options);
+
+        if (SettingsConverterUtil.shouldNotConvertCurrentShaderSettings()) {
+            if (decoded != null) {
+                return new ByteArrayInputStream(decoded.getBytes(StandardCharsets.ISO_8859_1));
+            }
+            return Files.newInputStream(settingFile, options);
+        }
+
+        List<String> lines = decoded != null
+                ? Arrays.asList(decoded.split("\\R", -1))
+                : Files.readAllLines(settingFile, StandardCharsets.ISO_8859_1);
+        euphoriaPatcher$debugLog("Applied settings conversions to imported settings file: " + settingFile.getFileName());
+        return SettingsConverterUtil.convertToInputStreamAndUpdateSettings(lines);
     }
 
     /**

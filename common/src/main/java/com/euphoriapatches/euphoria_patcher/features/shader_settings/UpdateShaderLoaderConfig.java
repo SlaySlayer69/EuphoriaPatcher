@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.features;
+package com.euphoriapatches.euphoria_patcher.features.shader_settings;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;

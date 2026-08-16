@@ -22,7 +22,11 @@ import java.util.regex.Pattern;
 public class DimensionWildcardMap implements Map<Object, Object> {
     private static final ThreadLocal<DimensionWildcardMap> BUILDER = new ThreadLocal<>();
 
+    /** Sentinel stored in {@link #matchCache} to remember a resolved "no match" without hitting {@code null}. */
+    private static final PatternEntry NO_MATCH = new PatternEntry(null, null, null, null, null);
+
     private final List<PatternEntry> entries = new ArrayList<>();
+    private final Map<String, PatternEntry> matchCache = new java.util.HashMap<>();
 
     public static void beginBuilding() {
         BUILDER.set(new DimensionWildcardMap());
@@ -73,6 +77,7 @@ public class DimensionWildcardMap implements Map<Object, Object> {
 
     public void registerEntry(String namespace, String name, Object value) {
         entries.add(new PatternEntry(namespace, name, toPattern(namespace), toPattern(name), value));
+        matchCache.clear();
         debugLog("Registered dimension entry " + namespace + ":" + name + " -> " + value);
     }
 
@@ -93,15 +98,23 @@ public class DimensionWildcardMap implements Map<Object, Object> {
             return null;
         }
 
+        String cacheKey = parts[0] + ':' + parts[1];
+        PatternEntry cached = matchCache.get(cacheKey);
+        if (cached != null) {
+            return cached == NO_MATCH ? null : cached;
+        }
+
         for (int i = entries.size() - 1; i >= 0; i--) {
             PatternEntry entry = entries.get(i);
             if (entry.namespacePattern.matcher(parts[0]).matches() && entry.namePattern.matcher(parts[1]).matches()) {
                 debugLog("Matched " + parts[0] + ":" + parts[1] + " against " + entry.rawNamespace + ":" + entry.rawName + " -> " + entry.value);
+                matchCache.put(cacheKey, entry);
                 return entry;
             }
         }
 
         debugLog("No dimension entry matched " + parts[0] + ":" + parts[1] + " (checked " + entries.size() + " entries)");
+        matchCache.put(cacheKey, NO_MATCH);
         return null;
     }
 
@@ -185,6 +198,7 @@ public class DimensionWildcardMap implements Map<Object, Object> {
     @Override
     public void clear() {
         entries.clear();
+        matchCache.clear();
     }
 
     @Override

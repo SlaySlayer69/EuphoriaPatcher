@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.features;
+package com.euphoriapatches.euphoria_patcher.features.shader_settings;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
@@ -136,7 +136,7 @@ public class UpdateShaderConfig {
                         String versionIdentifier = versionIdentifiers.get(i);
 
                         debugLog("Delayed processing of file: " + configFile.getFileName());
-                        addIdentifierToSettingsFile(configFile, versionIdentifier);
+                        addIdentifierToSettingsFile(configFile, versionIdentifier, false);
                     }
                 }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
             }
@@ -187,10 +187,12 @@ public class UpdateShaderConfig {
             // Determine version identifier to use based on the actual shader version
             String versionIdentifier = getVersionIdentifierForShader(shaderName, detector);
 
+            boolean allowSettingsConversion = SettingsConverterUtil.shouldConvertSettings(currentShaderpack);
+
             // Schedule the update
             scheduler.schedule(() -> {
                 debugLog("Delayed processing of current settings file: " + configFile.getFileName());
-                addIdentifierToSettingsFile(configFile, versionIdentifier);
+                addIdentifierToSettingsFile(configFile, versionIdentifier, allowSettingsConversion);
             }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
 
         } catch (Exception e) {
@@ -261,7 +263,7 @@ public class UpdateShaderConfig {
         }
     }
 
-    private static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd) {
+    private static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion) {
         // Try with increasing delay between attempts
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
@@ -280,14 +282,15 @@ public class UpdateShaderConfig {
 
                 List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
 
-                // Apply settings conversions
-                List<String> convertedLines = ShaderSettingsConverter.convertLines(lines);
-                // Check if any settings were actually changed
-                boolean settingsChanged = !lines.equals(convertedLines);
-                lines = convertedLines;
+                boolean settingsChanged = false;
+                if (allowSettingsConversion) {
+                    List<String> convertedLines = ShaderSettingsConverter.convertLines(lines);
+                    settingsChanged = !lines.equals(convertedLines);
+                    lines = convertedLines;
 
-                debugLog("Applied settings conversions to file: " + configFile.getFileName() +
-                         (settingsChanged ? " (changes applied)" : " (no changes needed)"));
+                    debugLog("Applied settings conversions to file: " + configFile.getFileName() +
+                             (settingsChanged ? " (changes applied)" : " (no changes needed)"));
+                }
 
                 // Check for identifiers
                 boolean mainIdentifierExists = false;
@@ -327,7 +330,7 @@ public class UpdateShaderConfig {
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
                     identifiersAtTop && !hasDuplicateVersionIdentifiers) {
 
-                    debugLog("No settings changes needed and identifiers are correctly positioned for: " + configFile.getFileName());
+                    debugLog(allowSettingsConversion ? "No settings changes needed and" : "" + "Identifiers are correctly positioned for: " + configFile.getFileName());
                     return; // Nothing to do
                 } else if (hasDuplicateVersionIdentifiers) {
                     debugLog("Found duplicate version identifiers - will collapse to one marker for: " + configFile.getFileName());
@@ -443,7 +446,7 @@ public class UpdateShaderConfig {
                 Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
 
                 // Add our identifiers to the new config file - include version since the name has current version
-                addIdentifierToSettingsFile(newPath, getVersionIdentifier());
+                addIdentifierToSettingsFile(newPath, getVersionIdentifier(), true);
 
                 EuphoriaPatcher.log(0, "Successfully updated shader config file to the latest version!");
             }
@@ -469,7 +472,7 @@ public class UpdateShaderConfig {
                             Files.copy(latestShaderConfigFilePath, newPath);
 
                             // Add our identifiers to this copy too
-                            addIdentifierToSettingsFile(newPath, getVersionIdentifier());
+                            addIdentifierToSettingsFile(newPath, getVersionIdentifier(), true);
 
                             EuphoriaPatcher.log(0, "Successfully copied shader config file and renamed it!");
                         }

@@ -24,6 +24,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String MODERN_SHADER_PACK_CLASS = "net.irisshaders.iris.shaderpack.ShaderPack";
     public static final String NATIVE_IMAGE_CLASS = "com.mojang.blaze3d.platform.NativeImage";
     public static final String IRIS_SHADER_PACK_SCREEN_CLASS = "net.irisshaders.iris.gui.screen.ShaderPackScreen";
+    public static final String MODERN_IRIS_MAIN_CLASS = "net.irisshaders.iris.Iris";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -94,6 +95,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisShaderPackScreenMixin")) {
             return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisConfigPropertiesMixin")) {
+            return checkClassExists(MODERN_IRIS_MAIN_CLASS);
         }
         // Apply other mixins by default
         return true;

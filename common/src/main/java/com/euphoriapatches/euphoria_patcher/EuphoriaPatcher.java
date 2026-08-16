@@ -4,6 +4,8 @@ import com.euphoriapatches.euphoria_patcher.config.Config;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.*;
 import com.euphoriapatches.euphoria_patcher.features.properties.PropertiesWatcher;
+import com.euphoriapatches.euphoria_patcher.features.shader_settings.UpdateShaderConfig;
+import com.euphoriapatches.euphoria_patcher.features.shader_settings.UpdateShaderLoaderConfig;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;

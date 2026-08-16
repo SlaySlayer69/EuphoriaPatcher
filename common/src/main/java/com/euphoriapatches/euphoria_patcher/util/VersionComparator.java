@@ -40,6 +40,16 @@ public class VersionComparator {
     }
 
     /**
+     * Check if newVersion is newer than or equal to oldVersion
+     * @param newVersion First version string
+     * @param oldVersion Second version string
+     * @return true if newVersion is newer than or equal to oldVersion
+     */
+    public static boolean isNewerOrEqual(String newVersion, String oldVersion) {
+        return compareVersionStrings(newVersion, oldVersion) >= 0;
+    }
+
+    /**
      * Compare two version arrays (e.g., [5, 3, 2] vs [5, 1, 0])
      * @param v1 First version array [major, minor, patch]
      * @param v2 Second version array [major, minor, patch]

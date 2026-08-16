@@ -37,7 +37,9 @@
     "OptifineShadersUniformsMixin",
     "NativeImageMixin",
     "IrisShaderPackScreenMixin",
-    "IrisLegacyShaderPackScreenMixin"
+    "IrisLegacyShaderPackScreenMixin",
+    "IrisConfigPropertiesMixin",
+    "IrisLegacyConfigPropertiesMixin"
   ],
   "injectors": {
     "defaultRequire": 0

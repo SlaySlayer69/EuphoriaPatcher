@@ -2,7 +2,7 @@ package com.euphoriapatches.euphoria_patcher.integration;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
-import com.euphoriapatches.euphoria_patcher.features.UpdateShaderConfig;
+import com.euphoriapatches.euphoria_patcher.features.shader_settings.UpdateShaderConfig;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;

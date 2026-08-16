@@ -32,6 +32,8 @@
     "EnderDragonRendererMixin",
     "IrisLegacyExclusiveUniformsMixin",
     "IrisModernExclusiveUniformsMixin",
+    "IrisConfigPropertiesMixin",
+    "IrisLegacyConfigPropertiesMixin",
     "IrisLegacyShaderPackScreenMixin",
     "IrisShaderPackScreenMixin",
     "NativeImageMixin",
