@@ -31,8 +31,9 @@ public class SteganographyCodec {
     private static final int EUPHORIA_FLAG_BIT_INDEX = HEADER_SIZE_BITS;
     private static final int TEXT_START_BIT = HEADER_SIZE_BITS + 1;
 
-    // Usable channels per pixel for capacity estimation - alpha is deliberately left untouched.
-    public static final int BITS_PER_PIXEL = 3;
+    // Usable channels per pixel for capacity estimation but blue only (lowest luminance
+    // contribution), red/green/alpha deliberately left untouched.
+    public static final int BITS_PER_PIXEL = 1;
 
     private SteganographyCodec() {
     }

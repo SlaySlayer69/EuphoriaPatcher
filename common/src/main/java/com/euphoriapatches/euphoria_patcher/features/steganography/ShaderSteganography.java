@@ -25,8 +25,14 @@ import java.util.Locale;
  * packing to {@link SteganographyCodec}.
  */
 public class ShaderSteganography {
-    // Usable channels per pixel for capacity estimation - alpha is deliberately left untouched.
+    // Usable channels per pixel for capacity estimation, blue only (lowest luminance
+    // contribution), red/green/alpha deliberately left untouched.
     public static final int BITS_PER_PIXEL = SteganographyCodec.BITS_PER_PIXEL;
+
+    // Byte offset of blue within an STBImage-decoded RGB triplet, and bit-shift of blue within a
+    // packed ABGR/RGBA color int (Red=0, Green=8, Blue=16)
+    private static final int BLUE_BYTE_OFFSET = 2;
+    private static final int BLUE_BIT_SHIFT = 16;
 
     private ShaderSteganography() {
     }
@@ -103,9 +109,11 @@ public class ShaderSteganography {
             // Uses absolute indexed get(i) rather than relative bulk get(channelData). Relative gets advance
             // position to capacity, causing stbi_image_free() to free the wrong pointer and trigger native
             // STATUS_HEAP_CORRUPTION crashes without JVM crash logs. Yes. That was fun :D
+            // Stride-3, offset 2: pulls only the blue byte of every pixel out of the interleaved
+            // R,G,B,R,G,B,... buffer STBImage returns.
             byte[] channelData = new byte[width * height * BITS_PER_PIXEL];
             for (int i = 0; i < channelData.length; i++) {
-                channelData[i] = pixels.get(i);
+                channelData[i] = pixels.get(i * 3 + BLUE_BYTE_OFFSET);
             }
 
             String text = SteganographyCodec.decode(channelData);
@@ -170,9 +178,13 @@ public class ShaderSteganography {
             // Uses absolute indexed get(i) rather than relative bulk get(channelData). Relative gets advance
             // position to capacity, causing stbi_image_free() to free the wrong pointer and trigger native
             // STATUS_HEAP_CORRUPTION crashes without JVM crash logs. Yes. That was fun :D
+            byte[] fullRgb = new byte[width * height * 3];
+            for (int i = 0; i < fullRgb.length; i++) {
+                fullRgb[i] = pixels.get(i);
+            }
             byte[] channelData = new byte[width * height * BITS_PER_PIXEL];
             for (int i = 0; i < channelData.length; i++) {
-                channelData[i] = pixels.get(i);
+                channelData[i] = fullRgb[i * 3 + BLUE_BYTE_OFFSET];
             }
 
             if (neededBits > channelData.length) {
@@ -183,23 +195,14 @@ public class ShaderSteganography {
 
             // Preserves upper nibble (0xF0) and expands the LSB (bit 0) across all 4 low bits (0x0F/0x00),
             // amplifying a 1-bit embedded value into a human-visible channel swing for debugging.
+            byte[] amplifiedRgb = fullRgb.clone();
             for (int i = 0; i < neededBits; i++) {
                 int bitValue = channelData[i] & 1;
                 int lowNibble = bitValue == 1 ? 0x0F : 0x00;
-                channelData[i] = (byte) ((channelData[i] & 0xF0) | lowNibble);
+                amplifiedRgb[i * 3 + BLUE_BYTE_OFFSET] = (byte) ((channelData[i] & 0xF0) | lowNibble);
             }
 
-            Path debugFile = debugFilePath(pngFile);
-            ByteBuffer outputBuffer = ByteBuffer.allocateDirect(channelData.length);
-            outputBuffer.put(channelData).flip();
-
-            boolean success = STBImageWrite.stbi_write_png(debugFile.toAbsolutePath().toString(), width, height,
-                    BITS_PER_PIXEL, outputBuffer, width * BITS_PER_PIXEL);
-            if (!success) {
-                debugLog("STBImageWrite failed to write debug visualization to " + debugFile);
-            } else {
-                debugLog("Wrote debug visualization: " + debugFile.getFileName() + " (" + neededBits + " channel bytes amplified)");
-            }
+            writeRgbPng(debugFilePath(pngFile), width, height, amplifiedRgb, neededBits + " channel bytes amplified");
 
             writeDecodedPayloadDump(pngFile);
         } catch (IOException e) {
@@ -214,10 +217,32 @@ public class ShaderSteganography {
     }
 
     private static Path debugFilePath(Path pngFile) {
+        return suffixedFilePath(pngFile, "-debug.png");
+    }
+
+    private static Path withoutDataFilePath(Path pngFile) {
+        return suffixedFilePath(pngFile, "-without_data.png");
+    }
+
+    private static Path suffixedFilePath(Path pngFile, String suffix) {
         String name = pngFile.getFileName().toString();
         String baseName = name.toLowerCase(Locale.ROOT).endsWith(".png") ? name.substring(0, name.length() - 4) : name;
         Path parent = pngFile.getParent();
-        return parent != null ? parent.resolve(baseName + "-debug.png") : Paths.get(baseName + "-debug.png");
+        return parent != null ? parent.resolve(baseName + suffix) : Paths.get(baseName + suffix);
+    }
+
+    // Writes a plain interleaved RGB byte[] out as a PNG via STBImageWrite, logging success/failure.
+    private static void writeRgbPng(Path outputFile, int width, int height, byte[] rgbData, String logDetail) {
+        ByteBuffer outputBuffer = ByteBuffer.allocateDirect(rgbData.length);
+        outputBuffer.put(rgbData).flip();
+
+        boolean success = STBImageWrite.stbi_write_png(outputFile.toAbsolutePath().toString(), width, height,
+                3, outputBuffer, width * 3);
+        if (!success) {
+            debugLog("STBImageWrite failed to write " + outputFile);
+        } else {
+            debugLog("Wrote " + outputFile.getFileName() + " (" + logDetail + ")");
+        }
     }
 
     // DEBUG mode only: re-decodes the payload from the saved PNG and writes it to a
@@ -289,10 +314,9 @@ public class ShaderSteganography {
                 int packed = (int) pixelGetter.invoke(image, x, y);
                 originalPixels[pixelIndex] = packed;
 
-                int channelsThisPixel = Math.min(BITS_PER_PIXEL, neededBits - filled);
-                for (int c = 0; c < channelsThisPixel; c++) {
-                    // Reads low 3 color bytes of the packed int, skipping byte 3 (alpha).
-                    channelData[filled++] = (byte) (packed >>> (c * 8));
+                if (filled < neededBits) {
+                    // Blue channel byte only (shift 16): Red=0, Green=8, Blue=16.
+                    channelData[filled++] = (byte) (packed >>> BLUE_BIT_SHIFT);
                 }
             }
 
@@ -306,14 +330,12 @@ public class ShaderSteganography {
                 int y = pixelIndex / width;
                 int packed = originalPixels[pixelIndex];
 
-                int channelsThisPixel = Math.min(BITS_PER_PIXEL, neededBits - filled);
-                for (int c = 0; c < channelsThisPixel; c++) {
-                    int shift = c * 8; // Bit position for this channel byte: Red=0, Green=8, Blue=16
+                if (filled < neededBits) {
                     int newByteValue = channelData[filled++] & 0xFF;
-                    // 1. (0xFF << shift) creates a byte mask over channel 'c'
-                    // 2. ~ zeroes out channel 'c' while keeping the other 3 bytes intact
-                    // 3. | splices the updated channel byte into the zeroed slot
-                    packed = (packed & ~(0xFF << shift)) | (newByteValue << shift);
+                    // 1. (0xFF << shift) creates a byte mask over the blue channel
+                    // 2. ~ zeroes out blue while keeping the other 3 bytes intact
+                    // 3. | splices the updated blue byte into the zeroed slot
+                    packed = (packed & ~(0xFF << BLUE_BIT_SHIFT)) | (newByteValue << BLUE_BIT_SHIFT);
                 }
 
                 pixelSetter.invoke(image, x, y, packed);
@@ -337,6 +359,34 @@ public class ShaderSteganography {
             return false; // readEmbeddableText() already logged why
         }
         return embedIntoImage(image, width, height, pixelGetter, pixelSetter, text, isCurrentShaderEuphoriaPatches());
+    }
+
+    /**
+     * [DEBUG ONLY] Saves a pre-embed {@code "-without_data.png"} snapshot via STBImageWrite directly,
+     * bypassing file-writing mixin hooks to avoid recursive calls before LSB data is added.
+     */
+    public static void writeOriginalPixelSnapshot(Object image, int width, int height, Method pixelGetter, Path screenshotFile) {
+        if (image == null || pixelGetter == null || width <= 0 || height <= 0) {
+            debugLog("writeOriginalPixelSnapshot() called with invalid arguments, skipping");
+            return;
+        }
+
+        try {
+            byte[] rgb = new byte[width * height * 3];
+            int i = 0;
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int packed = (int) pixelGetter.invoke(image, x, y);
+                    rgb[i++] = (byte) packed;
+                    rgb[i++] = (byte) (packed >>> 8);
+                    rgb[i++] = (byte) (packed >>> BLUE_BIT_SHIFT);
+                }
+            }
+
+            writeRgbPng(withoutDataFilePath(screenshotFile), width, height, rgb, "true pre-embed pixels, " + width + "x" + height);
+        } catch (Throwable t) {
+            debugLog("Failed to snapshot original pixels via reflection: " + t);
+        }
     }
 
     /**

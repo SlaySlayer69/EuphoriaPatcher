@@ -70,6 +70,11 @@ public final class NativeImageEmbedHelper {
             int width = (int) getWidth.invoke(nativeImage);
             int height = (int) getHeight.invoke(nativeImage);
 
+            //Needs to happen before we embed our data
+            if (ConfigHandler.EmbedShaderSettingsMode.DEBUG.equals(ConfigHandler.doEmbedShaderSettingsInScreenshots)) {
+                ShaderSteganography.writeOriginalPixelSnapshot(nativeImage, width, height, getter, file.toPath());
+            }
+
             boolean embedded = ShaderSteganography.embedCurrentShaderSettings(nativeImage, width, height, getter, setter);
             debugLog("Embed attempt finished (embedded=" + embedded + ") for " + width + "x" + height + " image");
         } catch (Throwable t) {
