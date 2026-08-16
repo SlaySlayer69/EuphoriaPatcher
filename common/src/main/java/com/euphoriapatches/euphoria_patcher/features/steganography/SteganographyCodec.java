@@ -118,7 +118,7 @@ public class SteganographyCodec {
         writeBitsFromBytes(channelData, bitIndex, compressedBytes);
 
         debugLog("Encoded payload: " + rawTextBytes.length + " raw text bytes -> " + compressedBytes.length
-                + " compressed bytes (" + header.length + " byte header + 1 EP flag bit + compressed text with " + String.format("%.1f", (double) compressedBytes.length / rawTextBytes.length * 100.0) + "% compression), "
+                + " compressed bytes (" + header.length + " byte header + 1 EP flag bit + compressed text with " + String.format("%.1f", (1.0 - (double) compressedBytes.length / rawTextBytes.length) * 100.0) + "% space saved), "
                 + "isEuphoriaShader=" + isEuphoriaShader + ", used " + totalBits + "/" + channelData.length
                 + " available channel bits (" + String.format("%.1f", totalBits * 100.0 / channelData.length) + "%)");
         return true;
