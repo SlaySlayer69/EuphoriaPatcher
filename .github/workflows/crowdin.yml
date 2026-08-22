@@ -3,7 +3,7 @@ run-name: "Crowdin Translations #${{ github.run_number }}"
 
 on:
   push:
-    branches: [main]
+    branches: [multiloader]
     paths:
       - "common/src/main/resources/assets/euphoria_patcher/lang/en_us.json"
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         default: false
         required: true
       test_mode:
-        description: "Target main-test instead of main (for validating this workflow)"
+        description: "Target multiloader-test instead of multiloader (for validating this workflow)"
         type: boolean
         default: false
         required: true
@@ -27,7 +27,7 @@ concurrency:
 
 env:
   LOCALIZATION_BRANCH: l10n_crowdin_translations
-  TARGET_BRANCH: ${{ (github.event_name == 'workflow_dispatch' && inputs.test_mode) && 'main-test' || 'main' }}
+  TARGET_BRANCH: ${{ (github.event_name == 'workflow_dispatch' && inputs.test_mode) && 'multiloader-test' || 'multiloader' }}
   LANG_PATH: common/src/main/resources/assets/euphoria_patcher/lang
   CROWDIN_PROJECT_SLUG: euphoriapatchesmod
 
@@ -102,12 +102,12 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: multiloader
           fetch-depth: 0
 
       - name: "Prepare target branch"
         run: |
-          if [ "${{ env.TARGET_BRANCH }}" != "main" ]; then
+          if [ "${{ env.TARGET_BRANCH }}" != "multiloader" ]; then
             if git ls-remote --exit-code --heads origin "${{ env.TARGET_BRANCH }}" > /dev/null 2>&1; then
               git fetch origin "${{ env.TARGET_BRANCH }}"
               git checkout "${{ env.TARGET_BRANCH }}"
