@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "Apoya EP",
+  "euphoria_patcher.button.update": "¡Actualiza EP!",
+  "euphoria_patcher.tooltip.support": "¡Apoya a Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "¡Actualiza Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "¿Quitar el botón de apoyo?",
+  "euphoria_patcher.tooltip.remove.hint": "(SHIFT + Clic para eliminar)",
+  "fml.menu.mods.info.description.euphoria_patcher": "Un mod que aplica el add-on Euphoria Patches a Complementary Shaders.\nActiva y cambia la configuración de Euphoria Patches en el menú de configuración del shaderpack\n¡Reporta problemas en Discord!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Un mod que aplica el add-on Euphoria Patches a Complementary Shaders.\nActiva y cambia la configuración de Euphoria Patches en el menú de configuración del shaderpack\n¡Reporta problemas en Discord!"
+}

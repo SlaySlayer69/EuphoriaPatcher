@@ -40,6 +40,22 @@ public class IrisHeaderEntryMixin {
     @Unique
     private static boolean euphoriaPatcher$hasShownExtendedTooltip = false;
 
+    @Unique
+    private static final String euphoriaPatcher$BUTTON_SUPPORT_KEY = "euphoria_patcher.button.support";
+    @Unique
+    private static final String euphoriaPatcher$BUTTON_UPDATE_KEY = "euphoria_patcher.button.update";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_SUPPORT_KEY = "euphoria_patcher.tooltip.support";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_UPDATE_KEY = "euphoria_patcher.tooltip.update";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_REMOVE_KEY = "euphoria_patcher.tooltip.remove";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_REMOVE_HINT_KEY = "euphoria_patcher.tooltip.remove.hint";
+
+    @Unique
+    private static final int euphoriaPatcher$MIN_SIDE_BUTTON_WIDTH = 42;
+
     @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
         try {
@@ -47,12 +63,12 @@ public class IrisHeaderEntryMixin {
             ShaderDetector shaderDetector = instance.getShaderDetector();
             Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
 
-            String buttonText = "Support EP";
+            String buttonTextKey = euphoriaPatcher$BUTTON_SUPPORT_KEY;
             int buttonColor = 0; // 1=Red, 2=Green, 3=Blue, 0=Purple
 
             boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
             if (isUpdateAvailable) {
-                buttonText = "Update EP!";
+                buttonTextKey = euphoriaPatcher$BUTTON_UPDATE_KEY;
                 buttonColor = 2; // Green
                 euphoriaPatcher$EuphoriaURL = EuphoriaPatcher.EP_DOWNLOAD_URL;
             } else {
@@ -60,7 +76,7 @@ public class IrisHeaderEntryMixin {
             }
 
             if (euphoriaPatcher$shouldShowEPButton())
-                euphoriaPatcher$addEPIrisButton(buttonText, buttonColor);
+                euphoriaPatcher$addEPIrisButton(buttonTextKey, buttonColor);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Failed to add Iris EP button: " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
@@ -159,13 +175,13 @@ public class IrisHeaderEntryMixin {
             MutableComponent buttonText;
             if (isUpdateAvailable) {
                 // Update available: always green, ignore shift
-                buttonText = Component.literal("Update EP!").withStyle(ChatFormatting.GREEN);
+                buttonText = Component.translatable(euphoriaPatcher$BUTTON_UPDATE_KEY).withStyle(ChatFormatting.GREEN);
             } else if (shiftDown) {
                 // No update, shift held: red
-                buttonText = Component.literal("Support EP").withStyle(ChatFormatting.RED);
+                buttonText = Component.translatable(euphoriaPatcher$BUTTON_SUPPORT_KEY).withStyle(ChatFormatting.RED);
             } else {
                 // No update, normal: purple
-                buttonText = Component.literal("Support EP").withStyle(ChatFormatting.LIGHT_PURPLE);
+                buttonText = Component.translatable(euphoriaPatcher$BUTTON_SUPPORT_KEY).withStyle(ChatFormatting.LIGHT_PURPLE);
             }
 
             Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
@@ -186,7 +202,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$addEPIrisButton(String buttonTextLiteral, int buttonColor) {
+    private void euphoriaPatcher$addEPIrisButton(String buttonTextKey, int buttonColor) {
         try {
             Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
             Object screen = ReflectionUtils.getFieldValue(this, "screen");
@@ -213,11 +229,12 @@ public class IrisHeaderEntryMixin {
             }
 
             @SuppressWarnings("null")
-            MutableComponent buttonText = Component.literal(buttonTextLiteral).withStyle(buttonColorFormatting);
+            MutableComponent buttonText = Component.translatable(buttonTextKey).withStyle(buttonColorFormatting);
             Minecraft minecraft = Minecraft.getInstance();
 
             Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClick(minecraft, screen));
-            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
+            int width = Math.max(euphoriaPatcher$MIN_SIDE_BUTTON_WIDTH, minecraft.font.width(buttonText) + 8);
+            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, width);
             euphoriaPatcher$debugLog("Successfully added Iris EP button");
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error in addEPIrisButton: " + e.getMessage());
@@ -452,24 +469,26 @@ public class IrisHeaderEntryMixin {
                     Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
                     boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
 
-                    String tooltipString;
+                    String tooltipKey;
                     ChatFormatting colorFormatting;
+                    boolean appendRemoveHint = false;
 
                     if (isUpdateAvailable) { // Has higher priority over shift key
-                        tooltipString = "Update Euphoria Patches!";
+                        tooltipKey = euphoriaPatcher$TOOLTIP_UPDATE_KEY;
                         colorFormatting = ChatFormatting.GREEN;
                     } else if (shiftDown) {
-                        tooltipString = "Remove Support Button?";
+                        tooltipKey = euphoriaPatcher$TOOLTIP_REMOVE_KEY;
                         colorFormatting = ChatFormatting.RED;
                     } else {
-                        String removeString = "";
-                        if (euphoriaPatcher$hasShownExtendedTooltip) {
-                            removeString = " (SHIFT Click to Remove)";
-                        }
-                        tooltipString = "Support Euphoria Patches!" + removeString;
+                        tooltipKey = euphoriaPatcher$TOOLTIP_SUPPORT_KEY;
+                        appendRemoveHint = euphoriaPatcher$hasShownExtendedTooltip;
                         colorFormatting = ChatFormatting.LIGHT_PURPLE;
                     }
-                    MutableComponent tooltipText = Component.literal(tooltipString).withStyle(colorFormatting);
+                    MutableComponent tooltipText = Component.translatable(tooltipKey).withStyle(colorFormatting);
+                    if (appendRemoveHint) {
+                        tooltipText.append(Component.literal(" "));
+                        tooltipText.append(Component.translatable(euphoriaPatcher$TOOLTIP_REMOVE_HINT_KEY).withStyle(colorFormatting));
+                    }
                     // Get ScreenRectangle from Iris button
                     Object rect = child.getClass().getMethod("getRectangle").invoke(child);
                     int rightBound = (int) rect.getClass().getMethod("getBoundInDirection", ScreenDirection.class).invoke(rect, ScreenDirection.RIGHT);

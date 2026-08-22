@@ -32,6 +32,22 @@ public class IrisHeaderEntryMixin {
     @Unique
     private static boolean euphoriaPatcher$hasShownExtendedTooltip = false;
 
+    @Unique
+    private static final String euphoriaPatcher$BUTTON_SUPPORT_KEY = "euphoria_patcher.button.support";
+    @Unique
+    private static final String euphoriaPatcher$BUTTON_UPDATE_KEY = "euphoria_patcher.button.update";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_SUPPORT_KEY = "euphoria_patcher.tooltip.support";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_UPDATE_KEY = "euphoria_patcher.tooltip.update";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_REMOVE_KEY = "euphoria_patcher.tooltip.remove";
+    @Unique
+    private static final String euphoriaPatcher$TOOLTIP_REMOVE_HINT_KEY = "euphoria_patcher.tooltip.remove.hint";
+
+    @Unique
+    private static final int euphoriaPatcher$MIN_SIDE_BUTTON_WIDTH = 42;
+
     @Inject(method = "<init>", at = @At("RETURN"), remap = false, require = 0)
     private void onConstructor(CallbackInfo ci) {
         try {
@@ -39,12 +55,12 @@ public class IrisHeaderEntryMixin {
             ShaderDetector shaderDetector = instance.getShaderDetector();
             Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
 
-            String buttonText = "Support EP";
+            String buttonTextKey = euphoriaPatcher$BUTTON_SUPPORT_KEY;
             int buttonColor = 0; // 1=Red, 2=Green, 3=Blue , 0=Purple
 
             boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
             if (isUpdateAvailable) {
-                buttonText = "Update EP!";
+                buttonTextKey = euphoriaPatcher$BUTTON_UPDATE_KEY;
                 buttonColor = 2; // Green
                 euphoriaPatcher$EuphoriaURL = EuphoriaPatcher.EP_DOWNLOAD_URL;
             } else {
@@ -52,7 +68,7 @@ public class IrisHeaderEntryMixin {
             }
 
             if (euphoriaPatcher$shouldShowEPButton())
-                euphoriaPatcher$addEPIrisButton(buttonText, buttonColor);
+                euphoriaPatcher$addEPIrisButton(buttonTextKey, buttonColor);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Failed to add Iris EP button: " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
@@ -130,26 +146,26 @@ public class IrisHeaderEntryMixin {
 
             boolean shiftDown = euphoriaPatcher$hasShownExtendedTooltip && euphoriaPatcher$isShiftDown();
 
-            String buttonTextLiteral;
+            String buttonTextKey;
             String buttonColorFormatting;
             if (isUpdateAvailable) {
                 // Update available: always green, ignore shift
-                buttonTextLiteral = "Update EP!";
+                buttonTextKey = euphoriaPatcher$BUTTON_UPDATE_KEY;
                 buttonColorFormatting = "GREEN";
             } else if (shiftDown) {
                 // No update, shift held: red
-                buttonTextLiteral = "Support EP";
+                buttonTextKey = euphoriaPatcher$BUTTON_SUPPORT_KEY;
                 buttonColorFormatting = "RED";
             } else {
                 // No update, normal: purple
-                buttonTextLiteral = "Support EP";
+                buttonTextKey = euphoriaPatcher$BUTTON_SUPPORT_KEY;
                 buttonColorFormatting = "LIGHT_PURPLE";
             }
 
             Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
             Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
             Object buttonColorFormattingEnum = chatFormattingClass.getField(buttonColorFormatting).get(null);
-            Object buttonText = componentClass.getMethod("literal", String.class).invoke(null, buttonTextLiteral);
+            Object buttonText = componentClass.getMethod("translatable", String.class).invoke(null, buttonTextKey);
             buttonText = buttonText.getClass().getMethod("withStyle", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
 
             Object children = utilityButtons.getClass().getMethod("children").invoke(utilityButtons);
@@ -170,7 +186,7 @@ public class IrisHeaderEntryMixin {
     }
 
     @Unique
-    private void euphoriaPatcher$addEPIrisButton(String buttonTextLiteral, int buttonColor) {
+    private void euphoriaPatcher$addEPIrisButton(String buttonTextKey, int buttonColor) {
         try {
             Object utilityButtons = ReflectionUtils.getFieldValue(this, "utilityButtons");
             Object screen = ReflectionUtils.getFieldValue(this, "screen");
@@ -202,15 +218,29 @@ public class IrisHeaderEntryMixin {
             Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
             Object buttonColorFormattingEnum = chatFormattingClass.getField(buttonColorFormatting).get(null);
 
-            Object buttonText = componentClass.getMethod("literal", String.class).invoke(null, buttonTextLiteral);
+            Object buttonText = componentClass.getMethod("translatable", String.class).invoke(null, buttonTextKey);
             buttonText = buttonText.getClass().getMethod("withStyle", chatFormattingClass).invoke(buttonText, buttonColorFormattingEnum);
 
             Object supportEPButton = euphoriaPatcher$createIrisButton(buttonText, () -> euphoriaPatcher$handleSupportEPButtonClick(minecraft, screen));
-            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, 66);
+            int width = euphoriaPatcher$measureButtonWidth(minecraft, buttonText);
+            euphoriaPatcher$addButtonToRow(utilityButtons, supportEPButton, width);
             euphoriaPatcher$debugLog("Successfully added Iris EP button (Modern)");
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error in addEPIrisButton: " + e.getMessage());
             euphoriaPatcher$debugLog(EuphoriaLogger.getStackTrace(e));
+        }
+    }
+
+    @Unique
+    private int euphoriaPatcher$measureButtonWidth(Object minecraft, Object component) {
+        try {
+            Object font = minecraft.getClass().getField("font").get(minecraft);
+            Class<?> formattedTextClass = Class.forName("net.minecraft.network.chat.FormattedText");
+            int textWidth = (int) font.getClass().getMethod("width", formattedTextClass).invoke(font, component);
+            return Math.max(euphoriaPatcher$MIN_SIDE_BUTTON_WIDTH, textWidth + 8);
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error measuring button width, falling back to default: " + e.getMessage());
+            return 66;
         }
     }
 
@@ -470,31 +500,37 @@ public class IrisHeaderEntryMixin {
                     Path currentShaderPackPath = ShaderLoader.getCurrentShaderpackPath();
                     boolean isUpdateAvailable = euphoriaPatcher$isUpdateAvailable(shaderDetector, currentShaderPackPath);
 
-                    String tooltipString;
+                    String tooltipKey;
                     String colorFormatting;
+                    boolean appendRemoveHint = false;
 
                     if (isUpdateAvailable) { // Has higher priority over shift key
-                        tooltipString = "Update Euphoria Patches!";
+                        tooltipKey = euphoriaPatcher$TOOLTIP_UPDATE_KEY;
                         colorFormatting = "GREEN";
                     } else if (shiftDown) {
-                        tooltipString = "Remove Support Button?";
+                        tooltipKey = euphoriaPatcher$TOOLTIP_REMOVE_KEY;
                         colorFormatting = "RED";
                     } else {
-                        String removeString = "";
-                        if (euphoriaPatcher$hasShownExtendedTooltip) {
-                            removeString = " (SHIFT Click to Remove)";
-                        }
-                        tooltipString = "Support Euphoria Patches!" + removeString;
+                        tooltipKey = euphoriaPatcher$TOOLTIP_SUPPORT_KEY;
+                        appendRemoveHint = euphoriaPatcher$hasShownExtendedTooltip;
                         colorFormatting = "LIGHT_PURPLE";
                     }
 
-                    // Create tooltip text: Component.literal(text).withStyle(color)
+                    // Create tooltip text: Component.translatable(key).withStyle(color)
                     Class<?> componentClass = Class.forName("net.minecraft.network.chat.Component");
                     Class<?> formattedTextClass = Class.forName("net.minecraft.network.chat.FormattedText");
                     Class<?> chatFormattingClass = Class.forName("net.minecraft.ChatFormatting");
                     Object colorFormattingEnum = chatFormattingClass.getField(colorFormatting).get(null);
-                    Object tooltipText = componentClass.getMethod("literal", String.class).invoke(null, tooltipString);
+                    Object tooltipText = componentClass.getMethod("translatable", String.class).invoke(null, tooltipKey);
                     tooltipText = tooltipText.getClass().getMethod("withStyle", chatFormattingClass).invoke(tooltipText, colorFormattingEnum);
+
+                    if (appendRemoveHint) {
+                        Object hintText = componentClass.getMethod("translatable", String.class).invoke(null, euphoriaPatcher$TOOLTIP_REMOVE_HINT_KEY);
+                        hintText = hintText.getClass().getMethod("withStyle", chatFormattingClass).invoke(hintText, colorFormattingEnum);
+                        Object space = componentClass.getMethod("literal", String.class).invoke(null, " ");
+                        tooltipText.getClass().getMethod("append", componentClass).invoke(tooltipText, space);
+                        tooltipText.getClass().getMethod("append", componentClass).invoke(tooltipText, hintText);
+                    }
 
                     // Get rectangle and calculate tooltip position
                     Object rect = child.getClass().getMethod("getRectangle").invoke(child);

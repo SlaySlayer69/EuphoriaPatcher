@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "Support EP",
+  "euphoria_patcher.button.update": "Update EP!",
+  "euphoria_patcher.tooltip.support": "Support Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "Update Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "Remove Support Button?",
+  "euphoria_patcher.tooltip.remove.hint": "(SHIFT Click to Remove)",
+  "fml.menu.mods.info.description.euphoria_patcher": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nEnable and Change Euphoria Patches Settings in the shaderpack settings menu\nReport issues on discord!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nEnable and Change Euphoria Patches Settings in the shaderpack settings menu\nReport issues on discord!"
+}
