@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "EPをサポート",
+  "euphoria_patcher.button.update": "EPを更新！",
+  "euphoria_patcher.tooltip.support": "Euphoria Patchesをサポート！",
+  "euphoria_patcher.tooltip.update": "Euphoria Patchesを更新！",
+  "euphoria_patcher.tooltip.remove": "サポートボタンを削除",
+  "euphoria_patcher.tooltip.remove.hint": " (Shift+クリックで削除)",
+  "fml.menu.mods.info.description.euphoria_patcher": "Complementary ShadersにEuphoria Patchesアドオンを適用するModです。\nシェーダー設定メニューからEuphoria Patches設定の有効化と変更ができます。\nDiscordで問題を報告してください！",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Complementary ShadersにEuphoria Patchesアドオンを適用するModです。\nシェーダー設定メニューからEuphoria Patches設定の有効化と変更ができます。\nDiscordで問題を報告してください！"
+}
