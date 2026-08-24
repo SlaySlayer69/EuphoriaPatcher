@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "Podpořit EP",
+  "euphoria_patcher.button.update": "Aktualizuj EP!",
+  "euphoria_patcher.tooltip.support": "Podpoř Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "Aktualizuj Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "Odstranit tlačítko podpory?",
+  "euphoria_patcher.tooltip.remove.hint": "(Odstraň kliknutím se Shiftem)",
+  "fml.menu.mods.info.description.euphoria_patcher": "Mod, který aplikuje doplněk Euphoria Patches k shaderu Complementary.\nPovoluj a měň nastavení Euphoria Patches v menu nastavení shaderů\nNahlaš problémy na Discordu!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Mod, který aplikuje doplněk Euphoria Patches k shaderu Complementary.\nPovoluj a měň nastavení Euphoria Patches v menu nastavení shaderů\nNahlaš problémy na Discordu!"
+}
