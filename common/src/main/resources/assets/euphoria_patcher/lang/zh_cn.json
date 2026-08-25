@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "赞助 EP",
+  "euphoria_patcher.button.update": "更新 EP！",
+  "euphoria_patcher.tooltip.support": "赞助 Euphoria Patches！",
+  "euphoria_patcher.tooltip.update": "更新 Euphoria Patches！",
+  "euphoria_patcher.tooltip.remove": "是否移除赞助按钮？",
+  "euphoria_patcher.tooltip.remove.hint": "(按住 SHIFT 来点击移除)",
+  "fml.menu.mods.info.description.euphoria_patcher": "一个对 Complementary 光影应用 Euphoria Patches 附加的模组。\n在光影包设置菜单启用或者调节 Euphoria Patches 设置\n请在 Discord 反馈问题！",
+  "modmenu.descriptionTranslation.euphoria_patcher": "一个对 Complementary 光影应用 Euphoria Patches 附加的模组。\n在光影包设置菜单启用或者调节 Euphoria Patches 设置\n请在 Discord 反馈问题！"
+}
