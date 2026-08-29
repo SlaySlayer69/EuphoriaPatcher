@@ -1,8 +1,12 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
+import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.features.steganography.ShaderSteganography;
 import com.euphoriapatches.euphoria_patcher.features.shader_settings.SettingsConverterUtil;
+import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
@@ -22,6 +26,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 // Make png shader settings files work with Iris, we decode the embedded config file if there is any and use iris importPackOptions to load it.
@@ -95,6 +100,46 @@ public class IrisShaderPackScreenMixin {
             ci.cancel();
         } catch (Throwable t) {
             euphoriaPatcher$debugLog("Failed to apply dropped settings file via reflection, falling back to standard handling: " + t);
+        }
+    }
+
+    /**
+     * Counts how often settings got changes, needs the Queue as Iris does no-op on applyChanges if no changes are pending
+     */
+    @Inject(method = "applyChanges", at = @At("HEAD"), remap = false, require = 0)
+    private void euphoriaPatcher$countSettingsChange(CallbackInfo ci) {
+        try {
+            if (euphoriaPatcher$pendingOptionChangeCount() > 0 && euphoriaPatcher$isEuphoriaShaderActive()) {
+                UserPersistentData.incrementTimesSettingsChanged();
+            }
+        } catch (Throwable t) {
+            euphoriaPatcher$debugLog("Failed to count shader settings change: " + t);
+        }
+    }
+
+    @Unique
+    private static int euphoriaPatcher$pendingOptionChangeCount() {
+        try {
+            Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");
+            Object queue = irisClass.getMethod("getShaderPackOptionQueue").invoke(null);
+            if (queue instanceof Map) {
+                return ((Map<?, ?>) queue).size();
+            }
+        } catch (Throwable t) {
+            euphoriaPatcher$debugLog("Could not read shader pack option queue: " + t);
+        }
+        return 0;
+    }
+
+    @Unique
+    private static boolean euphoriaPatcher$isEuphoriaShaderActive() {
+        try {
+            ShaderDetector shaderDetector = EuphoriaPatcher.getInstance().getShaderDetector();
+            return shaderDetector != null
+                    && shaderDetector.isEuphoriaPatchesShader(ShaderLoader.getCurrentShaderpackPath());
+        } catch (Throwable t) {
+            euphoriaPatcher$debugLog("Could not determine active shader: " + t);
+            return false;
         }
     }
 

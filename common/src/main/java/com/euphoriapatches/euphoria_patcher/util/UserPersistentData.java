@@ -40,7 +40,9 @@ public class UserPersistentData {
         SHADER_HASH("shaderHash"),
         SUPPORT_EP_BUTTON("supportEPButtonVisible"),
         EP_VERSION("EPVersion"),
-        ALTERNATIVE_SHADER_NAMES("alternativeShaderNames");
+        ALTERNATIVE_SHADER_NAMES("alternativeShaderNames"),
+        FIRST_EP_OPTIONS_TIMESTAMP("firstEPOptionsTimestamp"),
+        TIMES_SETTINGS_CHANGED("timesSettingsChanged");
 
         private final String jsonKey;
 
@@ -75,6 +77,8 @@ public class UserPersistentData {
         public Boolean supportEPButtonVisible;
         public String EPVersion;
         public String alternativeShaderNames;
+        public String firstEPOptionsTimestamp;
+        public Integer timesSettingsChanged;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
@@ -83,6 +87,8 @@ public class UserPersistentData {
             this.supportEPButtonVisible = null;
             this.EPVersion = null;
             this.alternativeShaderNames = null;
+            this.firstEPOptionsTimestamp = null;
+            this.timesSettingsChanged = null;
         }
     }
 
@@ -167,6 +173,8 @@ public class UserPersistentData {
                         jsonObject.addProperty(jsonKey, (Boolean) update.value);
                     } else if (fieldType == String.class) {
                         jsonObject.addProperty(jsonKey, (String) update.value);
+                    } else if (fieldType == Integer.class) {
+                        jsonObject.addProperty(jsonKey, (Number) update.value);
                     } else {
                         debugLog("Unsupported field type for " + update.field + ": " + fieldType);
                         continue;
@@ -331,6 +339,36 @@ public class UserPersistentData {
                 SaveData.of(DataField.STYLE_REIMAGINED, styleReimagined),
                 SaveData.of(DataField.STYLE_UNBOUND, styleUnbound)
         );
+    }
+
+    /**
+     * Records the timestamp when first time shaderpack option menu was opened with EP.
+     */
+    public static void recordFirstEPOptionsTimestampIfAbsent() {
+        PersistentShaderData data = load();
+        if (data.firstEPOptionsTimestamp != null && !data.firstEPOptionsTimestamp.trim().isEmpty()) {
+            debugLog("First EP options timestamp already recorded: " + data.firstEPOptionsTimestamp);
+            return;
+        }
+
+        String timestamp = java.time.Instant.now().toString();
+        debugLog("Recording first EP options timestamp: " + timestamp);
+        save(SaveData.of(DataField.FIRST_EP_OPTIONS_TIMESTAMP, timestamp));
+    }
+
+    /**
+     * Returns how many times the user has changed settings while EP was active
+     */
+    public static int getTimesSettingsChanged() {
+        Integer value = load().timesSettingsChanged;
+        return value == null ? 0 : value;
+    }
+
+    // Increment counter by 1
+    public static void incrementTimesSettingsChanged() {
+        int updated = getTimesSettingsChanged() + 1;
+        debugLog("Incrementing timesSettingsChanged to " + updated);
+        save(SaveData.of(DataField.TIMES_SETTINGS_CHANGED, updated));
     }
 
     /**

@@ -67,6 +67,10 @@ public class IrisHeaderEntryMixin {
                 euphoriaPatcher$EuphoriaURL = "https://euphoriapatches.com/support";
             }
 
+            if (euphoriaPatcher$isShaderOptionsScreenOpen() && shaderDetector.isEuphoriaPatchesShader(currentShaderPackPath)) {
+                UserPersistentData.recordFirstEPOptionsTimestampIfAbsent();
+            }
+
             if (euphoriaPatcher$shouldShowEPButton())
                 euphoriaPatcher$addEPIrisButton(buttonTextKey, buttonColor);
         } catch (Exception e) {
@@ -114,6 +118,25 @@ public class IrisHeaderEntryMixin {
         boolean secondCondition = shouldShowSupportButton || isUpdateAvailable;
 
         return shaderDetector.isEuphoriaPatchesShader(currentShaderPackPath) && secondCondition;
+    }
+
+    @Unique
+    private boolean euphoriaPatcher$isShaderOptionsScreenOpen() {
+        try {
+            Object screen = ReflectionUtils.getFieldValue(this, "screen");
+            if (screen == null) {
+                return false;
+            }
+            Object optionMenuOpen = ReflectionUtils.getFieldValue(screen, "optionMenuOpen");
+            if (!(optionMenuOpen instanceof Boolean)) {
+                euphoriaPatcher$debugLog("Could not read optionMenuOpen from ShaderPackScreen");
+                return false;
+            }
+            return (Boolean) optionMenuOpen;
+        } catch (Exception e) {
+            euphoriaPatcher$debugLog("Error checking if shader options screen is open: " + e.getMessage());
+            return false;
+        }
     }
 
     @Unique
