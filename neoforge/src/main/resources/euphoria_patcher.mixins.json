@@ -23,6 +23,8 @@
     "PreparedRenderTypeMixin",
     "NativeImageMixin",
     "IrisShaderPackScreenMixin",
-    "IrisConfigPropertiesMixin"
+    "IrisConfigPropertiesMixin",
+    "SodiumMessagePopupMixin",
+    "SodiumMessagePopupContainerMixin"
   ]
 }

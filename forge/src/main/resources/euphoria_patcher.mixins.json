@@ -39,7 +39,9 @@
     "IrisShaderPackScreenMixin",
     "IrisLegacyShaderPackScreenMixin",
     "IrisConfigPropertiesMixin",
-    "IrisLegacyConfigPropertiesMixin"
+    "IrisLegacyConfigPropertiesMixin",
+    "SodiumMessagePopupMixin",
+    "SodiumMessagePopupContainerMixin"
   ],
   "injectors": {
     "defaultRequire": 0

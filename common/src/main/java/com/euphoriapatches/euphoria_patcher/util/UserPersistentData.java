@@ -42,7 +42,8 @@ public class UserPersistentData {
         EP_VERSION("EPVersion"),
         ALTERNATIVE_SHADER_NAMES("alternativeShaderNames"),
         FIRST_EP_OPTIONS_TIMESTAMP("firstEPOptionsTimestamp"),
-        TIMES_SETTINGS_CHANGED("timesSettingsChanged");
+        TIMES_SETTINGS_CHANGED("timesSettingsChanged"),
+        CLICKED_SUPPORT_POPUP("clickedSupportPopup");
 
         private final String jsonKey;
 
@@ -79,6 +80,7 @@ public class UserPersistentData {
         public String alternativeShaderNames;
         public String firstEPOptionsTimestamp;
         public Integer timesSettingsChanged;
+        public Boolean clickedSupportPopup;
 
         public PersistentShaderData() {
             this.styleReimagined = null;
@@ -89,6 +91,7 @@ public class UserPersistentData {
             this.alternativeShaderNames = null;
             this.firstEPOptionsTimestamp = null;
             this.timesSettingsChanged = null;
+            this.clickedSupportPopup = null;
         }
     }
 

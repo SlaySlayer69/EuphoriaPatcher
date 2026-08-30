@@ -42,6 +42,9 @@
     "ReloadShadersOnDimensionChangeMixin",
     "ReloadShadersOnDimensionChangeMixinYarn",
     "RenderTypeMixin",
-    "RenderTypeMixinYarn"
+    "RenderTypeMixinYarn",
+    "SodiumMessagePopupMixin",
+    "SodiumMessagePopupContainerMixin",
+    "SodiumMessagePopupContainerMixinYarn"
   ]
 }

@@ -452,6 +452,28 @@ public class ShaderDetector {
     }
 
     /**
+     * Whether a shaderpack with exactly this name exists in the shaderpacks folder
+     * @param name the exact name
+     */
+    public boolean hasShaderpackNamed(String name) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+            for (Path path : stream) {
+                String fileName = path.getFileName().toString();
+                String baseName = fileName.toLowerCase(Locale.ROOT).endsWith(".zip")
+                        ? fileName.substring(0, fileName.length() - ".zip".length())
+                        : fileName;
+                if (baseName.equals(name)) {
+                    debugLog("Found shaderpack named \"" + name + "\": " + fileName);
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            debugLog("Error checking for shaderpack \"" + name + "\": " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Check if the user has any dev versions installed
      * @return true if no dev versions are installed
      */

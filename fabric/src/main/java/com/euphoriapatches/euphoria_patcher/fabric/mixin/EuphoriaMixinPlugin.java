@@ -194,6 +194,18 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
             return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS);
         }
 
+        if (mixinClassName.contains("SodiumMessagePopupContainerMixinYarn")) {
+            return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS) && checkClassExists(MINECRAFT_CLIENT_YARN_CLASS);
+        }
+
+        if (mixinClassName.contains("SodiumMessagePopupContainerMixin")) {
+            return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS) && checkClassExists(MINECRAFT_CLIENT_CLASS);
+        }
+
+        if (mixinClassName.contains("SodiumMessagePopup")) {
+            return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS);
+        }
+
         if (mixinClassName.contains("IrisConfigPropertiesMixin") && !mixinClassName.contains("Legacy")) {
             return checkClassExists(MODERN_IRIS_MAIN_CLASS);
         }

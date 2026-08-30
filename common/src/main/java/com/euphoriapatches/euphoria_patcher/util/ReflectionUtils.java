@@ -1,7 +1,9 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
@@ -27,6 +29,71 @@ public class ReflectionUtils {
             debugLog("Exception checking class " + className + ": " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Returns the first declared constructor of {@code clazz} with {@code parameterCount} parameters,
+     * made accessible, or null. Useful when a constructor's parameter types aren't known ahead of time.
+     */
+    public static Constructor<?> findConstructor(Class<?> clazz, int parameterCount) {
+        for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+            if (constructor.getParameterCount() == parameterCount) {
+                constructor.setAccessible(true);
+                return constructor;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Invokes a method by matching return and parameter types instead of name, bypassing deobfuscation differences.
+     * Returns {@code null} and logs a debug message on invocation failure or signature mismatch.
+     */
+    public static Object invokeBySignature(Object target, Class<?> returnType, Class<?>[] parameterTypes, Object... args) {
+        for (Method method : target.getClass().getDeclaredMethods()) {
+            if (method.getReturnType() != returnType || !parametersMatch(method.getParameterTypes(), parameterTypes)) {
+                continue;
+            }
+            try {
+                method.setAccessible(true);
+                return method.invoke(target, args);
+            } catch (Exception e) {
+                debugLog("Error invoking " + method.getName() + ": " + e.getMessage());
+                return null;
+            }
+        }
+        debugLog("No " + returnType.getSimpleName() + " method " + Arrays.toString(parameterTypes)
+                + " on " + target.getClass().getName());
+        return null;
+    }
+
+    private static boolean parametersMatch(Class<?>[] actual, Class<?>[] wanted) {
+        if (actual.length != wanted.length) {
+            return false;
+        }
+        for (int i = 0; i < wanted.length; i++) {
+            if (actual[i] == wanted[i]) {
+                continue;
+            }
+            if (actual[i].isPrimitive() || wanted[i].isPrimitive() || !actual[i].isAssignableFrom(wanted[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the first of the given class names that can be loaded, or null if none can.
+     * Handy for a type that is named differently across mapping sets.
+     */
+    public static Class<?> firstClass(String... classNames) {
+        for (String className : classNames) {
+            try {
+                return Class.forName(className);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return null;
     }
 
     /**
@@ -156,6 +223,85 @@ public class ReflectionUtils {
         }
 
         debugLog("Field " + fieldName + " not found in class hierarchy");
+        return null;
+    }
+
+    /**
+     * Tries each candidate field name in order and returns the first non-null value found.
+     *
+     * @param target     Target instance, {@link Class}, or class-name String for static fields.
+     * @param fieldNames Candidate field names in priority order.
+     * @return First non-null resolved value, or {@code null} if all fail.
+     */
+    public static Object getFieldValue(Object target, String... fieldNames) {
+        for (String fieldName : fieldNames) {
+            Object value = getFieldValue(target, fieldName);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Invokes a method by matching exact parameter types, walking class hierarchies and overriding access checks.
+     * <p>
+     * Swallows all reflection exceptions and returns {@code null} on failure or for {@code void} methods.
+     *
+     * @param target         Instance object, or {@link Class} / fully qualified class-name String for static methods.
+     * @param methodName     Target method name.
+     * @param parameterTypes Exact parameter types (pass {@code new Class<?>[0]} for no-arg methods).
+     * @param args           Invocation arguments matching {@code parameterTypes}.
+     * @return Method return value, or {@code null} on failure / {@code void} methods.
+     */
+    public static Object invokeMethod(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {
+        Class<?> clazz;
+        Object instance = target;
+
+        try {
+            if (target instanceof String) {
+                clazz = Class.forName((String) target);
+                instance = null;
+            } else if (target instanceof Class<?>) {
+                clazz = (Class<?>) target;
+                instance = null;
+            } else {
+                clazz = target.getClass();
+            }
+        } catch (ClassNotFoundException e) {
+            debugLog("Class not found: " + target);
+            return null;
+        }
+
+        while (clazz != null) {
+            try {
+                Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
+                method.setAccessible(true);
+                return method.invoke(instance, args);
+            } catch (NoSuchMethodException e) {
+                clazz = clazz.getSuperclass();
+            } catch (Exception e) {
+                debugLog("Error invoking " + methodName + ": " + e.getMessage());
+                return null;
+            }
+        }
+
+        debugLog("Method " + methodName + " not found in class hierarchy");
+        return null;
+    }
+
+    /**
+     * Like {@link #invokeMethod(Object, String, Class[], Object...)} but tries each candidate name
+     * in order (for a method named differently across mapping sets), returning the first non-null
+     * result. Not suitable for {@code void} methods.
+     */
+    public static Object invokeMethod(Object target, String[] methodNames, Class<?>[] parameterTypes, Object... args) {
+        for (String methodName : methodNames) {
+            Object result = invokeMethod(target, methodName, parameterTypes, args);
+            if (result != null) {
+                return result;
+            }
+        }
         return null;
     }
 }

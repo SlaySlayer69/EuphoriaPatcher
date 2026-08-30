@@ -3,7 +3,7 @@ package com.euphoriapatches.euphoria_patcher.logging;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
-import com.euphoriapatches.euphoria_patcher.integration.SodiumConsole;
+import com.euphoriapatches.euphoria_patcher.integration.sodium.SodiumConsole;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;

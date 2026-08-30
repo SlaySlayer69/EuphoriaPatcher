@@ -1,4 +1,4 @@
-package com.euphoriapatches.euphoria_patcher.integration;
+package com.euphoriapatches.euphoria_patcher.integration.sodium;
 
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
