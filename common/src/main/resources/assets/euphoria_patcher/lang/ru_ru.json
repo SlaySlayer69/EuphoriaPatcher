@@ -1,0 +1,10 @@
+{
+  "euphoria_patcher.button.support": "Поддержать EP",
+  "euphoria_patcher.button.update": "Обновить EP!",
+  "euphoria_patcher.tooltip.support": "Поддержать Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "Обновить Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "Убрать кнопку поддержки?",
+  "euphoria_patcher.tooltip.remove.hint": "(SHIFT + клик, чтобы убрать)",
+  "fml.menu.mods.info.description.euphoria_patcher": "Модификация, применяющая аддон Euphoria Patches к Complementary Shaders.\nВключите и изменяйте настройки Euphoria Patches в меню настроек шейдерпака.\nСообщайте об ошибках в Discord!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Модификация, применяющая аддон Euphoria Patches к Complementary Shaders.\nВключите и изменяйте настройки Euphoria Patches в меню настроек шейдерпака.\nСообщайте об ошибках в Discord!"
+}
