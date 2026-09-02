@@ -6,5 +6,14 @@
   "euphoria_patcher.tooltip.remove": "Odstranit tlačítko podpory?",
   "euphoria_patcher.tooltip.remove.hint": "(Odstraň kliknutím se Shiftem)",
   "fml.menu.mods.info.description.euphoria_patcher": "Mod, který aplikuje doplněk Euphoria Patches k shaderu Complementary.\nPovoluj a měň nastavení Euphoria Patches v menu nastavení shaderů\nNahlaš problémy na Discordu!",
-  "modmenu.descriptionTranslation.euphoria_patcher": "Mod, který aplikuje doplněk Euphoria Patches k shaderu Complementary.\nPovoluj a měň nastavení Euphoria Patches v menu nastavení shaderů\nNahlaš problémy na Discordu!"
+  "modmenu.descriptionTranslation.euphoria_patcher": "Mod, který aplikuje doplněk Euphoria Patches k shaderu Complementary.\nPovoluj a měň nastavení Euphoria Patches v menu nastavení shaderů\nNahlaš problémy na Discordu!",
+  "euphoria_patcher.donation.line1": "Ahoj!",
+  "euphoria_patcher.donation.line2": "Jsme rádi, že si užíváš %s!",
+  "euphoria_patcher.donation.line3": "Přidávání nových nastavení, efektů a funkcí zabírá %s práce.",
+  "euphoria_patcher.donation.line4": "Pokud máš rád extra atmosféru ve tvém světě, zvaž %s.",
+  "euphoria_patcher.donation.line5": "Děkujeme za používání Euphoria Patches <3",
+  "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
+  "euphoria_patcher.donation.line3.highlight": "nespočetně hodin",
+  "euphoria_patcher.donation.line4.highlight": "podpoření projektu",
+  "euphoria_patcher.donation.button": "Podpořit projekt"
 }
