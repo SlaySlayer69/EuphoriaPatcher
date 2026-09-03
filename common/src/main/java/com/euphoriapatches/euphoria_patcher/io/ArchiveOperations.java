@@ -1,8 +1,9 @@
 package com.euphoriapatches.euphoria_patcher.io;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import com.euphoriapatches.euphoria_patcher.util.HashUtils;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.UserInstallErrorMessages;
@@ -223,15 +224,19 @@ public class ArchiveOperations {
     }
 
     public static boolean verifyBaseArchive(Path baseArchived, String originalFileName) {
+        return verifyBaseArchive(baseArchived, originalFileName, ShaderTargets.defaultTarget());
+    }
+
+    public static boolean verifyBaseArchive(Path baseArchived, String originalFileName, ShaderTarget target) {
         try {
             String fileName = baseArchived.getFileName().toString();
-            debugLog("Verifying archive: " + fileName);
+            debugLog("Verifying archive: " + fileName + " against target " + target.getId());
 
             long fileSize = Files.size(baseArchived);
-            debugLog("Archive size: " + fileSize + " bytes, expected: " + PatchInfo.BASE_TAR_SIZE + " bytes");
+            debugLog("Archive size: " + fileSize + " bytes, expected: " + target.getBaseTarSize() + " bytes");
 
             // First check: byte size (fast check)
-            boolean isValidSize = fileSize == PatchInfo.BASE_TAR_SIZE;
+            boolean isValidSize = fileSize == target.getBaseTarSize();
 
             if (!isValidSize) {
                 debugLog("Invalid archive size: verification failed");
@@ -248,7 +253,7 @@ public class ArchiveOperations {
             }
 
             // Second check: content hash verification (if size matches)
-            if (HashUtils.hasIncorrectHash(baseArchived, PatchInfo.BASE_TAR_SHA256)) {
+            if (HashUtils.hasIncorrectHash(baseArchived, target.getBaseTarSha256())) {
                 debugLog("Archive hash verification failed - file has been modified");
                 UserInstallErrorMessages.handleHashMismatch(fileName, originalFileName);
                 return false;
@@ -264,14 +269,18 @@ public class ArchiveOperations {
     }
 
     public static boolean verifyBaseArchiveQuiet(Path baseArchived) {
+        return verifyBaseArchiveQuiet(baseArchived, ShaderTargets.defaultTarget());
+    }
+
+    public static boolean verifyBaseArchiveQuiet(Path baseArchived, ShaderTarget target) {
         try {
             String fileName = baseArchived.getFileName().toString();
-            debugLog("Quietly verifying archive: " + fileName);
+            debugLog("Quietly verifying archive: " + fileName + " against target " + target.getId());
 
             long fileSize = Files.size(baseArchived);
 
-            boolean isValidSize = fileSize == PatchInfo.BASE_TAR_SIZE;
-            debugLog("Archive size: " + fileSize + " bytes, expected: " + PatchInfo.BASE_TAR_SIZE + " bytes, valid: " + isValidSize);
+            boolean isValidSize = fileSize == target.getBaseTarSize();
+            debugLog("Archive size: " + fileSize + " bytes, expected: " + target.getBaseTarSize() + " bytes, valid: " + isValidSize);
             if (!isValidSize) {
                 return false;
             }

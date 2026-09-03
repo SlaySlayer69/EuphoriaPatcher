@@ -3,6 +3,8 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -176,6 +178,10 @@ public class ShaderValidator {
      * @return The first path that passes validation, or null if none pass
      */
     public Path validateByByteSizeParallel(List<Path> paths, ProgressCallback progressCallback) {
+        return validateByByteSizeParallel(paths, progressCallback, ShaderTargets.defaultTarget());
+    }
+
+    public Path validateByByteSizeParallel(List<Path> paths, ProgressCallback progressCallback, ShaderTarget target) {
         if (paths == null || paths.isEmpty()) {
             return null;
         }
@@ -211,7 +217,7 @@ public class ShaderValidator {
                         progressCallback.onProgress(currentCount, totalFiles);
                     }
 
-                    if (validateByByteSize(path, currentCount, totalFiles)) {
+                    if (validateByByteSize(path, currentCount, totalFiles, target)) {
                         return path; // Return the valid path
                     }
                     return null;
@@ -261,6 +267,10 @@ public class ShaderValidator {
      * @return true if the shader matches the expected byte size
      */
     public boolean validateByByteSize(Path path, int filesScanned, int totalFiles) {
+        return validateByByteSize(path, filesScanned, totalFiles, ShaderTargets.defaultTarget());
+    }
+
+    public boolean validateByByteSize(Path path, int filesScanned, int totalFiles, ShaderTarget target) {
         try {
             debugLog("Validating shader by byte size (" + filesScanned + "/" + totalFiles + "): " + path.getFileName());
 
@@ -295,7 +305,7 @@ public class ShaderValidator {
             debugLog("Successfully archived to: " + baseArchived);
 
             // Check byte size quietly
-            boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
+            boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived, target);
             debugLog("Byte size verification result for " + path.getFileName() + ": " + result);
 
             // Clean up

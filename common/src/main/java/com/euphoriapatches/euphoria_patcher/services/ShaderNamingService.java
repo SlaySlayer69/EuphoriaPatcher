@@ -1,6 +1,8 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -29,10 +31,28 @@ public class ShaderNamingService {
     private final String shaderMyFileLocation;
     private final Path shaderpacks;
     private final ShaderDetector shaderDetector;
+    private final ShaderTarget target;
+
+    /**
+     * Creates a naming service for a specific base shader target.
+     */
+    public ShaderNamingService(ShaderTarget target, String patchName, Path shaderpacks,
+                               ShaderDetector shaderDetector) {
+        this(target.getBrandName(), patchName, target.getBaseVersion(), target.getPatchVersion(),
+             target.getCommonLocation(), target.getMarkerFileLocation(), shaderpacks, shaderDetector, target);
+    }
 
     public ShaderNamingService(String brandName, String patchName, String version, String patchVersion,
                                String commonLocation, String shaderMyFileLocation, Path shaderpacks,
                                ShaderDetector shaderDetector) {
+        this(brandName, patchName, version, patchVersion, commonLocation, shaderMyFileLocation,
+             shaderpacks, shaderDetector, ShaderTargets.defaultTarget());
+    }
+
+    private ShaderNamingService(String brandName, String patchName, String version, String patchVersion,
+                                String commonLocation, String shaderMyFileLocation, Path shaderpacks,
+                                ShaderDetector shaderDetector, ShaderTarget target) {
+        this.target = target;
         this.brandName = brandName;
         this.patchName = patchName;
         this.version = version;
@@ -61,10 +81,12 @@ public class ShaderNamingService {
     public Path renameToCorrectShaderName(Path path) {
         try {
             String fileName = path.getFileName().toString();
-            String style;
+            String style = null;
 
-            // First try to determine style from filename
-            if (fileName.contains("Unbound")) {
+            if (!target.hasStyles()) {
+                debugLog("Target " + target.getId() + " has no styles, naming without a style suffix");
+            } else if (fileName.contains("Unbound")) {
+                // First try to determine style from filename
                 style = "Unbound";
             } else if (fileName.contains("Reimagined")) {
                 style = "Reimagined";
@@ -75,7 +97,7 @@ public class ShaderNamingService {
             }
 
             // Create the correct name format
-            String correctName = brandName + style + version;
+            String correctName = target.getBaseShaderName(style);
             if (fileName.endsWith(".zip")) {
                 correctName += ".zip";
             }
