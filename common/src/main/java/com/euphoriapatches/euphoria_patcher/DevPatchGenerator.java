@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.sigpipe.jbsdiff.ui.FileUI;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.HashUtils;
@@ -35,13 +37,21 @@ public class DevPatchGenerator {
     private static final String YELLOW = "\u001B[33m";
 
     // Constants - use PatchInfo directly to avoid EuphoriaPatcher initialization
-    private static final String BRAND_NAME = EuphoriaPatcher.BRAND_NAME;
     private static final String PATCH_NAME = EuphoriaPatcher.PATCH_NAME;
-    private static final String VERSION = PatchInfo.VERSION;
-    private static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
+
+    // Resolved from the selected target in main(); a target bundles brand name, base version and
+    // everything else that used to be hardcoded to Complementary Shaders.
+    private static ShaderTarget target = ShaderTargets.defaultTarget();
+    private static String BRAND_NAME = target.getBrandName();
+    private static String VERSION = target.getBaseVersion();
+    private static String PATCH_VERSION = target.getPatchVersion();
+    private static String MODRINTH_PROJECT_ID = target.getModrinthProjectId();
+
+    // Optional explicit inputs, see printUsage()
+    private static Path explicitBase = null;
+    private static Path explicitPatched = null;
 
     // Modrinth API constants
-    private static final String MODRINTH_PROJECT_ID = "HVnmMxH1";
     private static final String MODRINTH_API_BASE = "https://api.modrinth.com/v2";
     private static final String USER_AGENT = "EuphoriaPatcher-DevPatchGenerator/1.0";
 
@@ -56,6 +66,14 @@ public class DevPatchGenerator {
     public static void main(String[] args) {
         System.out.println(BLUE + "=== Euphoria Patches - Dev Patch Generator ===" + RESET);
         System.out.println("IntelliJ Base Directory: " + BLUE + INTELLIJ_BASE_DIR + RESET);
+
+        if (!parseArgs(args)) {
+            printUsage();
+            return;
+        }
+
+        System.out.println("Target: " + BLUE + target.getId() + RESET
+                + " (" + target.getBrandName() + target.getBaseVersion() + ")");
         System.out.println();
 
         // Initialize a dummy ModLoaderSpecifics to avoid initialization errors
@@ -111,6 +129,54 @@ public class DevPatchGenerator {
             System.err.println(RED + "ERROR: " + e.getMessage() + RESET);
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Parses the optional command line arguments.
+     *
+     * @return false when the arguments are invalid and usage should be printed
+     */
+    private static boolean parseArgs(String[] args) {
+        if (args == null) return true;
+
+        for (String arg : args) {
+            if (arg.startsWith("--target=")) {
+                String id = arg.substring("--target=".length());
+                ShaderTarget resolved = ShaderTargets.byId(id);
+                if (resolved == null) {
+                    System.err.println(RED + "Unknown target: " + id + RESET);
+                    return false;
+                }
+                target = resolved;
+                BRAND_NAME = target.getBrandName();
+                VERSION = target.getBaseVersion();
+                PATCH_VERSION = target.getPatchVersion();
+                MODRINTH_PROJECT_ID = target.getModrinthProjectId();
+            } else if (arg.startsWith("--base=")) {
+                explicitBase = Paths.get(arg.substring("--base=".length())).toAbsolutePath();
+            } else if (arg.startsWith("--patched=")) {
+                explicitPatched = Paths.get(arg.substring("--patched=".length())).toAbsolutePath();
+            } else {
+                System.err.println(RED + "Unknown argument: " + arg + RESET);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void printUsage() {
+        System.out.println();
+        System.out.println("Usage: DevPatchGenerator [--target=<id>] [--base=<zip|dir>] [--patched=<zip|dir>]");
+        System.out.println();
+        System.out.println("  --target=<id>       which base shader to build a patch for");
+        StringBuilder ids = new StringBuilder();
+        for (ShaderTarget t : ShaderTargets.all()) {
+            if (ids.length() > 0) ids.append(", ");
+            ids.append(t.getId());
+        }
+        System.out.println("                      known targets: " + ids);
+        System.out.println("  --base=<path>       unpatched base shaderpack; downloaded from Modrinth when omitted");
+        System.out.println("  --patched=<path>    patched shaderpack source; looked up in ./shaderpacks when omitted");
     }
 
     /**
@@ -231,12 +297,29 @@ public class DevPatchGenerator {
                 return null;
             }
 
-            JsonObject latestVersion = versions.get(0).getAsJsonObject();
-            String versionNumber = latestVersion.get("version_number").getAsString();
-            System.out.println(GREEN + "Found latest version: " + versionNumber + RESET);
+            // Prefer the version the target is pinned to, so patch builds stay reproducible when
+            // upstream publishes a newer release
+            JsonObject selectedVersion = null;
+            String pinned = VERSION.startsWith("_") ? VERSION.substring(1) : VERSION;
+            for (int i = 0; i < versions.size(); i++) {
+                JsonObject candidate = versions.get(i).getAsJsonObject();
+                if (candidate.get("version_number").getAsString().equals(pinned)) {
+                    selectedVersion = candidate;
+                    break;
+                }
+            }
+
+            if (selectedVersion == null) {
+                System.out.println(YELLOW + "Pinned version " + pinned
+                        + " not found on Modrinth, falling back to the latest release" + RESET);
+                selectedVersion = versions.get(0).getAsJsonObject();
+            }
+
+            String versionNumber = selectedVersion.get("version_number").getAsString();
+            System.out.println(GREEN + "Selected version: " + versionNumber + RESET);
 
             // Get the first file (there's only one)
-            JsonArray files = latestVersion.getAsJsonArray("files");
+            JsonArray files = selectedVersion.getAsJsonArray("files");
             JsonObject file = files.get(0).getAsJsonObject();
 
             String downloadUrl = file.get("url").getAsString();
@@ -287,6 +370,33 @@ public class DevPatchGenerator {
      * Finds the base and patched shader files
      */
     private static ShaderPair findShaders() {
+        // Explicitly provided paths win over anything found in the shaderpacks folder
+        if (explicitBase != null || explicitPatched != null) {
+            Path base = explicitBase;
+            Path patched = explicitPatched;
+
+            if (base != null && !Files.exists(base)) {
+                System.err.println(RED + "ERROR: --base path does not exist: " + base + RESET);
+                base = null;
+            }
+            if (patched != null && !Files.exists(patched)) {
+                System.err.println(RED + "ERROR: --patched path does not exist: " + patched + RESET);
+                patched = null;
+            }
+            if (base != null && patched != null) {
+                return new ShaderPair(base, patched);
+            }
+            // Fall through so the missing half can still be discovered or downloaded
+            ShaderPair discovered = findShadersInShaderpacksDir();
+            return new ShaderPair(
+                    base != null ? base : (discovered == null ? null : discovered.baseShader),
+                    patched != null ? patched : (discovered == null ? null : discovered.patchedShader));
+        }
+
+        return findShadersInShaderpacksDir();
+    }
+
+    private static ShaderPair findShadersInShaderpacksDir() {
         // Check if directory exists and is not empty
         if (!Files.exists(SHADERPACKS_DIR) || !Files.isDirectory(SHADERPACKS_DIR)) {
             System.err.println(RED + "ERROR: shaderpacks directory not found at: " + SHADERPACKS_DIR + RESET);
@@ -315,8 +425,9 @@ public class DevPatchGenerator {
                     patchedShader = path;
                 }
 
-                // Check if it's the Euphoria-Patches directory
-                if (name.equals("Euphoria-Patches") && Files.isDirectory(path)) {
+                // Check if it's the Euphoria-Patches directory (default target only - other targets
+                // pass their patched source explicitly via --patched)
+                if (target == ShaderTargets.defaultTarget() && name.equals("Euphoria-Patches") && Files.isDirectory(path)) {
                     Path gitDir = path.resolve(".git");
                     if (Files.exists(gitDir) && Files.isDirectory(gitDir)) {
                         // Verify version from pack.json using ShaderDetector
@@ -421,7 +532,7 @@ public class DevPatchGenerator {
             ensureDirectoryExists(PATCH_FILES_DIR);
 
             // Generate patch files
-            String patchFileName = PATCH_NAME + PATCH_VERSION + ".patch";
+            String patchFileName = target.getPatchResourceName(PATCH_NAME);
 
             System.out.println(YELLOW + "Generating patch file: " + patchFileName + RESET);
             System.out.println(YELLOW + "This may take a moment..." + RESET);
@@ -471,6 +582,17 @@ public class DevPatchGenerator {
      */
     private static void extractOrCopyShader(Path shaderPath, Path outputDir) throws Exception {
         if (Files.isDirectory(shaderPath)) {
+            String[] packagedRoots = target.getPackagedRoots();
+            if (packagedRoots != null) {
+                // The target declares exactly what a released pack contains, so copy only those
+                // entries. This keeps a source checkout (docs, scripts, CI config) from leaking
+                // into the patch.
+                System.out.println("  " + BLUE + shaderPath.getFileName() + RESET
+                        + " is a source checkout, copying packaged roots only...");
+                copyPackagedRoots(shaderPath, outputDir, packagedRoots);
+                return;
+            }
+
             // Check if it's the Euphoria-Patches directory
             boolean isEuphoriaPatchesDir = shaderPath.getFileName().toString().equals("Euphoria-Patches");
 
@@ -486,6 +608,31 @@ public class DevPatchGenerator {
             // It's a file (probably a zip), extract it
             System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is an archive, extracting...");
             ArchiveUtils.extract(shaderPath, outputDir);
+        }
+    }
+
+    /**
+     * Copies only the top level entries a released pack of this target consists of, so that a
+     * source checkout produces byte identical content to the published zip.
+     */
+    private static void copyPackagedRoots(Path source, Path destination, String[] packagedRoots) throws IOException {
+        Files.createDirectories(destination);
+
+        for (String root : packagedRoots) {
+            Path entry = source.resolve(root);
+            if (!Files.exists(entry)) {
+                System.err.println(YELLOW + "Warning: packaged root missing in source: " + root + RESET);
+                continue;
+            }
+
+            Path targetPath = destination.resolve(root);
+            if (Files.isDirectory(entry)) {
+                FileUtils.copyDirectory(entry.toFile(), targetPath.toFile());
+            } else {
+                Files.createDirectories(targetPath.getParent());
+                Files.copy(entry, targetPath);
+            }
+            System.out.println("    " + GREEN + "Included: " + root + RESET);
         }
     }
 

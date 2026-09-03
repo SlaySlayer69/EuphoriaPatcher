@@ -5,6 +5,8 @@ import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
@@ -28,14 +30,29 @@ public class ShaderPatchingService {
     private final Path shaderpacks;
     @SuppressWarnings("unused")
     private final ShaderNamingService namingService;
+    private final ShaderTarget target;
+
+    /**
+     * Creates a patching service for a specific base shader target.
+     */
+    public ShaderPatchingService(ShaderTarget target, String patchName, Path shaderpacks,
+                                 ShaderNamingService namingService) {
+        this(patchName, target.getPatchVersion(), target.getCommonLocation(), shaderpacks, namingService, target);
+    }
 
     public ShaderPatchingService(String patchName, String patchVersion, String commonLocation,
                                 Path shaderpacks, ShaderNamingService namingService) {
+        this(patchName, patchVersion, commonLocation, shaderpacks, namingService, ShaderTargets.defaultTarget());
+    }
+
+    private ShaderPatchingService(String patchName, String patchVersion, String commonLocation,
+                                  Path shaderpacks, ShaderNamingService namingService, ShaderTarget target) {
         this.patchName = patchName;
         this.patchVersion = patchVersion;
         this.commonLocation = commonLocation;
         this.shaderpacks = shaderpacks;
         this.namingService = namingService;
+        this.target = target;
     }
 
     /**
@@ -57,12 +74,16 @@ public class ShaderPatchingService {
             baseExtracted = ArchiveOperations.extract(info.baseFile, baseExtracted, "extracting archive");
             if (baseExtracted == null) return false;
 
-            normalizeShaderStyleInCommon(baseExtracted);
+            if (target.hasCommonFile()) {
+                normalizeShaderStyleInCommon(baseExtracted);
+            } else {
+                debugLog("Target " + target.getId() + " has no common file, skipping style normalization");
+            }
 
             Path baseArchived = temp.resolve(baseName + ".tar");
             baseArchived = ArchiveOperations.archive(baseExtracted, baseArchived);
 
-            if (baseArchived != null && !ArchiveOperations.verifyBaseArchive(baseArchived, info.baseFile.getFileName().toString())) return false;
+            if (baseArchived != null && !ArchiveOperations.verifyBaseArchive(baseArchived, info.baseFile.getFileName().toString(), target)) return false;
 
             return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
         } finally {
@@ -100,7 +121,7 @@ public class ShaderPatchingService {
      * Apply production patch
      */
     public boolean applyProductionPatch(Path baseArchived, Path patchedArchive, Path patchFile, Path patchedFile, boolean styleUnbound, boolean styleReimagined) {
-        String patchResourceName = patchName + patchVersion + ".patch";
+        String patchResourceName = target.getPatchResourceName(patchName);
         debugLog("Attempting to load patch resource: " + patchResourceName);
 
         try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchResourceName)) {
@@ -152,6 +173,10 @@ public class ShaderPatchingService {
      * Apply style settings
      */
     public void applyStyleSettings(Path patchedFile, boolean styleUnbound, boolean styleReimagined) throws IOException {
+        if (!target.hasStyles() || !target.hasCommonFile()) {
+            debugLog("Target " + target.getId() + " has no styles, skipping style settings");
+            return;
+        }
         if (!styleUnbound && !styleReimagined) return;
 
         File commons = new File(patchedFile.toFile(), commonLocation);

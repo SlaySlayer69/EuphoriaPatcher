@@ -3,6 +3,8 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.io.FileOperations;
 import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTarget;
+import com.euphoriapatches.euphoria_patcher.targets.ShaderTargets;
 import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
@@ -39,6 +41,7 @@ public class ShaderDetector {
     private final String shaderMyFileLocation;
     private final Path shaderpacks;
     private final ShaderValidator shaderValidator;
+    private final ShaderTarget target;
 
     private int totalFilesToScan = 0;
 
@@ -49,8 +52,24 @@ public class ShaderDetector {
     private static final Pattern earlyDevPattern = Pattern.compile("EuphoriaPatches_earlyDev_(\\d{4}-\\d{2}-\\d{2})\\.zip");
     private static boolean hasAnyDevVersion = false;
 
+    /**
+     * Creates a detector for a specific base shader target.
+     */
+    public ShaderDetector(ShaderTarget target, String patchName, Path shaderpacks) {
+        this(target.getBrandName(), patchName, target.getBaseVersion(), target.getPatchVersion(),
+             target.getCommonLocation(), target.getMarkerFileLocation(), shaderpacks, target);
+    }
+
     public ShaderDetector(String brandName, String patchName, String version, String patchVersion,
                          String commonLocation, String shaderMyFileLocation, Path shaderpacks) {
+        this(brandName, patchName, version, patchVersion, commonLocation, shaderMyFileLocation,
+             shaderpacks, ShaderTargets.defaultTarget());
+    }
+
+    private ShaderDetector(String brandName, String patchName, String version, String patchVersion,
+                          String commonLocation, String shaderMyFileLocation, Path shaderpacks,
+                          ShaderTarget target) {
+        this.target = target;
         this.brandName = brandName;
         this.patchName = patchName;
         this.version = version;
@@ -119,10 +138,12 @@ public class ShaderDetector {
                 Path shaderByByteSize = findShaderByByteSize(namingService);
                 if (shaderByByteSize != null) {
                     log(0, "Found valid shader by byte size: " + shaderByByteSize.getFileName());
-                    // Determine shader style from path or assume default
-                    String name = shaderByByteSize.getFileName().toString();
-                    info.styleReimagined = name.contains("Reimagined") || !name.contains("Unbound");
-                    info.styleUnbound = name.contains("Unbound");
+                    if (target.hasStyles()) {
+                        // Determine shader style from path or assume default
+                        String name = shaderByByteSize.getFileName().toString();
+                        info.styleReimagined = name.contains("Reimagined") || !name.contains("Unbound");
+                        info.styleUnbound = name.contains("Unbound");
+                    }
                     info.baseFile = shaderByByteSize;
                     checkIfAlreadyInstalled(shaderByByteSize, info, namingService);
                 }
@@ -138,8 +159,9 @@ public class ShaderDetector {
      */
     public void checkForExistingPatchedShaders(ShaderInfo info) {
         try {
-            // First check for newer dev versions
-            if (checkForNewerDevVersion(info)) {
+            // First check for newer dev versions. The dev naming scheme only ever describes the
+            // default target, so other targets must not be skipped because of it.
+            if (target == ShaderTargets.defaultTarget() && checkForNewerDevVersion(info)) {
                 return;
             }
 
@@ -210,7 +232,9 @@ public class ShaderDetector {
                             info.installedDir = directory;
 
                             // Try to determine style from directory name or common.glsl
-                            if (dirName.contains("Reimagined")) {
+                            if (!target.hasStyles()) {
+                                debugLog("Target " + target.getId() + " has no styles, skipping style detection");
+                            } else if (dirName.contains("Reimagined")) {
                                 info.styleReimagined = true;
                             } else if (dirName.contains("Unbound")) {
                                 info.styleUnbound = true;
@@ -305,7 +329,8 @@ public class ShaderDetector {
 
             // Use parallel validation with progress callback
             Path validShader = shaderValidator.validateByByteSizeParallel(allPaths,
-                (scanned, total) -> log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far")
+                (scanned, total) -> log(2, 0, "Please wait... Scanned " + scanned + " of " + total + " files so far"),
+                target
             );
 
             if (validShader != null) {
@@ -323,6 +348,15 @@ public class ShaderDetector {
      */
     public void processShaderPath(Path path, ShaderInfo info, ShaderNamingService namingService) {
         String name = path.getFileName().toString();
+
+        if (!target.hasStyles()) {
+            // Single style pack: the first match is the base shader
+            if (info.baseFile == null) {
+                info.baseFile = path;
+            }
+            checkIfAlreadyInstalled(path, info, namingService);
+            return;
+        }
 
         // Check shader style from filename first
         boolean styleFromName = false;
@@ -378,8 +412,10 @@ public class ShaderDetector {
             Path potentialBaseZip = shaderpacks.resolve(baseName + ".zip");
 
             // Set shader styles based on directory name
-            info.styleReimagined = name.contains("Reimagined");
-            info.styleUnbound = name.contains("Unbound");
+            if (target.hasStyles()) {
+                info.styleReimagined = name.contains("Reimagined");
+                info.styleUnbound = name.contains("Unbound");
+            }
 
             if (Files.exists(potentialBaseZip)) {
                 info.baseFile = potentialBaseZip;
@@ -412,10 +448,11 @@ public class ShaderDetector {
      * Check if directory has Euphoria file
      */
     public boolean hasEuphoriaFile(Path dir) throws IOException {
+        String markerNamePart = target.getMarkerFileNamePart();
         try (Stream<Path> paths = Files.walk(dir)) {
             return paths
                     .filter(Files::isRegularFile)
-                    .anyMatch(p -> p.getFileName().toString().contains("EuphoriaPatches"));
+                    .anyMatch(p -> p.getFileName().toString().contains(markerNamePart));
         }
     }
 
@@ -665,6 +702,13 @@ public class ShaderDetector {
         try {
             String nameLower = path.getFileName().toString().toLowerCase(Locale.ROOT);
 
+            // Never skip the shader we are currently looking for: some targets (Photon) are
+            // themselves on the "popular shader" list, which exists purely to speed up the scan.
+            if (nameLower.startsWith(target.getBrandName().toLowerCase(Locale.ROOT))) {
+                debugLog("Not skipping " + path.getFileName() + " - it matches the current target brand");
+                return false;
+            }
+
             List<String> popularPatterns = Arrays.asList(
                     ".*bsl_v\\d+\\..*",
                     ".*sildur's.*",
@@ -888,6 +932,12 @@ public class ShaderDetector {
      * If found, updates info to indicate we should patch the missing style
      */
     private boolean checkForMissingStyle(ShaderInfo info) {
+        // Targets without a style pair can never have a missing style
+        if (!target.hasStyles()) {
+            debugLog("Target " + target.getId() + " has no styles, skipping missing style check");
+            return false;
+        }
+
         // If both styles are already installed, nothing to do
         if (info.styleReimagined && info.styleUnbound) {
             debugLog("Both styles already installed");
@@ -990,6 +1040,13 @@ public class ShaderDetector {
      * @param baseFile Path to the base shader file or directory
      * @return Path to the patched shader, or null if baseFile is null
      */
+    /**
+     * The base shader this detector was created for.
+     */
+    public ShaderTarget getTarget() {
+        return target;
+    }
+
     public Path getPatchedShaderPath(Path baseFile) {
         if (baseFile == null) {
             log(3, "Cannot create patched shader path - base file is null");
